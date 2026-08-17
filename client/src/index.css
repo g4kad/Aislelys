@@ -1,0 +1,83 @@
+:root {
+  --bg: #faf6f1;
+  --surface: #ffffff;
+  --surface-alt: #f4ede4;
+  --text: #3a3532;
+  --text-muted: #8a8078;
+  --border: #e6dccf;
+  --accent: #c97b84;
+  --accent-dark: #ab5f68;
+  --accent-contrast: #ffffff;
+  --danger: #b5484f;
+  --radius: 12px;
+  --shadow: 0 2px 10px rgba(60, 45, 35, 0.07);
+
+  --sans: "Inter", system-ui, "Segoe UI", Roboto, sans-serif;
+  --heading: "Playfair Display", Georgia, serif;
+
+  font: 16px/1.5 var(--sans);
+  color: var(--text);
+  background: var(--bg);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+body {
+  margin: 0;
+  min-height: 100svh;
+  background: var(--bg);
+}
+
+h1, h2, h3 {
+  font-family: var(--heading);
+  font-weight: 700;
+  color: var(--text);
+  margin: 0;
+}
+
+p {
+  margin: 0;
+}
+
+button {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+  appearance: none;
+  -webkit-appearance: none;
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+}
+
+a {
+  color: inherit;
+}
+
+input, textarea, select {
+  font-family: inherit;
+  font-size: 0.95rem;
+}
+
+input:focus,
+textarea:focus,
+select:focus,
+.dropdown-trigger:focus-visible,
+.btn:focus-visible,
+.icon-btn:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(201, 123, 132, 0.2);
+}
