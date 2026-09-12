@@ -3,6 +3,7 @@ import type { InspirationCategory, InspirationItem } from "../types";
 import { getYouTubeEmbedUrl, getVimeoEmbedUrl, getInstagramEmbedUrl, getHostname } from "../inspirationUtils";
 import { IconClose, IconEdit, IconExternalLink, IconHeart, IconTrash } from "./Icons";
 import Dropdown from "./Dropdown";
+import ImageLightbox from "./ImageLightbox";
 import * as api from "../api";
 
 type Props = {
@@ -20,6 +21,7 @@ export default function InspirationCard({ item, categories, onToggleApproved, on
   const [resolveFailed, setResolveFailed] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [editingCategory, setEditingCategory] = useState(false);
+  const [showLightbox, setShowLightbox] = useState(false);
 
   const youtubeEmbed = getYouTubeEmbedUrl(item.url);
   const vimeoEmbed = getVimeoEmbedUrl(item.url);
@@ -77,7 +79,17 @@ export default function InspirationCard({ item, categories, onToggleApproved, on
     return (
       <div className="pin-card">
         <div className="pin-image-wrap">
-          <img src={displayImageUrl ?? undefined} alt={item.caption || ""} onError={handleImageError} loading="lazy" />
+          <img
+            src={displayImageUrl ?? undefined}
+            alt={item.caption || ""}
+            onError={handleImageError}
+            onClick={() => setShowLightbox(true)}
+            loading="lazy"
+          />
+
+          {showLightbox && displayImageUrl && (
+            <ImageLightbox src={displayImageUrl} alt={item.caption} onClose={() => setShowLightbox(false)} />
+          )}
 
           <div className={`pin-overlay ${editingCategory ? "force-visible" : ""}`}>
             <button

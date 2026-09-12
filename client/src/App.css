@@ -1137,6 +1137,7 @@
 .pin-image-wrap img {
   width: 100%;
   display: block;
+  cursor: pointer;
 }
 
 .pin-overlay {
@@ -1155,6 +1156,13 @@
   flex-direction: column;
   justify-content: space-between;
   padding: 10px;
+  /* let clicks on empty overlay space fall through to the image beneath (opens lightbox) */
+  pointer-events: none;
+}
+
+.pin-overlay .pin-save-btn,
+.pin-overlay .pin-overlay-bottom {
+  pointer-events: auto;
 }
 
 .pin-card:hover .pin-overlay,
@@ -1388,6 +1396,48 @@
 
 .modal-body {
   padding: 20px;
+}
+
+/* ---------- Image lightbox (inspiration pop-up) ---------- */
+
+.lightbox-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 8, 6, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+  z-index: 60;
+  cursor: zoom-out;
+}
+
+.lightbox-image {
+  max-width: 100%;
+  max-height: 100%;
+  border-radius: 8px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+  cursor: default;
+}
+
+.lightbox-close {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.lightbox-close:hover {
+  background: rgba(255, 255, 255, 0.28);
 }
 
 .event-form {
