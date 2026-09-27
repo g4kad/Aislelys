@@ -2592,8 +2592,7 @@
 .lightbox-footer {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+  justify-content: center;
   padding-top: 12px;
   color: #fff;
 }
@@ -2602,20 +2601,5 @@
   font-size: 0.95rem;
   line-height: 1.4;
   min-width: 0;
-}
-
-.lightbox-original {
-  flex-shrink: 0;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  color: #fff;
-  font-size: 0.85rem;
-  opacity: 0.85;
-  text-decoration: none;
-}
-
-.lightbox-original:hover {
-  opacity: 1;
-  text-decoration: underline;
+  text-align: center;
 }

@@ -76,7 +76,7 @@ export default function InspirationPage() {
     () =>
       filteredItems
         .filter((i) => imageSrcs[i.id])
-        .map((i) => ({ id: i.id, src: imageSrcs[i.id], caption: i.caption, originalUrl: i.url })),
+        .map((i) => ({ id: i.id, src: imageSrcs[i.id], caption: i.caption })),
     [filteredItems, imageSrcs]
   );
   const lightboxIndex = lightboxSlides.findIndex((s) => s.id === lightboxItemId);

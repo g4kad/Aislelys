@@ -1,11 +1,10 @@
 import { useEffect, useRef, useState } from "react";
-import { IconChevronLeft, IconChevronRight, IconClose, IconExternalLink } from "./Icons";
+import { IconChevronLeft, IconChevronRight, IconClose } from "./Icons";
 
 export type LightboxSlide = {
   id: string;
   src: string;
   caption: string;
-  originalUrl: string;
 };
 
 type Props = {
@@ -160,13 +159,11 @@ export default function ImageLightbox({ slides, index, onIndexChange, onClose }:
         }}
       >
         <img key={slide.id} src={slide.src} alt={slide.caption} draggable={false} />
-        <figcaption className="lightbox-footer">
-          {slide.caption ? <span className="lightbox-caption">{slide.caption}</span> : <span />}
-          <a className="lightbox-original" href={slide.originalUrl} target="_blank" rel="noreferrer">
-            <IconExternalLink size={13} />
-            Open original
-          </a>
-        </figcaption>
+        {slide.caption && (
+          <figcaption className="lightbox-footer">
+            <span className="lightbox-caption">{slide.caption}</span>
+          </figcaption>
+        )}
       </figure>
     </div>
   );
