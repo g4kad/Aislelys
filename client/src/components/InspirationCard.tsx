@@ -3,6 +3,7 @@ import type { InspirationCategory, InspirationItem } from "../types";
 import { getYouTubeEmbedUrl, getVimeoEmbedUrl, getInstagramEmbedUrl, getTikTokEmbedUrl, getHostname } from "../inspirationUtils";
 import { IconClose, IconEdit, IconExternalLink, IconHeart, IconTrash } from "./Icons";
 import Dropdown from "./Dropdown";
+import ImageLightbox from "./ImageLightbox";
 import * as api from "../api";
 
 type Props = {
@@ -21,6 +22,7 @@ export default function InspirationCard({ item, categories, onToggleApproved, on
   const [resolveFailed, setResolveFailed] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [editingCategory, setEditingCategory] = useState(false);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
 
   const youtubeEmbed = getYouTubeEmbedUrl(item.url);
   const vimeoEmbed = getVimeoEmbedUrl(item.url);
@@ -87,7 +89,14 @@ export default function InspirationCard({ item, categories, onToggleApproved, on
         <div className="pin-image-wrap">
           <img src={displayImageUrl ?? undefined} alt={item.caption || ""} onError={handleImageError} loading="lazy" />
 
-          <div className={`pin-overlay ${editingCategory ? "force-visible" : ""}`}>
+          <div
+            className={`pin-overlay ${editingCategory ? "force-visible" : ""}`}
+            onClick={(e) => {
+              // clicks on the card's own buttons/dropdown shouldn't open the viewer
+              if (editingCategory || (e.target as HTMLElement).closest("button, a, .dropdown")) return;
+              setLightboxOpen(true);
+            }}
+          >
             <button
               className={`pin-save-btn ${item.approved ? "saved" : ""}`}
               title={item.approved ? "Approved" : "Mark as approved"}
@@ -121,16 +130,6 @@ export default function InspirationCard({ item, categories, onToggleApproved, on
                 </>
               ) : (
                 <>
-                  <a
-                    className="pin-round-btn"
-                    title="Open original"
-                    href={item.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <IconExternalLink size={13} />
-                  </a>
                   <button className="pin-round-btn" title="Change category" onClick={() => setEditingCategory(true)}>
                     <IconEdit size={13} />
                   </button>
@@ -144,6 +143,15 @@ export default function InspirationCard({ item, categories, onToggleApproved, on
         </div>
 
         {item.caption && <p className="pin-caption">{item.caption}</p>}
+
+        {lightboxOpen && displayImageUrl && (
+          <ImageLightbox
+            src={displayImageUrl}
+            caption={item.caption}
+            originalUrl={item.url}
+            onClose={() => setLightboxOpen(false)}
+          />
+        )}
       </div>
     );
   }

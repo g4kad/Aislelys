@@ -1768,6 +1768,10 @@
   padding: 10px;
 }
 
+.pin-overlay {
+  cursor: zoom-in;
+}
+
 .pin-card:hover .pin-overlay,
 .pin-card:focus-within .pin-overlay,
 .pin-overlay.force-visible {
@@ -2478,4 +2482,89 @@
   .invite-subtitle {
     font-size: 0.85rem;
   }
+}
+
+/* ---------- Image lightbox (inspiration pins) ---------- */
+
+.lightbox-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(20, 15, 12, 0.82);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 56px 16px 24px;
+  z-index: 60;
+  cursor: zoom-out;
+}
+
+.lightbox-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+}
+
+.lightbox-close:hover {
+  background: #fff;
+}
+
+.lightbox-figure {
+  margin: 0;
+  max-width: min(1100px, 100%);
+  max-height: 100%;
+  display: flex;
+  flex-direction: column;
+  cursor: default;
+}
+
+.lightbox-figure img {
+  display: block;
+  max-width: 100%;
+  max-height: calc(100vh - 140px);
+  max-height: calc(100dvh - 140px);
+  object-fit: contain;
+  border-radius: 14px;
+  margin: 0 auto;
+}
+
+.lightbox-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 12px;
+  color: #fff;
+}
+
+.lightbox-caption {
+  font-size: 0.95rem;
+  line-height: 1.4;
+  min-width: 0;
+}
+
+.lightbox-original {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #fff;
+  font-size: 0.85rem;
+  opacity: 0.85;
+  text-decoration: none;
+}
+
+.lightbox-original:hover {
+  opacity: 1;
+  text-decoration: underline;
 }
