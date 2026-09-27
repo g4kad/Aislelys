@@ -55,7 +55,9 @@ export default function VendorsBoard({
   return (
     <div className="board">
       <div className="board-sections">
-        {categories.map((category) => {
+        {vendors.length === 0 && <p className="empty-hint">No vendors yet.</p>}
+        {/* empty categories are hidden here but still exist, so they stay in the pickers */}
+        {categories.filter((category) => groups.byCategory.has(category.title)).map((category) => {
           const categoryVendors = groups.byCategory.get(category.title) ?? [];
           const isOpen = !collapsed.has(category.id);
           return (
@@ -72,24 +74,20 @@ export default function VendorsBoard({
                 <span className="section-count">{categoryVendors.length}</span>
               </button>
               {isOpen && (
-                categoryVendors.length === 0 ? (
-                  <p className="empty-hint">No vendors in this category yet.</p>
-                ) : (
-                  <div className="card-list">
-                    {categoryVendors.map((vendor) => (
-                      <VendorCard
-                        key={vendor.id}
-                        vendor={vendor}
-                        categories={categories}
-                        budgetCategories={budgetCategories}
-                        onCreateCategory={onCreateCategory}
-                        color={category.color}
-                        onUpdate={(patch) => onUpdate(vendor.id, patch)}
-                        onDelete={() => onDelete(vendor.id)}
-                      />
-                    ))}
-                  </div>
-                )
+                <div className="card-list">
+                  {categoryVendors.map((vendor) => (
+                    <VendorCard
+                      key={vendor.id}
+                      vendor={vendor}
+                      categories={categories}
+                      budgetCategories={budgetCategories}
+                      onCreateCategory={onCreateCategory}
+                      color={category.color}
+                      onUpdate={(patch) => onUpdate(vendor.id, patch)}
+                      onDelete={() => onDelete(vendor.id)}
+                    />
+                  ))}
+                </div>
               )}
             </div>
           );

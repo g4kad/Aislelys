@@ -51,7 +51,9 @@ export default function BudgetBoard({
 
   return (
     <div className="board-sections">
-      {categories.map((category) => {
+      {items.length === 0 && <p className="empty-hint">No expenses yet.</p>}
+      {/* empty categories are hidden here but still exist, so they stay in the pickers */}
+      {categories.filter((category) => groups.byCategory.has(category.title)).map((category) => {
         const categoryItems = groups.byCategory.get(category.title) ?? [];
         return (
           <div className="board-section" style={{ borderLeftColor: category.color }} key={category.id}>
@@ -61,10 +63,7 @@ export default function BudgetBoard({
               <span className="section-subtotal">{formatSgd(categorySgd(categoryItems))} {subtotalLabel}</span>
               <span className="section-count">{categoryItems.length}</span>
             </div>
-            {categoryItems.length === 0 ? (
-              <p className="empty-hint">No expenses in this category yet.</p>
-            ) : (
-              <div className="card-list">
+            <div className="card-list">
                 {categoryItems.map((item) => (
                   <BudgetItemCard
                     key={item.id}
@@ -76,8 +75,7 @@ export default function BudgetBoard({
                     onDelete={() => onDelete(item.id)}
                   />
                 ))}
-              </div>
-            )}
+            </div>
           </div>
         );
       })}
