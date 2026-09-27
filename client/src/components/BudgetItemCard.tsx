@@ -147,7 +147,7 @@ export default function BudgetItemCard({ budgetItem, categories, mode, color, de
           <div className="card-footer">
             {confirmDelete ? (
               <span className="confirm-row">
-                {budgetItem.sourceVendorId ? "Remove from budget? (The vendor stays.)" : "Delete this expense?"}
+                {budgetItem.sourceVendorId ? "Remove from budget? The vendor stays, set back to Inquired." : "Delete this expense?"}
                 <button className="btn small danger" onClick={onDelete}>Delete</button>
                 <button className="btn small ghost" onClick={() => setConfirmDelete(false)}>Cancel</button>
               </span>

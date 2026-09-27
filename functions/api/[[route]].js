@@ -1186,9 +1186,17 @@ async function syncBudgetItemToVendor(db, coupleId, vendorId, line) {
 app.delete("/budget-items/:id", async (c) => {
   const coupleId = c.get("coupleId");
   const id = c.req.param("id");
-  const existing = await c.env.DB.prepare("SELECT id FROM budget_items WHERE id = ? AND coupleId = ?").bind(id, coupleId).first();
+  const existing = await c.env.DB.prepare("SELECT id, sourceVendorId FROM budget_items WHERE id = ? AND coupleId = ?")
+    .bind(id, coupleId)
+    .first();
   if (!existing) return c.json({ error: "Budget item not found" }, 404);
   await c.env.DB.prepare("DELETE FROM budget_items WHERE id = ?").bind(id).run();
+  // removing a vendor's line from the budget keeps the vendor, back at Inquired
+  if (existing.sourceVendorId) {
+    await c.env.DB.prepare("UPDATE vendors SET status = 'inquired' WHERE id = ? AND coupleId = ?")
+      .bind(existing.sourceVendorId, coupleId)
+      .run();
+  }
   await cancelPendingNotifications(c.env.DB, id);
   return c.body(null, 204);
 });
@@ -1377,8 +1385,8 @@ app.post("/vendors", async (c) => {
 // (the line's "actual") and paid status all mirror the vendor. The line's
 // "estimated" starts at the cost and keeps following it, unless it's been set
 // to something different on the Budget page. Going back to Inquired removes
-// the line. The link is soft — if the line is deleted on the Budget page,
-// later vendor edits won't recreate it until the vendor is booked again.
+// the line, and deleting the line on the Budget page sets the vendor back to
+// Inquired (the vendor itself is kept).
 // Edits made on the Budget page flow back via syncBudgetItemToVendor.
 const VENDOR_BUDGET_STATUSES = new Set(["downpayment", "booked", "paid"]);
 
