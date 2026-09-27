@@ -2,7 +2,7 @@ import { useState } from "react";
 import type { BudgetCategory, Currency } from "../types";
 import Modal from "./Modal";
 import Dropdown from "./Dropdown";
-import { CURRENCIES, GENERIC_BUDGET_CATEGORIES } from "../constants";
+import { CURRENCIES, GENERIC_BUDGET_CATEGORIES, PURCHASES_CATEGORY } from "../constants";
 import { useIsMobile } from "../useIsMobile";
 
 type Props = {
@@ -22,7 +22,7 @@ type Props = {
 export default function BudgetFormModal({ categories, onClose, onCreate, onCreateCategory }: Props) {
   const isMobile = useIsMobile();
   const [item, setItem] = useState("");
-  const [category, setCategory] = useState(categories[0]?.title ?? "");
+  const [category, setCategory] = useState(PURCHASES_CATEGORY);
   const [currency, setCurrency] = useState<Currency>("SGD");
   const [estimated, setEstimated] = useState("");
   const [actual, setActual] = useState("");
@@ -39,7 +39,7 @@ export default function BudgetFormModal({ categories, onClose, onCreate, onCreat
   }
 
   async function handleCategoryChange(value: string) {
-    const alreadyExists = categories.some((c) => c.title === value);
+    const alreadyExists = value === PURCHASES_CATEGORY || categories.some((c) => c.title === value);
     if (!alreadyExists && value) {
       const created = await onCreateCategory(value);
       setCategory(created.title);
@@ -48,10 +48,12 @@ export default function BudgetFormModal({ categories, onClose, onCreate, onCreat
     }
   }
 
+  // Purchases always comes first (it may not exist yet — the server creates it)
   const existingTitles = new Set(categories.map((c) => c.title.trim().toLowerCase()));
   const suggestions = GENERIC_BUDGET_CATEGORIES.filter((title) => !existingTitles.has(title.toLowerCase()));
   const categoryOptions = [
-    ...categories.map((c) => ({ value: c.title, label: c.title })),
+    { value: PURCHASES_CATEGORY, label: PURCHASES_CATEGORY },
+    ...categories.filter((c) => c.title !== PURCHASES_CATEGORY).map((c) => ({ value: c.title, label: c.title })),
     ...suggestions.map((title) => ({ value: title, label: title })),
   ];
 
@@ -60,7 +62,7 @@ export default function BudgetFormModal({ categories, onClose, onCreate, onCreat
     if (!item.trim()) return;
     onCreate({
       item: item.trim(),
-      category: category || "Other",
+      category: category || PURCHASES_CATEGORY,
       currency,
       estimated: Math.max(0, Number(estimated) || 0),
       actual: Math.max(0, Number(actual) || 0),
@@ -156,6 +158,12 @@ export default function BudgetFormModal({ categories, onClose, onCreate, onCreat
           <input type="checkbox" checked={paid} onChange={(e) => setPaid(e.target.checked)} />
           Paid
         </label>
+
+        <p className="form-hint">
+          {category === PURCHASES_CATEGORY
+            ? "Purchases are day-to-day expenses and stay on the budget only."
+            : "This will also be added to your vendors."}
+        </p>
 
         <div className="btn-row">
           <button type="submit" className="btn primary">Add expense</button>

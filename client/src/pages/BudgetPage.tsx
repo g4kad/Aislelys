@@ -105,6 +105,10 @@ export default function BudgetPage() {
     try {
       const created = await api.createBudgetItem(data);
       setItems((prev) => [created, ...prev]);
+      // the server creates the category (e.g. Purchases) if it didn't exist yet
+      if (!categories.some((c) => c.title === created.category)) {
+        setCategories(await api.getBudgetCategories());
+      }
     } catch (err) {
       setError((err as Error).message);
     }

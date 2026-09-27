@@ -2,7 +2,7 @@ import { useState } from "react";
 import type { BudgetCategory, BudgetItem, Currency } from "../types";
 import { IconChevronRight, IconTrash } from "./Icons";
 import Dropdown from "./Dropdown";
-import { CURRENCIES } from "../constants";
+import { CURRENCIES, PURCHASES_CATEGORY } from "../constants";
 import { formatMoney } from "../money";
 
 type Props = {
@@ -83,7 +83,10 @@ export default function BudgetItemCard({ budgetItem, categories, mode, color, de
             <Dropdown
               value={budgetItem.category}
               onChange={(v) => onUpdate({ category: v })}
-              options={categories.map((c) => ({ value: c.title, label: c.title }))}
+              options={categories
+                // a vendor's line can't move into the budget-only Purchases category
+                .filter((c) => !(budgetItem.sourceVendorId && c.title === PURCHASES_CATEGORY))
+                .map((c) => ({ value: c.title, label: c.title }))}
               className="category-dropdown"
             />
           </label>

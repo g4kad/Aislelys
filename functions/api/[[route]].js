@@ -1108,6 +1108,13 @@ app.get("/budget-items", async (c) => {
   );
 });
 
+// Budget-only category for day-to-day spending: its lines never become vendors,
+// and it's never mirrored into the vendor categories.
+const PURCHASES_CATEGORY = "Purchases";
+
+// A new expense added on the Budget page also becomes a vendor (Booked, or
+// Paid if ticked), linked the same way as a vendor's own budget line —
+// unless it's filed under Purchases.
 app.post("/budget-items", async (c) => {
   const coupleId = c.get("coupleId");
   const { item, category, estimated, actual, paid, currency } = await c.req.json();
@@ -1115,17 +1122,55 @@ app.post("/budget-items", async (c) => {
   const row = {
     id: crypto.randomUUID(),
     item: item.trim(),
-    category: category || "Other",
+    category: category || PURCHASES_CATEGORY,
     currency: currency === "MYR" ? "MYR" : "SGD",
     estimated: Math.max(0, Number(estimated) || 0),
     actual: Math.max(0, Number(actual) || 0),
     paid: Boolean(paid),
     createdAt: new Date().toISOString(),
+    sourceVendorId: null,
   };
+  await ensureCategory(c.env.DB, coupleId, "budget", row.category);
+
+  if (row.category !== PURCHASES_CATEGORY) {
+    const vendorId = crypto.randomUUID();
+    await ensureCategory(c.env.DB, coupleId, "vendor", row.category);
+    await c.env.DB.prepare(
+      "INSERT INTO vendors (id,coupleId,name,category,contact,cost,status,notes,createdAt,currency,budgetCategory,downpayment) VALUES (?,?,?,?,?,?,?,?,?,?,?,0)"
+    )
+      .bind(
+        vendorId,
+        coupleId,
+        row.item,
+        row.category,
+        "",
+        row.actual || row.estimated,
+        row.paid ? "paid" : "booked",
+        "",
+        row.createdAt,
+        row.currency,
+        row.category
+      )
+      .run();
+    row.sourceVendorId = vendorId;
+    row.downpayment = 0;
+  }
+
   await c.env.DB.prepare(
-    "INSERT INTO budget_items (id,coupleId,item,category,currency,estimated,actual,paid,createdAt) VALUES (?,?,?,?,?,?,?,?,?)"
+    "INSERT INTO budget_items (id,coupleId,item,category,currency,estimated,actual,paid,createdAt,sourceVendorId) VALUES (?,?,?,?,?,?,?,?,?,?)"
   )
-    .bind(row.id, coupleId, row.item, row.category, row.currency, row.estimated, row.actual, row.paid ? 1 : 0, row.createdAt)
+    .bind(
+      row.id,
+      coupleId,
+      row.item,
+      row.category,
+      row.currency,
+      row.estimated,
+      row.actual,
+      row.paid ? 1 : 0,
+      row.createdAt,
+      row.sourceVendorId
+    )
     .run();
   return c.json(row, 201);
 });
@@ -1398,6 +1443,7 @@ const CATEGORY_TABLES = { budget: "budget_categories", vendor: "vendor_categorie
 
 async function ensureCategory(db, coupleId, side, title) {
   if (!title) return;
+  if (side === "vendor" && title === PURCHASES_CATEGORY) return;
   const table = CATEGORY_TABLES[side];
   const otherTable = CATEGORY_TABLES[side === "budget" ? "vendor" : "budget"];
   const exists = await db.prepare(`SELECT id FROM ${table} WHERE coupleId = ? AND title = ?`).bind(coupleId, title).first();

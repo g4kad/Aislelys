@@ -5,6 +5,10 @@ export const VENDOR_STATUSES: { value: "inquired" | "downpayment" | "booked" | "
   { value: "paid", label: "Paid" },
 ];
 
+// Budget-only category for day-to-day spending: never becomes a vendor, and
+// never shows up in the vendor categories. The default for new expenses.
+export const PURCHASES_CATEGORY = "Purchases";
+
 export const CURRENCIES: { value: "SGD" | "MYR"; label: string }[] = [
   { value: "SGD", label: "SGD (S$)" },
   { value: "MYR", label: "MYR (RM)" },
