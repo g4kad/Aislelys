@@ -14,6 +14,7 @@ export default function InspirationPage() {
   const [error, setError] = useState<string | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
+  const [approvedOnly, setApprovedOnly] = useState(false);
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [newCategoryTitle, setNewCategoryTitle] = useState("");
   const [confirmDeleteCategoryId, setConfirmDeleteCategoryId] = useState<string | null>(null);
@@ -48,15 +49,25 @@ export default function InspirationPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  const filteredItems = useMemo(
-    () => (selectedCategoryId === null ? items : items.filter((i) => i.categoryId === selectedCategoryId)),
-    [items, selectedCategoryId]
-  );
+  const filteredItems = useMemo(() => {
+    return items.filter((i) => {
+      if (selectedCategoryId !== null && i.categoryId !== selectedCategoryId) return false;
+      if (approvedOnly && !i.approved) return false;
+      return true;
+    });
+  }, [items, selectedCategoryId, approvedOnly]);
 
   const approvedCountFor = useMemo(() => {
     return (categoryId: string | null) =>
       items.filter((i) => (categoryId === null ? true : i.categoryId === categoryId) && i.approved).length;
   }, [items]);
+
+  const totalCountFor = useMemo(() => {
+    return (categoryId: string | null) =>
+      items.filter((i) => (categoryId === null ? true : i.categoryId === categoryId)).length;
+  }, [items]);
+
+  const categoryBadgeCountFor = approvedOnly ? approvedCountFor : totalCountFor;
 
   async function handleAddItem(url: string, caption: string, categoryId: string | null) {
     try {
@@ -141,7 +152,14 @@ export default function InspirationPage() {
 
       <div className="guest-list-header">
         <h2 className="board-region-title">Inspiration</h2>
-        <span className="guest-total-pill">{approvedCountFor(selectedCategoryId)} approved</span>
+        <button
+          type="button"
+          className={`guest-total-pill approved-filter-pill ${approvedOnly ? "active" : ""}`}
+          onClick={() => setApprovedOnly((v) => !v)}
+          aria-pressed={approvedOnly}
+        >
+          {approvedCountFor(selectedCategoryId)} approved
+        </button>
       </div>
 
       <p className="page-subtitle">
@@ -168,11 +186,11 @@ export default function InspirationPage() {
                 value={selectedCategoryId ?? ""}
                 onChange={(v) => setSelectedCategoryId(v || null)}
                 options={[
-                  { value: "", label: "All", badge: approvedCountFor(null) },
+                  { value: "", label: "All", badge: categoryBadgeCountFor(null) },
                   ...categories.map((cat) => ({
                     value: cat.id,
                     label: cat.title,
-                    badge: approvedCountFor(cat.id),
+                    badge: categoryBadgeCountFor(cat.id),
                   })),
                 ]}
               />
@@ -192,7 +210,7 @@ export default function InspirationPage() {
         <div className="category-tabs">
           <span className={`category-tab-group ${selectedCategoryId === null ? "active" : ""}`}>
             <button className="category-tab" onClick={() => setSelectedCategoryId(null)}>
-              All <span className="category-tab-count">{approvedCountFor(null)}</span>
+              All <span className="category-tab-count">{categoryBadgeCountFor(null)}</span>
             </button>
           </span>
 
@@ -202,7 +220,7 @@ export default function InspirationPage() {
               className={`category-tab-group ${selectedCategoryId === cat.id ? "active" : ""}`}
             >
               <button className="category-tab" onClick={() => setSelectedCategoryId(cat.id)}>
-                {cat.title} <span className="category-tab-count">{approvedCountFor(cat.id)}</span>
+                {cat.title} <span className="category-tab-count">{categoryBadgeCountFor(cat.id)}</span>
               </button>
               {confirmDeleteCategoryId === cat.id ? (
                 <span className="category-tab-confirm">
@@ -248,7 +266,7 @@ export default function InspirationPage() {
       )}
 
       <div className="inspiration-add-row">
-        <button className="btn primary small" onClick={() => setShowAddModal(true)}>
+        <button className="btn primary small btn-add-primary" onClick={() => setShowAddModal(true)}>
           + Add
         </button>
       </div>
@@ -267,6 +285,8 @@ export default function InspirationPage() {
         <p className="empty-hint">
           {items.length === 0
             ? "No inspiration saved yet — paste a link above to get started."
+            : approvedOnly
+            ? "No approved items here yet."
             : "No items in this category yet."}
         </p>
       ) : (

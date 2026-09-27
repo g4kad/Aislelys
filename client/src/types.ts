@@ -2,6 +2,7 @@ export type Section = {
   id: string;
   title: string;
   color: string;
+  position: number;
 };
 
 export type WeddingDate = {
@@ -11,7 +12,8 @@ export type WeddingDate = {
 export type Task = {
   id: string;
   name: string;
-  assignee: string;
+  assigneeUserId: string | null;
+  createdByUserId: string | null;
   done: boolean;
 };
 
@@ -30,19 +32,51 @@ export type TodoItem = {
   id: string;
   date: string; // YYYY-MM-DD
   text: string;
+  assigneeUserId: string | null;
+  createdByUserId: string | null;
   done: boolean;
   createdAt: string;
+};
+
+export type User = {
+  id: string;
+  name: string;
+};
+
+export type Notification = {
+  id: string;
+  userId: string;
+  actorUserId: string | null;
+  message: string;
+  entityType: string | null;
+  entityId: string | null;
+  read: boolean;
+  createdAt: string;
+};
+
+export type GuestCategory = {
+  id: string;
+  ownerId: string;
+  title: string;
 };
 
 export type Guest = {
   id: string;
   name: string;
-  plusCount: number; // additional people this guest is bringing
+  plusCount: number; // additional people this guest/family is bringing
+  categoryId: string;
+  isVip: boolean;
+  included: boolean; // whether this guest counts toward the guest totals
+  phone?: string;
+  email?: string;
+  address?: string;
+  notes?: string;
 };
 
 export type GuestOwner = {
   id: string;
   name: string;
+  categories: GuestCategory[];
   guests: Guest[];
   createdAt: string;
 };
@@ -64,6 +98,7 @@ export type InspirationCategory = {
 
 export type Budget = {
   total: number;
+  savings: number;
 };
 
 export type Currency = "SGD" | "MYR";
@@ -71,6 +106,7 @@ export type Currency = "SGD" | "MYR";
 export type BudgetCategory = {
   id: string;
   title: string;
+  color: string;
   createdAt: string;
 };
 
@@ -92,6 +128,13 @@ export type ExchangeRate = {
 };
 
 export type VendorStatus = "inquired" | "booked" | "paid";
+
+export type VendorCategory = {
+  id: string;
+  title: string;
+  color: string;
+  createdAt: string;
+};
 
 export type Vendor = {
   id: string;

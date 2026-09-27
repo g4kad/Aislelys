@@ -1,21 +1,24 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { EventItem, Section, Task, TodoItem } from "../types";
 import { MONTH_NAMES, WEEKDAY_NAMES, getMonthMatrix, toDateKey, todayKey, formatDateLong } from "../dateUtils";
 import EventCard from "./EventCard";
 import EventFormModal from "./EventFormModal";
+import FullTimelineModal from "./FullTimelineModal";
 import DayTodoList from "./DayTodoList";
-import { IconChevronLeft, IconChevronRight } from "./Icons";
+import { IconChevronLeft, IconChevronRight, IconLayers } from "./Icons";
 
 type Props = {
   events: EventItem[];
   sections: Section[];
   todos: TodoItem[];
+  cursor: Date;
+  onCursorChange: (cursor: Date) => void;
   onCreateEvent: (data: { title: string; date: string; time: string; sectionId: string | null; notes: string }) => void;
   onCreateSection: (title: string, color: string) => Promise<Section>;
   onUpdateEvent: (id: string, patch: Partial<Pick<EventItem, "title" | "date" | "time" | "sectionId" | "notes">>) => void;
   onDeleteEvent: (id: string) => void;
-  onAddTask: (eventId: string, name: string, assignee: string) => void;
-  onUpdateTask: (eventId: string, taskId: string, patch: Partial<Pick<Task, "name" | "assignee" | "done">>) => void;
+  onAddTask: (eventId: string, name: string, assigneeUserId: string | null) => void;
+  onUpdateTask: (eventId: string, taskId: string, patch: Partial<Pick<Task, "name" | "assigneeUserId" | "done">>) => void;
   onDeleteTask: (eventId: string, taskId: string) => void;
   onAddTodo: (date: string, text: string) => void;
   onToggleTodo: (id: string, done: boolean) => void;
@@ -23,13 +26,24 @@ type Props = {
 };
 
 export default function CalendarView(props: Props) {
-  const { events, sections } = props;
-  const today = new Date();
-  const [cursor, setCursor] = useState(new Date(today.getFullYear(), today.getMonth(), 1));
+  const { events, sections, cursor } = props;
   const [selectedDate, setSelectedDate] = useState<string>(todayKey());
   const [showForm, setShowForm] = useState(false);
+  const [showTimeline, setShowTimeline] = useState(false);
 
   const weeks = useMemo(() => getMonthMatrix(cursor.getFullYear(), cursor.getMonth()), [cursor]);
+
+  // Keep the selected day in step with whichever month is being viewed, so
+  // navigating months doesn't leave the day panel (and its "+ Add task"
+  // default date) stuck on a day from the month you navigated away from.
+  useEffect(() => {
+    setSelectedDate((prev) => {
+      const [, , dStr] = prev.split("-");
+      const daysInCursorMonth = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 0).getDate();
+      const day = Math.min(Number(dStr), daysInCursorMonth);
+      return toDateKey(new Date(cursor.getFullYear(), cursor.getMonth(), day));
+    });
+  }, [cursor]);
 
   const eventsByDate = useMemo(() => {
     const map = new Map<string, EventItem[]>();
@@ -54,19 +68,24 @@ export default function CalendarView(props: Props) {
   );
 
   function goToMonth(delta: number) {
-    setCursor((c) => new Date(c.getFullYear(), c.getMonth() + delta, 1));
+    props.onCursorChange(new Date(cursor.getFullYear(), cursor.getMonth() + delta, 1));
   }
 
   return (
     <div className="calendar-layout">
       <div className="calendar-panel">
         <div className="calendar-nav">
-          <button className="icon-btn" onClick={() => goToMonth(-1)} aria-label="Previous month">
-            <IconChevronLeft />
-          </button>
-          <h2>{MONTH_NAMES[cursor.getMonth()]} {cursor.getFullYear()}</h2>
-          <button className="icon-btn" onClick={() => goToMonth(1)} aria-label="Next month">
-            <IconChevronRight size={16} />
+          <div className="calendar-month-nav">
+            <button className="icon-btn" onClick={() => goToMonth(-1)} aria-label="Previous month">
+              <IconChevronLeft />
+            </button>
+            <h2>{MONTH_NAMES[cursor.getMonth()]} {cursor.getFullYear()}</h2>
+            <button className="icon-btn" onClick={() => goToMonth(1)} aria-label="Next month">
+              <IconChevronRight size={16} />
+            </button>
+          </div>
+          <button className="icon-btn" onClick={() => setShowTimeline(true)} title="Full timeline" aria-label="Full timeline">
+            <IconLayers />
           </button>
         </div>
 
@@ -108,7 +127,7 @@ export default function CalendarView(props: Props) {
         <div className="day-panel">
           <div className="day-panel-header">
             <h3>{formatDateLong(selectedDate)}</h3>
-            <button className="btn primary small day-panel-add-task" onClick={() => setShowForm(true)}>
+            <button className="btn primary small day-panel-add-task btn-add-primary" onClick={() => setShowForm(true)}>
               + Add task
             </button>
           </div>
@@ -123,9 +142,10 @@ export default function CalendarView(props: Props) {
                   event={ev}
                   section={ev.sectionId ? sectionById.get(ev.sectionId) : undefined}
                   sections={sections}
+                  hideDate
                   onUpdateEvent={(patch) => props.onUpdateEvent(ev.id, patch)}
                   onDeleteEvent={() => props.onDeleteEvent(ev.id)}
-                  onAddTask={(name, assignee) => props.onAddTask(ev.id, name, assignee)}
+                  onAddTask={(name, assigneeUserId) => props.onAddTask(ev.id, name, assigneeUserId)}
                   onUpdateTask={(taskId, patch) => props.onUpdateTask(ev.id, taskId, patch)}
                   onDeleteTask={(taskId) => props.onDeleteTask(ev.id, taskId)}
                 />
@@ -134,7 +154,7 @@ export default function CalendarView(props: Props) {
           )}
         </div>
 
-        <button className="btn primary calendar-mobile-add-task" onClick={() => setShowForm(true)}>
+        <button className="btn primary calendar-mobile-add-task btn-add-primary" onClick={() => setShowForm(true)}>
           + Add task
         </button>
 
@@ -155,6 +175,19 @@ export default function CalendarView(props: Props) {
           onClose={() => setShowForm(false)}
           onCreate={props.onCreateEvent}
           onCreateSection={props.onCreateSection}
+        />
+      )}
+
+      {showTimeline && (
+        <FullTimelineModal
+          events={events}
+          sections={sections}
+          onClose={() => setShowTimeline(false)}
+          onUpdateEvent={props.onUpdateEvent}
+          onDeleteEvent={props.onDeleteEvent}
+          onAddTask={props.onAddTask}
+          onUpdateTask={props.onUpdateTask}
+          onDeleteTask={props.onDeleteTask}
         />
       )}
     </div>

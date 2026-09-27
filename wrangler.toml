@@ -1,0 +1,12 @@
+name = "bigday-planner"
+pages_build_output_dir = "client/dist"
+compatibility_date = "2026-08-17"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "bigday-planner-db"
+database_id = "e37665b1-681f-474b-b0c8-93b198869646"
+
+[[r2_buckets]]
+binding = "IMAGES"
+bucket_name = "bigday-planner-images"

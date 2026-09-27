@@ -3,6 +3,7 @@ import type { Section } from "../types";
 import Modal from "./Modal";
 import Dropdown from "./Dropdown";
 import { SECTION_COLORS } from "../palette";
+import { useIsMobile } from "../useIsMobile";
 
 type Props = {
   initialDate: string;
@@ -13,6 +14,7 @@ type Props = {
 };
 
 export default function EventFormModal({ initialDate, sections, onClose, onCreate, onCreateSection }: Props) {
+  const isMobile = useIsMobile();
   const [title, setTitle] = useState("");
   const [date, setDate] = useState(initialDate);
   const [time, setTime] = useState("");
@@ -47,7 +49,7 @@ export default function EventFormModal({ initialDate, sections, onClose, onCreat
             placeholder="e.g. Book the venue"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            autoFocus
+            autoFocus={!isMobile}
             required
           />
         </label>
@@ -64,13 +66,13 @@ export default function EventFormModal({ initialDate, sections, onClose, onCreat
         </div>
 
         <label>
-          Section
+          Wedding Card
           <Dropdown
             value={sectionId}
             onChange={setSectionId}
-            placeholder="No section"
+            placeholder="No wedding card"
             options={[
-              { value: "", label: "No section" },
+              { value: "", label: "No wedding card" },
               ...sections.map((s) => ({ value: s.id, label: s.title })),
             ]}
           />
@@ -78,13 +80,13 @@ export default function EventFormModal({ initialDate, sections, onClose, onCreat
 
         {!creatingSection ? (
           <button type="button" className="link-btn" onClick={() => setCreatingSection(true)}>
-            + Create a new section
+            + Create a new wedding card
           </button>
         ) : (
           <div className="inline-create-box">
             <input
               type="text"
-              placeholder="Section title (e.g. Set Up)"
+              placeholder="Wedding card title (e.g. Set Up)"
               value={newSectionTitle}
               onChange={(e) => setNewSectionTitle(e.target.value)}
             />
@@ -102,7 +104,7 @@ export default function EventFormModal({ initialDate, sections, onClose, onCreat
             </div>
             <div className="btn-row">
               <button type="button" className="btn small" onClick={handleAddSection}>
-                Add section
+                Add wedding card
               </button>
               <button type="button" className="btn small ghost" onClick={() => setCreatingSection(false)}>
                 Cancel

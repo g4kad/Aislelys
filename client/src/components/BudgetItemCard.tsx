@@ -8,12 +8,14 @@ import { formatMoney } from "../money";
 type Props = {
   budgetItem: BudgetItem;
   categories: BudgetCategory[];
+  mode: "estimated" | "actual";
+  color?: string;
   defaultExpanded?: boolean;
   onUpdate: (patch: Partial<Pick<BudgetItem, "item" | "category" | "currency" | "estimated" | "actual" | "paid">>) => void;
   onDelete: () => void;
 };
 
-export default function BudgetItemCard({ budgetItem, categories, defaultExpanded = false, onUpdate, onDelete }: Props) {
+export default function BudgetItemCard({ budgetItem, categories, mode, color, defaultExpanded = false, onUpdate, onDelete }: Props) {
   const [expanded, setExpanded] = useState(defaultExpanded);
   const [editing, setEditing] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -30,7 +32,7 @@ export default function BudgetItemCard({ budgetItem, categories, defaultExpanded
   }
 
   return (
-    <div className="card budget-card">
+    <div className="card budget-card" style={{ borderLeftColor: color ?? "#ccc" }}>
       <button className="card-header" onClick={toggleExpanded} aria-expanded={expanded}>
         <span className={`chevron ${expanded ? "open" : ""}`}><IconChevronRight /></span>
         <span className="card-title">{budgetItem.item}</span>
@@ -39,16 +41,11 @@ export default function BudgetItemCard({ budgetItem, categories, defaultExpanded
 
       {expanded && !editing && (
         <div className="card-body card-view">
-          <div className="card-meta">{budgetItem.category}</div>
-
           <div className="view-block">
-            <span className="view-label">Estimated</span>
-            <p className="notes-text">{formatMoney(budgetItem.estimated, budgetItem.currency)}</p>
-          </div>
-
-          <div className="view-block">
-            <span className="view-label">Actual</span>
-            <p className="notes-text">{formatMoney(budgetItem.actual, budgetItem.currency)}</p>
+            <span className="view-label">{mode === "estimated" ? "Estimated" : "Actual"}</span>
+            <p className="notes-text">
+              {formatMoney(mode === "estimated" ? budgetItem.estimated : budgetItem.actual, budgetItem.currency)}
+            </p>
           </div>
 
           <div className="card-footer">
@@ -70,6 +67,7 @@ export default function BudgetItemCard({ budgetItem, categories, defaultExpanded
               value={budgetItem.category}
               onChange={(v) => onUpdate({ category: v })}
               options={categories.map((c) => ({ value: c.title, label: c.title }))}
+              className="category-dropdown"
             />
           </label>
 
@@ -111,7 +109,7 @@ export default function BudgetItemCard({ budgetItem, categories, defaultExpanded
             {confirmDelete ? (
               <span className="confirm-row">
                 Delete this expense?
-                <button className="btn small danger" onClick={onDelete}>Yes, delete</button>
+                <button className="btn small danger" onClick={onDelete}>Delete</button>
                 <button className="btn small ghost" onClick={() => setConfirmDelete(false)}>Cancel</button>
               </span>
             ) : (

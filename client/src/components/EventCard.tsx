@@ -1,18 +1,23 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { EventItem, Section, Task } from "../types";
 import { formatDateShort, formatTime } from "../dateUtils";
 import { IconCheck, IconChevronRight, IconCircle, IconClose, IconTrash } from "./Icons";
 import Dropdown from "./Dropdown";
+import { useAuth } from "../auth";
+import { colorForKey } from "../palette";
 
 type Props = {
   event: EventItem;
   section: Section | undefined;
   sections: Section[];
   defaultExpanded?: boolean;
+  expanded?: boolean;
+  onToggleExpand?: () => void;
+  hideDate?: boolean;
   onUpdateEvent: (patch: Partial<Pick<EventItem, "title" | "date" | "time" | "sectionId" | "notes">>) => void;
   onDeleteEvent: () => void;
-  onAddTask: (name: string, assignee: string) => void;
-  onUpdateTask: (taskId: string, patch: Partial<Pick<Task, "name" | "assignee" | "done">>) => void;
+  onAddTask: (name: string, assigneeUserId: string | null) => void;
+  onUpdateTask: (taskId: string, patch: Partial<Pick<Task, "name" | "assigneeUserId" | "done">>) => void;
   onDeleteTask: (taskId: string) => void;
 };
 
@@ -21,35 +26,59 @@ export default function EventCard({
   section,
   sections,
   defaultExpanded = false,
+  expanded: controlledExpanded,
+  onToggleExpand,
+  hideDate = false,
   onUpdateEvent,
   onDeleteEvent,
   onAddTask,
   onUpdateTask,
   onDeleteTask,
 }: Props) {
-  const [expanded, setExpanded] = useState(defaultExpanded);
+  const { accounts } = useAuth();
+  const [uncontrolledExpanded, setUncontrolledExpanded] = useState(defaultExpanded);
+  const expanded = controlledExpanded ?? uncontrolledExpanded;
   const [editing, setEditing] = useState(false);
   const [taskName, setTaskName] = useState("");
   const [taskAssignee, setTaskAssignee] = useState("");
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   const doneCount = event.tasks.filter((t) => t.done).length;
+  const nameFor = (userId: string | null) => accounts.find((a) => a.id === userId)?.name;
+  const initialsFor = (userId: string | null) => {
+    const name = nameFor(userId);
+    if (!name) return null;
+    return name
+      .trim()
+      .split(/\s+/)
+      .slice(0, 2)
+      .map((w) => w.charAt(0).toUpperCase())
+      .join("");
+  };
+  const assigneeOptions = [
+    { value: "", label: "Assign" },
+    ...accounts.map((a) => ({ value: a.id, label: a.name })),
+  ];
+
+  useEffect(() => {
+    if (!expanded) {
+      setEditing(false);
+      setConfirmDelete(false);
+    }
+  }, [expanded]);
 
   function toggleExpanded() {
-    setExpanded((v) => {
-      const next = !v;
-      if (!next) {
-        setEditing(false);
-        setConfirmDelete(false);
-      }
-      return next;
-    });
+    if (onToggleExpand) {
+      onToggleExpand();
+    } else {
+      setUncontrolledExpanded((v) => !v);
+    }
   }
 
   function submitTask(e: React.FormEvent) {
     e.preventDefault();
     if (!taskName.trim()) return;
-    onAddTask(taskName.trim(), taskAssignee.trim());
+    onAddTask(taskName.trim(), taskAssignee || null);
     setTaskName("");
     setTaskAssignee("");
   }
@@ -72,10 +101,13 @@ export default function EventCard({
 
       {expanded && !editing && (
         <div className="card-body card-view">
-          <div className="card-meta">
-            {formatDateShort(event.date)}
-            {event.time && ` · ${formatTime(event.time)}`}
-          </div>
+          {(!hideDate || event.time) && (
+            <div className="card-meta">
+              {!hideDate && formatDateShort(event.date)}
+              {!hideDate && event.time && " · "}
+              {event.time && formatTime(event.time)}
+            </div>
+          )}
 
           <div className="view-block">
             <span className="view-label">Notes</span>
@@ -94,7 +126,15 @@ export default function EventCard({
                       {task.done ? <IconCheck /> : <IconCircle />}
                     </span>
                     <span className={`task-name ${task.done ? "done" : ""}`}>{task.name}</span>
-                    {task.assignee && <span className="task-assignee-view">{task.assignee}</span>}
+                    {initialsFor(task.assigneeUserId) && (
+                      <span
+                        className="task-assignee-avatar"
+                        title={nameFor(task.assigneeUserId)}
+                        style={{ background: colorForKey(task.assigneeUserId ?? "") }}
+                      >
+                        {initialsFor(task.assigneeUserId)}
+                      </span>
+                    )}
                   </li>
                 ))}
               </ul>
@@ -119,13 +159,13 @@ export default function EventCard({
           </label>
           <div className="field-row">
             <label>
-              Section
+              Wedding Card
               <Dropdown
                 value={event.sectionId ?? ""}
                 onChange={(v) => onUpdateEvent({ sectionId: v || null })}
-                placeholder="No section"
+                placeholder="No wedding card"
                 options={[
-                  { value: "", label: "No section" },
+                  { value: "", label: "No wedding card" },
                   ...sections.map((s) => ({ value: s.id, label: s.title })),
                 ]}
               />
@@ -174,12 +214,12 @@ export default function EventCard({
                     onChange={(e) => onUpdateTask(task.id, { done: e.target.checked })}
                   />
                   <span className="task-name">{task.name}</span>
-                  <input
-                    className="assignee-input"
-                    type="text"
-                    placeholder="Assign to…"
-                    value={task.assignee}
-                    onChange={(e) => onUpdateTask(task.id, { assignee: e.target.value })}
+                  <Dropdown
+                    className="assignee-dropdown"
+                    value={task.assigneeUserId ?? ""}
+                    onChange={(v) => onUpdateTask(task.id, { assigneeUserId: v || null })}
+                    placeholder="Assign"
+                    options={assigneeOptions}
                   />
                   <button className="icon-btn" title="Remove task" onClick={() => onDeleteTask(task.id)}>
                     <IconClose />
@@ -194,11 +234,12 @@ export default function EventCard({
                 value={taskName}
                 onChange={(e) => setTaskName(e.target.value)}
               />
-              <input
-                type="text"
-                placeholder="Assign to…"
+              <Dropdown
+                className="assignee-dropdown"
                 value={taskAssignee}
-                onChange={(e) => setTaskAssignee(e.target.value)}
+                onChange={setTaskAssignee}
+                placeholder="Assign"
+                options={assigneeOptions}
               />
               <button className="btn small" type="submit">Add task</button>
             </form>

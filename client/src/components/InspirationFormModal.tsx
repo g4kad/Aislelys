@@ -2,6 +2,8 @@ import { useState } from "react";
 import type { InspirationCategory } from "../types";
 import Modal from "./Modal";
 import Dropdown from "./Dropdown";
+import * as api from "../api";
+import { useIsMobile } from "../useIsMobile";
 
 type Props = {
   categories: InspirationCategory[];
@@ -18,11 +20,39 @@ export default function InspirationFormModal({
   onCreate,
   onCreateCategory,
 }: Props) {
+  const isMobile = useIsMobile();
+  const [mode, setMode] = useState<"link" | "upload">("link");
   const [url, setUrl] = useState("");
   const [caption, setCaption] = useState("");
   const [categoryId, setCategoryId] = useState(initialCategoryId ?? "");
   const [creatingCategory, setCreatingCategory] = useState(false);
   const [newCategoryTitle, setNewCategoryTitle] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [previewUrl, setPreviewUrl] = useState("");
+
+  function switchMode(next: "link" | "upload") {
+    setMode(next);
+    setUrl("");
+    setPreviewUrl("");
+    setUploadError(null);
+  }
+
+  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    setUploadError(null);
+    try {
+      const uploadedUrl = await api.uploadImage(file);
+      setUrl(uploadedUrl);
+      setPreviewUrl(URL.createObjectURL(file));
+    } catch (err) {
+      setUploadError((err as Error).message);
+    } finally {
+      setUploading(false);
+    }
+  }
 
   async function handleAddCategory() {
     if (!newCategoryTitle.trim()) return;
@@ -42,17 +72,51 @@ export default function InspirationFormModal({
   return (
     <Modal title="Add inspiration" onClose={onClose}>
       <form className="event-form" onSubmit={handleSubmit}>
-        <label>
-          Link
-          <input
-            type="url"
-            placeholder="Paste an image or video link…"
-            value={url}
-            onChange={(e) => setUrl(e.target.value)}
-            autoFocus
-            required
-          />
-        </label>
+        <div className="btn-row inspiration-mode-toggle">
+          <button
+            type="button"
+            className={`btn small ${mode === "link" ? "primary" : "ghost"}`}
+            onClick={() => switchMode("link")}
+          >
+            Paste a link
+          </button>
+          <button
+            type="button"
+            className={`btn small ${mode === "upload" ? "primary" : "ghost"}`}
+            onClick={() => switchMode("upload")}
+          >
+            Upload photo
+          </button>
+        </div>
+
+        {mode === "link" ? (
+          <label>
+            Link
+            <input
+              type="url"
+              placeholder="Paste an image or video link…"
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              autoFocus={!isMobile}
+              required
+            />
+          </label>
+        ) : (
+          <label>
+            Photo
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleFileChange}
+              required={!url}
+            />
+            {uploading && <p className="empty-hint">Uploading…</p>}
+            {uploadError && <p className="empty-hint">{uploadError}</p>}
+            {previewUrl && !uploading && (
+              <img className="inspiration-upload-preview" src={previewUrl} alt="Selected preview" />
+            )}
+          </label>
+        )}
 
         <label>
           Caption
@@ -88,7 +152,7 @@ export default function InspirationFormModal({
               placeholder="Category name…"
               value={newCategoryTitle}
               onChange={(e) => setNewCategoryTitle(e.target.value)}
-              autoFocus
+              autoFocus={!isMobile}
             />
             <div className="btn-row">
               <button type="button" className="btn small" onClick={handleAddCategory}>
@@ -102,7 +166,7 @@ export default function InspirationFormModal({
         )}
 
         <div className="btn-row">
-          <button type="submit" className="btn primary">+ Add</button>
+          <button type="submit" className="btn primary" disabled={uploading || !url}>+ Add</button>
           <button type="button" className="btn ghost" onClick={onClose}>Cancel</button>
         </div>
       </form>

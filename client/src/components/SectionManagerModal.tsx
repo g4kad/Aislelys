@@ -47,14 +47,20 @@ export default function SectionManagerModal({ sections, onClose, onCreate, onUpd
   }
 
   return (
-    <Modal title="Manage sections" onClose={onClose}>
+    <Modal title="Manage cards" onClose={onClose}>
       <ul className="section-manage-list">
         {sections.map((s) => {
           const isEditing = editingId === s.id;
           return (
             <li key={s.id} className="section-manage-row">
               {isEditing ? (
-                <>
+                <div className="section-manage-edit">
+                  <input
+                    type="text"
+                    value={draftTitle}
+                    onChange={(e) => setDraftTitle(e.target.value)}
+                    autoFocus
+                  />
                   <div className="color-swatches">
                     {SECTION_COLORS.map((c) => (
                       <button
@@ -67,17 +73,11 @@ export default function SectionManagerModal({ sections, onClose, onCreate, onUpd
                       />
                     ))}
                   </div>
-                  <input
-                    type="text"
-                    value={draftTitle}
-                    onChange={(e) => setDraftTitle(e.target.value)}
-                    autoFocus
-                  />
                   <div className="btn-row">
                     <button className="btn small primary" onClick={saveEdit}>Save</button>
                     <button className="btn small ghost" onClick={cancelEdit}>Cancel</button>
                   </div>
-                </>
+                </div>
               ) : (
                 <>
                   <span className="section-dot" style={{ background: s.color }} />
@@ -94,7 +94,7 @@ export default function SectionManagerModal({ sections, onClose, onCreate, onUpd
                         </button>
                       </span>
                     ) : (
-                      <button className="icon-btn" title="Delete section" onClick={() => setConfirmDeleteId(s.id)}>
+                      <button className="icon-btn" title="Delete wedding card" onClick={() => setConfirmDeleteId(s.id)}>
                         <IconClose />
                       </button>
                     )}
@@ -106,32 +106,34 @@ export default function SectionManagerModal({ sections, onClose, onCreate, onUpd
         })}
       </ul>
 
-      <form className="event-form" onSubmit={handleCreate}>
-        <label>
-          New section title
-          <input
-            type="text"
-            placeholder="e.g. Ceremony Day"
-            value={newTitle}
-            onChange={(e) => setNewTitle(e.target.value)}
-          />
-        </label>
-        <div className="color-swatches">
-          {SECTION_COLORS.map((c) => (
-            <button
-              type="button"
-              key={c.value}
-              className={`swatch ${newColor === c.value ? "selected" : ""}`}
-              style={{ background: c.value }}
-              title={c.name}
-              onClick={() => setNewColor(c.value)}
+      {!editingId && (
+        <form className="event-form" onSubmit={handleCreate}>
+          <label>
+            New wedding card title
+            <input
+              type="text"
+              placeholder="e.g. Ceremony Day"
+              value={newTitle}
+              onChange={(e) => setNewTitle(e.target.value)}
             />
-          ))}
-        </div>
-        <div className="btn-row">
-          <button type="submit" className="btn primary">Add section</button>
-        </div>
-      </form>
+          </label>
+          <div className="color-swatches">
+            {SECTION_COLORS.map((c) => (
+              <button
+                type="button"
+                key={c.value}
+                className={`swatch ${newColor === c.value ? "selected" : ""}`}
+                style={{ background: c.value }}
+                title={c.name}
+                onClick={() => setNewColor(c.value)}
+              />
+            ))}
+          </div>
+          <div className="btn-row">
+            <button type="submit" className="btn primary">Add wedding card</button>
+          </div>
+        </form>
+      )}
     </Modal>
   );
 }

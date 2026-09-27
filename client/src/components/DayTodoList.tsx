@@ -31,7 +31,7 @@ export default function DayTodoList({ todos, onAdd, onToggle, onDelete }: Props)
       {expanded && (
         <div className="card-body">
           {todos.length === 0 ? (
-            <p className="empty-hint">No to-dos yet for this day.</p>
+            <p className="empty-hint">Nothing on this list.</p>
           ) : (
             <ul className="task-list">
               {todos.map((todo) => (

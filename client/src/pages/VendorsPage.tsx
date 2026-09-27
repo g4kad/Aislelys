@@ -1,19 +1,23 @@
 import { useEffect, useState } from "react";
-import type { Vendor } from "../types";
+import type { Vendor, VendorCategory } from "../types";
 import * as api from "../api";
-import VendorCard from "../components/VendorCard";
+import VendorsBoard from "../components/VendorsBoard";
 import VendorFormModal from "../components/VendorFormModal";
+import { SECTION_COLORS } from "../palette";
 
 export default function VendorsPage() {
   const [vendors, setVendors] = useState<Vendor[]>([]);
+  const [categories, setCategories] = useState<VendorCategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
 
   useEffect(() => {
-    api
-      .getVendors()
-      .then(setVendors)
+    Promise.all([api.getVendors(), api.getVendorCategories()])
+      .then(([v, c]) => {
+        setVendors(v);
+        setCategories(c);
+      })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
   }, []);
@@ -52,6 +56,31 @@ export default function VendorsPage() {
     }
   }
 
+  async function handleCreateCategory(title: string, color?: string) {
+    const finalColor = color || SECTION_COLORS[categories.length % SECTION_COLORS.length].value;
+    const created = await api.createVendorCategory(title, finalColor);
+    setCategories((prev) => [created, ...prev]);
+    return created;
+  }
+
+  async function handleUpdateCategory(id: string, patch: Partial<Pick<VendorCategory, "title" | "color">>) {
+    setCategories((prev) => prev.map((c) => (c.id === id ? { ...c, ...patch } : c)));
+    try {
+      await api.updateVendorCategory(id, patch);
+    } catch (err) {
+      setError((err as Error).message);
+    }
+  }
+
+  async function handleDeleteCategory(id: string) {
+    setCategories((prev) => prev.filter((c) => c.id !== id));
+    try {
+      await api.deleteVendorCategory(id);
+    } catch (err) {
+      setError((err as Error).message);
+    }
+  }
+
   if (loading) return <p className="empty-hint">Loading…</p>;
 
   return (
@@ -72,28 +101,28 @@ export default function VendorsPage() {
       </p>
 
       <div className="btn-row" style={{ marginBottom: 16 }}>
-        <button type="button" className="btn primary" onClick={() => setShowAddModal(true)}>
+        <button type="button" className="btn primary btn-add-primary" onClick={() => setShowAddModal(true)}>
           + Add vendor
         </button>
       </div>
 
-      {vendors.length === 0 ? (
-        <p className="empty-hint">No vendors yet — add your first one above.</p>
-      ) : (
-        <div className="card-list">
-          {vendors.map((vendor) => (
-            <VendorCard
-              key={vendor.id}
-              vendor={vendor}
-              onUpdate={(patch) => handleUpdate(vendor.id, patch)}
-              onDelete={() => handleDelete(vendor.id)}
-            />
-          ))}
-        </div>
-      )}
+      <VendorsBoard
+        vendors={vendors}
+        categories={categories}
+        onUpdate={handleUpdate}
+        onDelete={handleDelete}
+        onCreateCategory={handleCreateCategory}
+        onUpdateCategory={handleUpdateCategory}
+        onDeleteCategory={handleDeleteCategory}
+      />
 
       {showAddModal && (
-        <VendorFormModal onClose={() => setShowAddModal(false)} onCreate={handleCreate} />
+        <VendorFormModal
+          categories={categories}
+          onClose={() => setShowAddModal(false)}
+          onCreate={handleCreate}
+          onCreateCategory={handleCreateCategory}
+        />
       )}
     </div>
   );

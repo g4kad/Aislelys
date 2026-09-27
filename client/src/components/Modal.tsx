@@ -5,12 +5,13 @@ type Props = {
   title: string;
   onClose: () => void;
   children: ReactNode;
+  className?: string;
 };
 
-export default function Modal({ title, onClose, children }: Props) {
+export default function Modal({ title, onClose, children, className }: Props) {
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal" onClick={(e) => e.stopPropagation()}>
+      <div className={`modal${className ? ` ${className}` : ""}`} onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <h2>{title}</h2>
           <button className="icon-btn" onClick={onClose} aria-label="Close">

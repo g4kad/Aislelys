@@ -47,6 +47,18 @@ export function getInstagramEmbedUrl(url: string): string | null {
   }
 }
 
+export function getTikTokEmbedUrl(url: string): string | null {
+  try {
+    const u = new URL(url);
+    if (!u.hostname.includes("tiktok.com")) return null;
+    const match = u.pathname.match(/\/video\/(\d+)/);
+    if (!match) return null;
+    return `https://www.tiktok.com/embed/v2/${match[1]}`;
+  } catch {
+    return null;
+  }
+}
+
 export function getHostname(url: string): string {
   try {
     return new URL(url).hostname.replace(/^www\./, "");

@@ -2,7 +2,8 @@ import { useState } from "react";
 import type { BudgetCategory, Currency } from "../types";
 import Modal from "./Modal";
 import Dropdown from "./Dropdown";
-import { CURRENCIES } from "../constants";
+import { CURRENCIES, GENERIC_BUDGET_CATEGORIES } from "../constants";
+import { useIsMobile } from "../useIsMobile";
 
 type Props = {
   categories: BudgetCategory[];
@@ -19,6 +20,7 @@ type Props = {
 };
 
 export default function BudgetFormModal({ categories, onClose, onCreate, onCreateCategory }: Props) {
+  const isMobile = useIsMobile();
   const [item, setItem] = useState("");
   const [category, setCategory] = useState(categories[0]?.title ?? "");
   const [currency, setCurrency] = useState<Currency>("SGD");
@@ -35,6 +37,23 @@ export default function BudgetFormModal({ categories, onClose, onCreate, onCreat
     setNewCategoryTitle("");
     setCreatingCategory(false);
   }
+
+  async function handleCategoryChange(value: string) {
+    const alreadyExists = categories.some((c) => c.title === value);
+    if (!alreadyExists && value) {
+      const created = await onCreateCategory(value);
+      setCategory(created.title);
+    } else {
+      setCategory(value);
+    }
+  }
+
+  const existingTitles = new Set(categories.map((c) => c.title.trim().toLowerCase()));
+  const suggestions = GENERIC_BUDGET_CATEGORIES.filter((title) => !existingTitles.has(title.toLowerCase()));
+  const categoryOptions = [
+    ...categories.map((c) => ({ value: c.title, label: c.title })),
+    ...suggestions.map((title) => ({ value: title, label: title })),
+  ];
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -60,7 +79,7 @@ export default function BudgetFormModal({ categories, onClose, onCreate, onCreat
             placeholder="e.g. Wedding gown"
             value={item}
             onChange={(e) => setItem(e.target.value)}
-            autoFocus
+            autoFocus={!isMobile}
             required
           />
         </label>
@@ -70,9 +89,10 @@ export default function BudgetFormModal({ categories, onClose, onCreate, onCreat
             Category
             <Dropdown
               value={category}
-              onChange={setCategory}
+              onChange={handleCategoryChange}
               placeholder="No category"
-              options={categories.map((c) => ({ value: c.title, label: c.title }))}
+              options={categoryOptions}
+              className="category-dropdown"
             />
           </label>
           <label>
@@ -96,7 +116,7 @@ export default function BudgetFormModal({ categories, onClose, onCreate, onCreat
               placeholder="Category name (e.g. Rentals)"
               value={newCategoryTitle}
               onChange={(e) => setNewCategoryTitle(e.target.value)}
-              autoFocus
+              autoFocus={!isMobile}
             />
             <div className="btn-row">
               <button type="button" className="btn small" onClick={handleAddCategory}>

@@ -1,19 +1,20 @@
 :root {
-  --bg: #faf6f1;
+  --bg: #fcfbfa;
   --surface: #ffffff;
-  --surface-alt: #f4ede4;
-  --text: #3a3532;
-  --text-muted: #8a8078;
-  --border: #e6dccf;
-  --accent: #c97b84;
-  --accent-dark: #ab5f68;
+  --surface-alt: #fdf9ef;
+  --text: #2b1c01;
+  --text-muted: #93816c;
+  --border: #ede2cc;
+  --accent: #b99767;
+  --accent-dark: #937450;
   --accent-contrast: #ffffff;
-  --danger: #b5484f;
+  --danger: #893b3b;
+  --success: #479352;
   --radius: 12px;
   --shadow: 0 2px 10px rgba(60, 45, 35, 0.07);
 
-  --sans: "Inter", system-ui, "Segoe UI", Roboto, sans-serif;
-  --heading: "Playfair Display", Georgia, serif;
+  --sans: "Raleway", system-ui, "Segoe UI", Roboto, sans-serif;
+  --heading: "Lusitana", Georgia, serif;
 
   font: 16px/1.5 var(--sans);
   color: var(--text);

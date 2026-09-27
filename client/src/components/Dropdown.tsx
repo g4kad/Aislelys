@@ -44,7 +44,8 @@ export default function Dropdown({ value, onChange, options, placeholder = "Sele
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key === "Escape") setOpen(false);
     }
-    function handleReposition() {
+    function handleReposition(e: Event) {
+      if (menuRef.current && e.target instanceof Node && menuRef.current.contains(e.target)) return;
       setOpen(false);
     }
 
@@ -84,7 +85,7 @@ export default function Dropdown({ value, onChange, options, placeholder = "Sele
       {open && menuRect &&
         createPortal(
           <ul
-            className="dropdown-menu"
+            className={`dropdown-menu ${className || ""}`}
             role="listbox"
             ref={menuRef}
             style={{ top: menuRect.top, left: menuRect.left, width: menuRect.width }}

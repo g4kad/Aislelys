@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import type { InspirationCategory, InspirationItem } from "../types";
-import { getYouTubeEmbedUrl, getVimeoEmbedUrl, getInstagramEmbedUrl, getHostname } from "../inspirationUtils";
+import { getYouTubeEmbedUrl, getVimeoEmbedUrl, getInstagramEmbedUrl, getTikTokEmbedUrl, getHostname } from "../inspirationUtils";
 import { IconClose, IconEdit, IconExternalLink, IconHeart, IconTrash } from "./Icons";
 import Dropdown from "./Dropdown";
 import * as api from "../api";
@@ -16,6 +16,7 @@ type Props = {
 export default function InspirationCard({ item, categories, onToggleApproved, onChangeCategory, onDelete }: Props) {
   const [imgFailed, setImgFailed] = useState(false);
   const [resolvedUrl, setResolvedUrl] = useState<string | null>(null);
+  const [resolvedEmbedUrl, setResolvedEmbedUrl] = useState<string | null>(null);
   const [resolving, setResolving] = useState(false);
   const [resolveFailed, setResolveFailed] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -24,19 +25,26 @@ export default function InspirationCard({ item, categories, onToggleApproved, on
   const youtubeEmbed = getYouTubeEmbedUrl(item.url);
   const vimeoEmbed = getVimeoEmbedUrl(item.url);
   const instagramEmbed = getInstagramEmbedUrl(item.url);
+  // Short TikTok share links (vm.tiktok.com, tiktok.com/t/...) — the kind
+  // TikTok's own mobile share sheet hands out — don't carry a numeric video
+  // id we can read directly, so getTikTokEmbedUrl returns null for those.
+  // resolvedEmbedUrl fills in once the server resolves it via oEmbed below.
+  const tiktokEmbed = getTikTokEmbedUrl(item.url) || resolvedEmbedUrl;
   const videoEmbedUrl = youtubeEmbed || vimeoEmbed;
 
   // The direct URL failed to load as an image — try resolving a preview image
-  // (e.g. Pinterest pin links, which are pages, not direct image files).
+  // (e.g. Pinterest pin links, which are pages, not direct image files) or,
+  // for TikTok short links, a playable embed URL.
   useEffect(() => {
-    if (!imgFailed || videoEmbedUrl || instagramEmbed || resolvedUrl || resolveFailed) return;
+    if (!imgFailed || videoEmbedUrl || instagramEmbed || tiktokEmbed || resolvedUrl || resolveFailed) return;
     let cancelled = false;
     setResolving(true);
     api
       .resolvePreviewImage(item.url)
-      .then((imageUrl) => {
+      .then((data) => {
         if (cancelled) return;
-        if (imageUrl) setResolvedUrl(imageUrl);
+        if (data.embedUrl) setResolvedEmbedUrl(data.embedUrl);
+        else if (data.imageUrl) setResolvedUrl(data.imageUrl);
         else setResolveFailed(true);
       })
       .catch(() => {
@@ -48,7 +56,7 @@ export default function InspirationCard({ item, categories, onToggleApproved, on
     return () => {
       cancelled = true;
     };
-  }, [imgFailed, videoEmbedUrl, instagramEmbed, resolvedUrl, resolveFailed, item.url]);
+  }, [imgFailed, videoEmbedUrl, instagramEmbed, tiktokEmbed, resolvedUrl, resolveFailed, item.url]);
 
   function handleImageError() {
     if (resolvedUrl) {
@@ -61,7 +69,7 @@ export default function InspirationCard({ item, categories, onToggleApproved, on
   }
 
   const displayImageUrl = imgFailed ? resolvedUrl : item.url;
-  const isPlainImage = !videoEmbedUrl && !instagramEmbed && !!displayImageUrl;
+  const isPlainImage = !videoEmbedUrl && !instagramEmbed && !tiktokEmbed && !!displayImageUrl;
 
   const categoryOptions = [
     { value: "", label: "No category" },
@@ -82,10 +90,10 @@ export default function InspirationCard({ item, categories, onToggleApproved, on
           <div className={`pin-overlay ${editingCategory ? "force-visible" : ""}`}>
             <button
               className={`pin-save-btn ${item.approved ? "saved" : ""}`}
+              title={item.approved ? "Approved" : "Mark as approved"}
               onClick={onToggleApproved}
             >
-              <IconHeart filled={item.approved} size={14} />
-              {item.approved ? "Saved" : "Save"}
+              <IconHeart filled={item.approved} size={15} />
             </button>
 
             <div className="pin-overlay-bottom">
@@ -113,6 +121,16 @@ export default function InspirationCard({ item, categories, onToggleApproved, on
                 </>
               ) : (
                 <>
+                  <a
+                    className="pin-round-btn"
+                    title="Open original"
+                    href={item.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <IconExternalLink size={13} />
+                  </a>
                   <button className="pin-round-btn" title="Change category" onClick={() => setEditingCategory(true)}>
                     <IconEdit size={13} />
                   </button>
@@ -148,6 +166,15 @@ export default function InspirationCard({ item, categories, onToggleApproved, on
               src={instagramEmbed}
               title={item.caption || "Inspiration from Instagram"}
               scrolling="yes"
+            />
+          </div>
+        ) : tiktokEmbed ? (
+          <div className="inspiration-tiktok-frame">
+            <iframe
+              src={tiktokEmbed}
+              title={item.caption || "Inspiration from TikTok"}
+              allow="encrypted-media; picture-in-picture"
+              allowFullScreen
             />
           </div>
         ) : resolving ? (

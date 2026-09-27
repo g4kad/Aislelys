@@ -1,11 +1,13 @@
 import { useState } from "react";
-import type { Vendor } from "../types";
+import type { Vendor, VendorCategory } from "../types";
 import { IconChevronRight, IconTrash } from "./Icons";
 import Dropdown from "./Dropdown";
-import { VENDOR_CATEGORIES, VENDOR_STATUSES } from "../constants";
+import { VENDOR_STATUSES } from "../constants";
 
 type Props = {
   vendor: Vendor;
+  categories: VendorCategory[];
+  color?: string;
   defaultExpanded?: boolean;
   onUpdate: (patch: Partial<Pick<Vendor, "name" | "category" | "contact" | "cost" | "status" | "notes">>) => void;
   onDelete: () => void;
@@ -15,7 +17,7 @@ const STATUS_LABEL: Record<string, string> = Object.fromEntries(
   VENDOR_STATUSES.map((s) => [s.value, s.label])
 );
 
-export default function VendorCard({ vendor, defaultExpanded = false, onUpdate, onDelete }: Props) {
+export default function VendorCard({ vendor, categories, color, defaultExpanded = false, onUpdate, onDelete }: Props) {
   const [expanded, setExpanded] = useState(defaultExpanded);
   const [editing, setEditing] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -32,7 +34,7 @@ export default function VendorCard({ vendor, defaultExpanded = false, onUpdate, 
   }
 
   return (
-    <div className="card vendor-card">
+    <div className="card vendor-card" style={{ borderLeftColor: color ?? "#ccc" }}>
       <button className="card-header" onClick={toggleExpanded} aria-expanded={expanded}>
         <span className={`chevron ${expanded ? "open" : ""}`}><IconChevronRight /></span>
         <span className="card-title">{vendor.name}</span>
@@ -41,8 +43,6 @@ export default function VendorCard({ vendor, defaultExpanded = false, onUpdate, 
 
       {expanded && !editing && (
         <div className="card-body card-view">
-          <div className="card-meta">{vendor.category}</div>
-
           <div className="view-block">
             <span className="view-label">Contact</span>
             <p className="notes-text">{vendor.contact || <em>No contact info yet.</em>}</p>
@@ -77,7 +77,9 @@ export default function VendorCard({ vendor, defaultExpanded = false, onUpdate, 
               <Dropdown
                 value={vendor.category}
                 onChange={(v) => onUpdate({ category: v })}
-                options={VENDOR_CATEGORIES.map((c) => ({ value: c, label: c }))}
+                placeholder="No category"
+                options={categories.map((c) => ({ value: c.title, label: c.title }))}
+                className="category-dropdown"
               />
             </label>
             <label>

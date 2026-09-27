@@ -2,12 +2,18 @@ import { useEffect, useMemo, useState } from "react";
 import type { Guest, GuestOwner } from "../types";
 import * as api from "../api";
 import GuestOwnerCard from "../components/GuestOwnerCard";
+import VipCard from "../components/VipCard";
 
 export default function GuestListPage() {
   const [owners, setOwners] = useState<GuestOwner[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [newName, setNewName] = useState("");
+  const [expandedOwnerId, setExpandedOwnerId] = useState<string | null>(null);
+
+  function toggleOwnerExpand(id: string) {
+    setExpandedOwnerId((prev) => (prev === id ? null : id));
+  }
 
   useEffect(() => {
     api
@@ -18,7 +24,11 @@ export default function GuestListPage() {
   }, []);
 
   const totalGuests = useMemo(
-    () => owners.reduce((sum, o) => sum + o.guests.reduce((s, g) => s + 1 + g.plusCount, 0), 0),
+    () =>
+      owners.reduce(
+        (sum, o) => sum + o.guests.reduce((s, g) => (g.included === false ? s : s + 1 + g.plusCount), 0),
+        0
+      ),
     [owners]
   );
 
@@ -56,9 +66,9 @@ export default function GuestListPage() {
     }
   }
 
-  async function handleAddGuest(ownerId: string, name: string, plusCount: number) {
+  async function handleAddGuest(ownerId: string, name: string, plusCount: number, categoryId: string, isVip: boolean) {
     try {
-      const guest = await api.addGuest(ownerId, name, plusCount);
+      const guest = await api.addGuest(ownerId, name, plusCount, categoryId, isVip);
       setOwners((prev) =>
         prev.map((o) => (o.id === ownerId ? { ...o, guests: [...o.guests, guest] } : o))
       );
@@ -67,7 +77,52 @@ export default function GuestListPage() {
     }
   }
 
-  async function handleUpdateGuest(ownerId: string, guestId: string, patch: Partial<Pick<Guest, "name" | "plusCount">>) {
+  async function handleAddCategory(ownerId: string, title: string) {
+    try {
+      const category = await api.createGuestCategory(ownerId, title);
+      setOwners((prev) =>
+        prev.map((o) => (o.id === ownerId ? { ...o, categories: [...o.categories, category] } : o))
+      );
+    } catch (err) {
+      setError((err as Error).message);
+    }
+  }
+
+  async function handleUpdateCategory(ownerId: string, categoryId: string, title: string) {
+    setOwners((prev) =>
+      prev.map((o) =>
+        o.id === ownerId
+          ? { ...o, categories: o.categories.map((cat) => (cat.id === categoryId ? { ...cat, title } : cat)) }
+          : o
+      )
+    );
+    try {
+      await api.updateGuestCategory(ownerId, categoryId, title);
+    } catch (err) {
+      setError((err as Error).message);
+    }
+  }
+
+  async function handleDeleteCategory(ownerId: string, categoryId: string) {
+    setOwners((prev) =>
+      prev.map((o) =>
+        o.id === ownerId
+          ? {
+              ...o,
+              categories: o.categories.filter((cat) => cat.id !== categoryId),
+              guests: o.guests.filter((g) => g.categoryId !== categoryId),
+            }
+          : o
+      )
+    );
+    try {
+      await api.deleteGuestCategory(ownerId, categoryId);
+    } catch (err) {
+      setError((err as Error).message);
+    }
+  }
+
+  async function handleUpdateGuest(ownerId: string, guestId: string, patch: Partial<Pick<Guest, "name" | "plusCount" | "isVip" | "included" | "phone" | "email" | "address" | "notes">>) {
     setOwners((prev) =>
       prev.map((o) =>
         o.id === ownerId
@@ -117,7 +172,7 @@ export default function GuestListPage() {
         they can add their own guests.
       </p>
 
-      {showCoupleSetup ? (
+      {showCoupleSetup && (
         <div className="couple-setup">
           <span className="view-label">Who is this list for?</span>
           <div className="btn-row">
@@ -139,7 +194,41 @@ export default function GuestListPage() {
             </button>
           </div>
         </div>
+      )}
+
+      {owners.length === 0 ? (
+        <p className="empty-hint">No lists yet — add the bride and groom above to get started.</p>
       ) : (
+        <>
+          <div className="card-list">
+            {owners.map((owner, index) => (
+              <GuestOwnerCard
+                key={owner.id}
+                owner={owner}
+                expanded={expandedOwnerId === owner.id}
+                onToggleExpand={() => toggleOwnerExpand(owner.id)}
+                showInviteLink={index >= 2}
+                deletable={index >= 2}
+                nameEditable={index >= 2}
+                onUpdateOwner={(patch) => handleUpdateOwner(owner.id, patch)}
+                onDeleteOwner={() => handleDeleteOwner(owner.id)}
+                onAddGuest={(name, plusCount, categoryId, isVip) => handleAddGuest(owner.id, name, plusCount, categoryId, isVip)}
+                onUpdateGuest={(guestId, patch) => handleUpdateGuest(owner.id, guestId, patch)}
+                onDeleteGuest={(guestId) => handleDeleteGuest(owner.id, guestId)}
+                onAddCategory={(title) => handleAddCategory(owner.id, title)}
+                onUpdateCategory={(categoryId, title) => handleUpdateCategory(owner.id, categoryId, title)}
+                onDeleteCategory={(categoryId) => handleDeleteCategory(owner.id, categoryId)}
+              />
+            ))}
+          </div>
+
+          <div className="card-list vip-section">
+            <VipCard owners={owners} />
+          </div>
+        </>
+      )}
+
+      {!showCoupleSetup && (
         <form className="add-owner-form" onSubmit={handleAddOwner}>
           <input
             type="text"
@@ -147,27 +236,8 @@ export default function GuestListPage() {
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
           />
-          <button className="btn primary" type="submit">+ Add person</button>
+          <button className="btn primary btn-add-primary" type="submit">+ Add person</button>
         </form>
-      )}
-
-      {owners.length === 0 ? (
-        <p className="empty-hint">No lists yet — add the bride and groom above to get started.</p>
-      ) : (
-        <div className="card-list">
-          {owners.map((owner, index) => (
-            <GuestOwnerCard
-              key={owner.id}
-              owner={owner}
-              showInviteLink={index >= 2}
-              onUpdateOwner={(patch) => handleUpdateOwner(owner.id, patch)}
-              onDeleteOwner={() => handleDeleteOwner(owner.id)}
-              onAddGuest={(name, plusCount) => handleAddGuest(owner.id, name, plusCount)}
-              onUpdateGuest={(guestId, patch) => handleUpdateGuest(owner.id, guestId, patch)}
-              onDeleteGuest={(guestId) => handleDeleteGuest(owner.id, guestId)}
-            />
-          ))}
-        </div>
       )}
     </div>
   );

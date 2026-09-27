@@ -4,10 +4,13 @@ import * as api from "../api";
 import BudgetBoard from "../components/BudgetBoard";
 import BudgetFormModal from "../components/BudgetFormModal";
 import { formatSgd, toSgd } from "../money";
+import { SECTION_COLORS } from "../palette";
 
 export default function BudgetPage() {
+  const [mode, setMode] = useState<"estimated" | "actual">("estimated");
   const [total, setTotal] = useState(0);
   const [totalInput, setTotalInput] = useState("0");
+  const [savingsInput, setSavingsInput] = useState("0");
   const [items, setItems] = useState<BudgetItem[]>([]);
   const [categories, setCategories] = useState<BudgetCategory[]>([]);
   const [myrToSgd, setMyrToSgd] = useState(0.31);
@@ -20,6 +23,7 @@ export default function BudgetPage() {
       .then(([budget, budgetItems, budgetCategories]) => {
         setTotal(budget.total);
         setTotalInput(String(budget.total));
+        setSavingsInput(String(budget.savings));
         setItems(budgetItems);
         setCategories(budgetCategories);
       })
@@ -33,10 +37,29 @@ export default function BudgetPage() {
       .catch(() => api.getExchangeRate().then((rate) => setMyrToSgd(rate.myrToSgd)).catch(() => {}));
   }, []);
 
-  async function handleCreateCategory(title: string): Promise<BudgetCategory> {
-    const created = await api.createBudgetCategory(title);
-    setCategories((prev) => [...prev, created]);
+  async function handleCreateCategory(title: string, color?: string): Promise<BudgetCategory> {
+    const finalColor = color || SECTION_COLORS[categories.length % SECTION_COLORS.length].value;
+    const created = await api.createBudgetCategory(title, finalColor);
+    setCategories((prev) => [created, ...prev]);
     return created;
+  }
+
+  async function handleUpdateCategory(id: string, patch: Partial<Pick<BudgetCategory, "title" | "color">>) {
+    setCategories((prev) => prev.map((c) => (c.id === id ? { ...c, ...patch } : c)));
+    try {
+      await api.updateBudgetCategory(id, patch);
+    } catch (err) {
+      setError((err as Error).message);
+    }
+  }
+
+  async function handleDeleteCategory(id: string) {
+    setCategories((prev) => prev.filter((c) => c.id !== id));
+    try {
+      await api.deleteBudgetCategory(id);
+    } catch (err) {
+      setError((err as Error).message);
+    }
   }
 
   const { estimatedSum, actualSum } = useMemo(
@@ -46,14 +69,26 @@ export default function BudgetPage() {
     }),
     [items, myrToSgd]
   );
-  const remaining = total - actualSum;
+  const modeSum = mode === "estimated" ? estimatedSum : actualSum;
+  const remaining = total - modeSum;
+  const savingsPercent = total > 0 ? Math.round(((Number(savingsInput) || 0) / total) * 100) : 0;
 
   async function commitTotal() {
     const next = Math.max(0, Number(totalInput) || 0);
     setTotal(next);
     setTotalInput(String(next));
     try {
-      await api.updateBudget(next);
+      await api.updateBudget({ total: next });
+    } catch (err) {
+      setError((err as Error).message);
+    }
+  }
+
+  async function commitSavings() {
+    const next = Math.max(0, Number(savingsInput) || 0);
+    setSavingsInput(String(next));
+    try {
+      await api.updateBudget({ savings: next });
     } catch (err) {
       setError((err as Error).message);
     }
@@ -108,6 +143,22 @@ export default function BudgetPage() {
 
       <div className="board-region-header">
         <h2 className="board-region-title">Budget</h2>
+        <div className="btn-row budget-mode-toggle">
+          <button
+            type="button"
+            className={`btn small ${mode === "estimated" ? "primary" : "ghost"}`}
+            onClick={() => setMode("estimated")}
+          >
+            Estimated
+          </button>
+          <button
+            type="button"
+            className={`btn small ${mode === "actual" ? "primary" : "ghost"}`}
+            onClick={() => setMode("actual")}
+          >
+            Actual
+          </button>
+        </div>
       </div>
 
       <p className="page-subtitle">
@@ -128,37 +179,47 @@ export default function BudgetPage() {
             />
           </div>
         </label>
-        <div className="budget-summary-stat">
-          <span className="budget-stat-label">Estimated (SGD)</span>
-          <span className="budget-stat-value">{formatSgd(estimatedSum)}</span>
-        </div>
-        <div className="budget-summary-stat">
-          <span className="budget-stat-label">Actual spent (SGD)</span>
-          <span className="budget-stat-value">{formatSgd(actualSum)}</span>
-        </div>
+        <label className="budget-summary-stat budget-total-stat">
+          <span className="budget-stat-label">Total savings</span>
+          <div className="budget-total-input-row">
+            <span className="budget-currency-prefix">S$</span>
+            <input
+              type="number"
+              min={0}
+              value={savingsInput}
+              onChange={(e) => setSavingsInput(e.target.value)}
+              onBlur={commitSavings}
+            />
+            {total > 0 && <span className="budget-savings-percent">({savingsPercent}%)</span>}
+          </div>
+        </label>
         <div className="budget-summary-stat">
           <span className="budget-stat-label">Remaining (SGD)</span>
-          <span className={`budget-stat-value ${remaining < 0 ? "over" : ""}`}>{formatSgd(remaining)}</span>
+          <span className={`budget-stat-value ${remaining < 0 ? "over" : "positive"}`}>{formatSgd(remaining)}</span>
+        </div>
+        <div className="budget-summary-stat budget-stat-highlight">
+          <span className="budget-stat-label">Total (SGD)</span>
+          <span className="budget-stat-value">{formatSgd(modeSum)}</span>
         </div>
       </div>
 
       <div className="btn-row" style={{ marginBottom: 16 }}>
-        <button type="button" className="btn primary" onClick={() => setShowAddModal(true)}>
+        <button type="button" className="btn primary btn-add-primary" onClick={() => setShowAddModal(true)}>
           + Add expense
         </button>
       </div>
 
-      {items.length === 0 ? (
-        <p className="empty-hint">No expenses yet — add your first one above.</p>
-      ) : (
-        <BudgetBoard
-          items={items}
-          categories={categories}
-          myrToSgd={myrToSgd}
-          onUpdate={handleUpdate}
-          onDelete={handleDelete}
-        />
-      )}
+      <BudgetBoard
+        items={items}
+        categories={categories}
+        myrToSgd={myrToSgd}
+        mode={mode}
+        onUpdate={handleUpdate}
+        onDelete={handleDelete}
+        onCreateCategory={handleCreateCategory}
+        onUpdateCategory={handleUpdateCategory}
+        onDeleteCategory={handleDeleteCategory}
+      />
 
       {showAddModal && (
         <BudgetFormModal

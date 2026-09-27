@@ -1,0 +1,1359 @@
+import { Hono } from "hono";
+import { cors } from "hono/cors";
+import { getCookie, setCookie, deleteCookie } from "hono/cookie";
+import { handle } from "hono/cloudflare-pages";
+
+const app = new Hono().basePath("/api");
+app.use("*", cors());
+
+// ---------- Auth helpers ----------
+
+const SESSION_MAX_AGE_SECONDS = 90 * 24 * 60 * 60; // 90 days
+
+function bytesToHex(bytes) {
+  return Array.from(bytes).map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+function hexToBytes(hex) {
+  const bytes = new Uint8Array(hex.length / 2);
+  for (let i = 0; i < bytes.length; i++) bytes[i] = parseInt(hex.substr(i * 2, 2), 16);
+  return bytes;
+}
+
+async function hashPassword(password, saltHex) {
+  const salt = saltHex ? hexToBytes(saltHex) : crypto.getRandomValues(new Uint8Array(16));
+  const keyMaterial = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(password),
+    "PBKDF2",
+    false,
+    ["deriveBits"]
+  );
+  const bits = await crypto.subtle.deriveBits(
+    { name: "PBKDF2", salt, iterations: 100000, hash: "SHA-256" },
+    keyMaterial,
+    256
+  );
+  return { hash: bytesToHex(new Uint8Array(bits)), salt: bytesToHex(salt) };
+}
+
+function randomToken() {
+  return bytesToHex(crypto.getRandomValues(new Uint8Array(32)));
+}
+
+// Short, unambiguous alphabet (no 0/O/1/l/i) for shareable IDs like guest
+// invite links, so they're easy to read aloud/retype and short to send.
+const SHORT_ID_ALPHABET = "23456789abcdefghjkmnpqrstuvwxyz";
+
+function generateShortId(length = 7) {
+  let id = "";
+  for (let i = 0; i < length; i++) {
+    id += SHORT_ID_ALPHABET[Math.floor(Math.random() * SHORT_ID_ALPHABET.length)];
+  }
+  return id;
+}
+
+async function generateUniqueShortId(db, table) {
+  for (let attempt = 0; attempt < 10; attempt++) {
+    const candidate = generateShortId();
+    const existing = await db.prepare(`SELECT id FROM ${table} WHERE id = ?`).bind(candidate).first();
+    if (!existing) return candidate;
+  }
+  return crypto.randomUUID();
+}
+
+async function createSession(db, c, userId) {
+  const token = randomToken();
+  const now = new Date();
+  const expires = new Date(now.getTime() + SESSION_MAX_AGE_SECONDS * 1000);
+  await db.prepare("INSERT INTO sessions (token, userId, createdAt, expiresAt) VALUES (?,?,?,?)")
+    .bind(token, userId, now.toISOString(), expires.toISOString())
+    .run();
+  setCookie(c, "session", token, {
+    httpOnly: true,
+    secure: true,
+    sameSite: "Lax",
+    path: "/",
+    maxAge: SESSION_MAX_AGE_SECONDS,
+  });
+}
+
+function isPublicGuestInvitePath(path, method) {
+  const ownerMatch = path.match(/^\/guest-owners\/[^/]+$/);
+  if (ownerMatch && method === "GET") return true;
+  const guestsMatch = path.match(/^\/guest-owners\/[^/]+\/guests(\/[^/]+)?$/);
+  if (guestsMatch && (method === "POST" || method === "PUT" || method === "DELETE")) return true;
+  const categoriesMatch = path.match(/^\/guest-owners\/[^/]+\/categories$/);
+  if (categoriesMatch && method === "POST") return true;
+  return false;
+}
+
+function isPublicCouplePath(path, method) {
+  if (/^\/couples\/[^/]+\/auth-status$/.test(path) && method === "GET") return true;
+  if (/^\/couples\/[^/]+\/login$/.test(path) && method === "POST") return true;
+  return false;
+}
+
+const PUBLIC_AUTH_PATHS = new Set(["/auth/logout", "/signup", "/default-couple"]);
+
+app.use("*", async (c, next) => {
+  const path = c.req.path.replace(/^\/api/, "") || "/";
+  const token = getCookie(c, "session");
+  if (token) {
+    const session = await c.env.DB.prepare("SELECT * FROM sessions WHERE token = ?").bind(token).first();
+    if (session && new Date(session.expiresAt) > new Date()) {
+      const user = await c.env.DB.prepare("SELECT id, name, coupleId FROM users WHERE id = ?").bind(session.userId).first();
+      if (user) {
+        c.set("user", { id: user.id, name: user.name });
+        c.set("coupleId", user.coupleId);
+      }
+    }
+  }
+  if (PUBLIC_AUTH_PATHS.has(path) || isPublicGuestInvitePath(path, c.req.method) || isPublicCouplePath(path, c.req.method)) {
+    return next();
+  }
+  if (!c.get("user")) return c.json({ error: "Not authenticated" }, 401);
+  return next();
+});
+
+const NOTIFICATION_BUFFER_MS = 10 * 60 * 1000; // 10 minutes
+
+// Notifications are inserted immediately but stamped with a scheduledFor
+// timestamp NOTIFICATION_BUFFER_MS in the future; the read endpoint only
+// returns rows whose scheduledFor has passed. That way a quick create-then-
+// undo (e.g. adding a task, then deleting it because it was wrong) never
+// surfaces at all — see cancelPendingNotifications, called from the routes
+// that revert an action within the buffer window.
+async function notifyOtherUsers(db, coupleId, actorUserId, message, entityType, entityId, kind) {
+  const couple = await db.prepare("SELECT notificationsHoldUntil FROM couples WHERE id = ?").bind(coupleId).first();
+  if (couple?.notificationsHoldUntil && new Date().toISOString().slice(0, 10) < couple.notificationsHoldUntil) return;
+  const { results: others } = await db.prepare("SELECT id FROM users WHERE coupleId = ? AND id != ?")
+    .bind(coupleId, actorUserId)
+    .all();
+  const scheduledFor = new Date(Date.now() + NOTIFICATION_BUFFER_MS).toISOString();
+  for (const u of others) {
+    await db
+      .prepare(
+        "INSERT INTO notifications (id, coupleId, userId, actorUserId, message, entityType, entityId, kind, read, createdAt, scheduledFor) VALUES (?,?,?,?,?,?,?,?,0,?,?)"
+      )
+      .bind(crypto.randomUUID(), coupleId, u.id, actorUserId, message, entityType, entityId, kind, new Date().toISOString(), scheduledFor)
+      .run();
+  }
+}
+
+// Deletes any not-yet-visible (scheduledFor still in the future) pending
+// notifications for an entity, optionally scoped to one kind. Used when an
+// action is reverted within the buffer window (task/todo deleted,
+// un-completed, or reassigned again) so the stale notification never shows.
+async function cancelPendingNotifications(db, entityId, kind) {
+  const now = new Date().toISOString();
+  if (kind) {
+    await db.prepare("DELETE FROM notifications WHERE entityId = ? AND kind = ? AND scheduledFor > ?")
+      .bind(entityId, kind, now)
+      .run();
+  } else {
+    await db.prepare("DELETE FROM notifications WHERE entityId = ? AND scheduledFor > ?")
+      .bind(entityId, now)
+      .run();
+  }
+}
+
+// ---------- Signup & couple-scoped auth routes ----------
+
+const RESERVED_SLUGS = new Set(["signup", "guests", "login", "api", "w", "assets"]);
+
+function slugify(text) {
+  return text
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+async function generateCoupleSlug(db, partner1Name, partner2Name) {
+  const base = [slugify(partner1Name), slugify(partner2Name)].filter(Boolean).join("-") || "couple";
+  let candidate = base;
+  let suffix = 2;
+  while (
+    RESERVED_SLUGS.has(candidate) ||
+    (await db.prepare("SELECT id FROM couples WHERE id = ?").bind(candidate).first())
+  ) {
+    candidate = `${base}-${suffix}`;
+    suffix++;
+  }
+  return candidate;
+}
+
+app.post("/signup", async (c) => {
+  const { partner1, partner2, weddingDate } = await c.req.json();
+  if (!partner1?.name?.trim() || !partner1?.password || !partner2?.name?.trim() || !partner2?.password) {
+    return c.json({ error: "A name and password are required for both partners" }, 400);
+  }
+  const coupleId = await generateCoupleSlug(c.env.DB, partner1.name.trim(), partner2.name.trim());
+  const p1Hash = await hashPassword(partner1.password);
+  const p2Hash = await hashPassword(partner2.password);
+  const p1Id = crypto.randomUUID();
+  const p2Id = crypto.randomUUID();
+  const createdAt = new Date().toISOString();
+
+  await c.env.DB.batch([
+    c.env.DB.prepare(
+      "INSERT INTO couples (id, partner1Name, partner2Name, weddingDate, budgetTotal, notificationsHoldUntil, createdAt) VALUES (?,?,?,?,0,NULL,?)"
+    ).bind(coupleId, partner1.name.trim(), partner2.name.trim(), weddingDate || null, createdAt),
+    c.env.DB.prepare("INSERT INTO users (id, coupleId, name, passwordHash, passwordSalt) VALUES (?,?,?,?,?)")
+      .bind(p1Id, coupleId, partner1.name.trim(), p1Hash.hash, p1Hash.salt),
+    c.env.DB.prepare("INSERT INTO users (id, coupleId, name, passwordHash, passwordSalt) VALUES (?,?,?,?,?)")
+      .bind(p2Id, coupleId, partner2.name.trim(), p2Hash.hash, p2Hash.salt),
+  ]);
+
+  await createSession(c.env.DB, c, p1Id);
+  return c.json({ coupleId, user: { id: p1Id, name: partner1.name.trim() } }, 201);
+});
+
+app.get("/default-couple", async (c) => {
+  const row = await c.env.DB.prepare("SELECT id FROM couples ORDER BY createdAt ASC LIMIT 1").first();
+  if (!row) return c.json({ error: "No workspace found" }, 404);
+  return c.json({ coupleId: row.id });
+});
+
+app.get("/couples/:coupleId/auth-status", async (c) => {
+  const coupleId = c.req.param("coupleId");
+  const { results } = await c.env.DB.prepare("SELECT id, name FROM users WHERE coupleId = ?").bind(coupleId).all();
+  if (results.length === 0) return c.json({ error: "Workspace not found" }, 404);
+  return c.json({ users: results });
+});
+
+app.post("/couples/:coupleId/login", async (c) => {
+  const coupleId = c.req.param("coupleId");
+  const { userId, password } = await c.req.json();
+  const user = await c.env.DB.prepare("SELECT * FROM users WHERE id = ? AND coupleId = ?").bind(userId, coupleId).first();
+  if (!user) return c.json({ error: "Incorrect name or password" }, 401);
+  const { hash } = await hashPassword(password, user.passwordSalt);
+  if (hash !== user.passwordHash) return c.json({ error: "Incorrect name or password" }, 401);
+  await createSession(c.env.DB, c, user.id);
+  return c.json({ id: user.id, name: user.name });
+});
+
+app.post("/auth/logout", async (c) => {
+  const token = getCookie(c, "session");
+  if (token) await c.env.DB.prepare("DELETE FROM sessions WHERE token = ?").bind(token).run();
+  deleteCookie(c, "session", { path: "/" });
+  return c.body(null, 204);
+});
+
+app.get("/auth/me", async (c) => {
+  const user = c.get("user");
+  if (!user) return c.json({ error: "Not authenticated" }, 401);
+  return c.json(user);
+});
+
+// ---------- Notifications ----------
+
+app.get("/notifications", async (c) => {
+  const user = c.get("user");
+  const { results } = await c.env.DB.prepare(
+    "SELECT * FROM notifications WHERE userId = ? AND COALESCE(scheduledFor, createdAt) <= ? ORDER BY createdAt DESC LIMIT 50"
+  )
+    .bind(user.id, new Date().toISOString())
+    .all();
+  return c.json(results.map((n) => ({ ...n, read: !!n.read })));
+});
+
+app.post("/notifications/:id/read", async (c) => {
+  const user = c.get("user");
+  const id = c.req.param("id");
+  await c.env.DB.prepare("UPDATE notifications SET read=1 WHERE id=? AND userId=?").bind(id, user.id).run();
+  return c.body(null, 204);
+});
+
+app.post("/notifications/read-all", async (c) => {
+  const user = c.get("user");
+  await c.env.DB.prepare("UPDATE notifications SET read=1 WHERE userId=?").bind(user.id).run();
+  return c.body(null, 204);
+});
+
+// ---------- Settings helper (shared, non-couple-specific exchange rate) ----------
+
+async function getSetting(db, key, fallback) {
+  const row = await db.prepare("SELECT value FROM settings WHERE key = ?").bind(key).first();
+  return row ? JSON.parse(row.value) : fallback;
+}
+
+async function setSetting(db, key, value) {
+  await db
+    .prepare(
+      "INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value"
+    )
+    .bind(key, JSON.stringify(value))
+    .run();
+}
+
+function toPlusCount(value) {
+  const n = Math.floor(Number(value));
+  return Number.isFinite(n) && n > 0 ? n : 0;
+}
+
+// ---------- Wedding date ----------
+
+app.get("/wedding-date", async (c) => {
+  const coupleId = c.get("coupleId");
+  const couple = await c.env.DB.prepare("SELECT weddingDate FROM couples WHERE id = ?").bind(coupleId).first();
+  return c.json({ date: couple?.weddingDate ?? null });
+});
+
+// ---------- Image uploads (for inspiration photos taken/picked on mobile) ----------
+
+const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
+
+app.post("/upload", async (c) => {
+  const body = await c.req.parseBody();
+  const file = body.file;
+  if (!file || typeof file === "string") return c.json({ error: "file is required" }, 400);
+  if (!file.type.startsWith("image/")) return c.json({ error: "only image uploads are supported" }, 400);
+  if (file.size > MAX_IMAGE_BYTES) return c.json({ error: "image is too large (max 10MB)" }, 400);
+
+  const ext = (file.name.split(".").pop() || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg";
+  const key = `${crypto.randomUUID()}.${ext}`;
+  await c.env.IMAGES.put(key, file, { httpMetadata: { contentType: file.type } });
+  return c.json({ url: `https://images.saranniankris.online/${key}` }, 201);
+});
+
+// ---------- Sections ----------
+
+app.get("/sections", async (c) => {
+  const coupleId = c.get("coupleId");
+  const { results } = await c.env.DB.prepare("SELECT * FROM sections WHERE coupleId = ? ORDER BY position ASC")
+    .bind(coupleId)
+    .all();
+  return c.json(results);
+});
+
+app.post("/sections", async (c) => {
+  const coupleId = c.get("coupleId");
+  const { title, color } = await c.req.json();
+  if (!title || !color) return c.json({ error: "title and color are required" }, 400);
+  const row = await c.env.DB.prepare("SELECT COALESCE(MAX(position), -1) + 1 AS nextPosition FROM sections WHERE coupleId = ?")
+    .bind(coupleId)
+    .first();
+  const section = { id: crypto.randomUUID(), title, color, position: row.nextPosition };
+  await c.env.DB.prepare("INSERT INTO sections (id, coupleId, title, color, position) VALUES (?,?,?,?,?)")
+    .bind(section.id, coupleId, section.title, section.color, section.position)
+    .run();
+  return c.json(section, 201);
+});
+
+app.put("/sections/reorder", async (c) => {
+  const coupleId = c.get("coupleId");
+  const { orderedIds } = await c.req.json();
+  if (!Array.isArray(orderedIds)) return c.json({ error: "orderedIds must be an array" }, 400);
+  await c.env.DB.batch(
+    orderedIds.map((id, index) =>
+      c.env.DB.prepare("UPDATE sections SET position = ? WHERE id = ? AND coupleId = ?").bind(index, id, coupleId)
+    )
+  );
+  return c.body(null, 204);
+});
+
+app.put("/sections/:id", async (c) => {
+  const coupleId = c.get("coupleId");
+  const id = c.req.param("id");
+  const body = await c.req.json();
+  const existing = await c.env.DB.prepare("SELECT * FROM sections WHERE id = ? AND coupleId = ?").bind(id, coupleId).first();
+  if (!existing) return c.json({ error: "Section not found" }, 404);
+  const title = body.title !== undefined ? body.title : existing.title;
+  const color = body.color !== undefined ? body.color : existing.color;
+  await c.env.DB.prepare("UPDATE sections SET title = ?, color = ? WHERE id = ?").bind(title, color, id).run();
+  return c.json({ id, title, color, position: existing.position });
+});
+
+app.delete("/sections/:id", async (c) => {
+  const coupleId = c.get("coupleId");
+  const id = c.req.param("id");
+  const existing = await c.env.DB.prepare("SELECT id FROM sections WHERE id = ? AND coupleId = ?").bind(id, coupleId).first();
+  if (!existing) return c.json({ error: "Section not found" }, 404);
+  await c.env.DB.prepare("DELETE FROM sections WHERE id = ?").bind(id).run();
+  await c.env.DB.prepare("UPDATE events SET sectionId = NULL WHERE sectionId = ?").bind(id).run();
+  return c.body(null, 204);
+});
+
+// ---------- Events (important dates) + nested tasks ----------
+
+function serializeTask(t) {
+  return {
+    id: t.id,
+    name: t.name,
+    assigneeUserId: t.assigneeUserId ?? null,
+    createdByUserId: t.createdByUserId ?? null,
+    done: !!t.done,
+  };
+}
+
+app.get("/events", async (c) => {
+  const coupleId = c.get("coupleId");
+  const { results: events } = await c.env.DB.prepare("SELECT * FROM events WHERE coupleId = ?").bind(coupleId).all();
+  const { results: tasks } = await c.env.DB.prepare("SELECT * FROM tasks WHERE coupleId = ?").bind(coupleId).all();
+  const byEvent = new Map();
+  for (const t of tasks) {
+    const list = byEvent.get(t.eventId) ?? [];
+    list.push(serializeTask(t));
+    byEvent.set(t.eventId, list);
+  }
+  const full = events.map((e) => ({ ...e, tasks: byEvent.get(e.id) ?? [] }));
+  return c.json(full);
+});
+
+app.post("/events", async (c) => {
+  const coupleId = c.get("coupleId");
+  const { title, date, time, sectionId, notes } = await c.req.json();
+  if (!title || !date) return c.json({ error: "title and date are required" }, 400);
+  const event = {
+    id: crypto.randomUUID(),
+    title,
+    date,
+    time: time || "",
+    sectionId: sectionId || null,
+    notes: notes || "",
+    createdAt: new Date().toISOString(),
+  };
+  await c.env.DB.prepare(
+    "INSERT INTO events (id, coupleId, title, date, time, sectionId, notes, createdAt) VALUES (?,?,?,?,?,?,?,?)"
+  )
+    .bind(event.id, coupleId, event.title, event.date, event.time, event.sectionId, event.notes, event.createdAt)
+    .run();
+  return c.json({ ...event, tasks: [] }, 201);
+});
+
+app.put("/events/:id", async (c) => {
+  const coupleId = c.get("coupleId");
+  const id = c.req.param("id");
+  const body = await c.req.json();
+  const existing = await c.env.DB.prepare("SELECT * FROM events WHERE id = ? AND coupleId = ?").bind(id, coupleId).first();
+  if (!existing) return c.json({ error: "Event not found" }, 404);
+  const title = body.title !== undefined ? body.title : existing.title;
+  const date = body.date !== undefined ? body.date : existing.date;
+  const time = body.time !== undefined ? body.time : existing.time;
+  const sectionId = body.sectionId !== undefined ? body.sectionId : existing.sectionId;
+  const notes = body.notes !== undefined ? body.notes : existing.notes;
+  await c.env.DB.prepare("UPDATE events SET title=?, date=?, time=?, sectionId=?, notes=? WHERE id=?")
+    .bind(title, date, time, sectionId, notes, id)
+    .run();
+  const { results: tasks } = await c.env.DB.prepare("SELECT * FROM tasks WHERE eventId = ?").bind(id).all();
+  return c.json({
+    id,
+    title,
+    date,
+    time,
+    sectionId,
+    notes,
+    createdAt: existing.createdAt,
+    tasks: tasks.map(serializeTask),
+  });
+});
+
+app.delete("/events/:id", async (c) => {
+  const coupleId = c.get("coupleId");
+  const id = c.req.param("id");
+  const existing = await c.env.DB.prepare("SELECT id FROM events WHERE id = ? AND coupleId = ?").bind(id, coupleId).first();
+  if (!existing) return c.json({ error: "Event not found" }, 404);
+  await c.env.DB.prepare("DELETE FROM events WHERE id = ?").bind(id).run();
+  await c.env.DB.prepare("DELETE FROM tasks WHERE eventId = ?").bind(id).run();
+  return c.body(null, 204);
+});
+
+app.post("/events/:id/tasks", async (c) => {
+  const coupleId = c.get("coupleId");
+  const eventId = c.req.param("id");
+  const actor = c.get("user");
+  const { name, assigneeUserId } = await c.req.json();
+  if (!name) return c.json({ error: "name is required" }, 400);
+  const event = await c.env.DB.prepare("SELECT id, title FROM events WHERE id = ? AND coupleId = ?").bind(eventId, coupleId).first();
+  if (!event) return c.json({ error: "Event not found" }, 404);
+  const task = {
+    id: crypto.randomUUID(),
+    name,
+    assigneeUserId: assigneeUserId || null,
+    createdByUserId: actor.id,
+    done: false,
+  };
+  await c.env.DB.prepare(
+    "INSERT INTO tasks (id, coupleId, eventId, name, assigneeUserId, createdByUserId, done) VALUES (?,?,?,?,?,?,?)"
+  )
+    .bind(task.id, coupleId, eventId, task.name, task.assigneeUserId, task.createdByUserId, 0)
+    .run();
+
+  let message = `${actor.name} added task "${name}" (${event.title})`;
+  if (task.assigneeUserId) {
+    const assignee = await c.env.DB.prepare("SELECT name FROM users WHERE id = ? AND coupleId = ?")
+      .bind(task.assigneeUserId, coupleId)
+      .first();
+    if (assignee) message = `${actor.name} added "${name}" and assigned it to ${assignee.name} (${event.title})`;
+  }
+  await notifyOtherUsers(c.env.DB, coupleId, actor.id, message, "task", task.id, "task-created");
+
+  return c.json(task, 201);
+});
+
+app.put("/events/:id/tasks/:taskId", async (c) => {
+  const coupleId = c.get("coupleId");
+  const { id: eventId, taskId } = c.req.param();
+  const actor = c.get("user");
+  const body = await c.req.json();
+  const existing = await c.env.DB.prepare("SELECT * FROM tasks WHERE id = ? AND eventId = ? AND coupleId = ?")
+    .bind(taskId, eventId, coupleId)
+    .first();
+  if (!existing) return c.json({ error: "Task not found" }, 404);
+  const event = await c.env.DB.prepare("SELECT title FROM events WHERE id = ?").bind(eventId).first();
+  const name = body.name !== undefined ? body.name : existing.name;
+  const assigneeUserId = body.assigneeUserId !== undefined ? body.assigneeUserId : existing.assigneeUserId;
+  const done = body.done !== undefined ? Boolean(body.done) : !!existing.done;
+  await c.env.DB.prepare("UPDATE tasks SET name=?, assigneeUserId=?, done=? WHERE id=?")
+    .bind(name, assigneeUserId, done ? 1 : 0, taskId)
+    .run();
+
+  if (body.done !== undefined && done && !existing.done) {
+    await notifyOtherUsers(c.env.DB, coupleId, actor.id, `${actor.name} completed "${name}" (${event.title})`, "task", taskId, "task-completed");
+  }
+  if (body.done !== undefined && !done && existing.done) {
+    await cancelPendingNotifications(c.env.DB, taskId, "task-completed");
+  }
+  if (body.assigneeUserId !== undefined && body.assigneeUserId !== existing.assigneeUserId) {
+    await cancelPendingNotifications(c.env.DB, taskId, "task-assigned");
+    if (body.assigneeUserId) {
+      const assignee = await c.env.DB.prepare("SELECT name FROM users WHERE id = ? AND coupleId = ?")
+        .bind(body.assigneeUserId, coupleId)
+        .first();
+      if (assignee) {
+        await notifyOtherUsers(
+          c.env.DB,
+          coupleId,
+          actor.id,
+          `${actor.name} assigned "${name}" to ${assignee.name} (${event.title})`,
+          "task",
+          taskId,
+          "task-assigned"
+        );
+      }
+    }
+  }
+
+  return c.json({ id: taskId, name, assigneeUserId, createdByUserId: existing.createdByUserId, done });
+});
+
+app.delete("/events/:id/tasks/:taskId", async (c) => {
+  const coupleId = c.get("coupleId");
+  const { taskId } = c.req.param();
+  const existing = await c.env.DB.prepare("SELECT id FROM tasks WHERE id = ? AND coupleId = ?").bind(taskId, coupleId).first();
+  if (!existing) return c.json({ error: "Task not found" }, 404);
+  await c.env.DB.prepare("DELETE FROM tasks WHERE id = ?").bind(taskId).run();
+  await cancelPendingNotifications(c.env.DB, taskId);
+  return c.body(null, 204);
+});
+
+// ---------- Day to-dos ----------
+
+function serializeTodo(t) {
+  return {
+    id: t.id,
+    date: t.date,
+    text: t.text,
+    assigneeUserId: t.assigneeUserId ?? null,
+    createdByUserId: t.createdByUserId ?? null,
+    done: !!t.done,
+    createdAt: t.createdAt,
+  };
+}
+
+app.get("/todos", async (c) => {
+  const coupleId = c.get("coupleId");
+  const { results } = await c.env.DB.prepare("SELECT * FROM todos WHERE coupleId = ? ORDER BY createdAt").bind(coupleId).all();
+  return c.json(results.map(serializeTodo));
+});
+
+app.post("/todos", async (c) => {
+  const coupleId = c.get("coupleId");
+  const actor = c.get("user");
+  const { date, text, assigneeUserId } = await c.req.json();
+  if (!date || !text || !text.trim()) return c.json({ error: "date and text are required" }, 400);
+  const todo = {
+    id: crypto.randomUUID(),
+    date,
+    text: text.trim(),
+    assigneeUserId: assigneeUserId || null,
+    createdByUserId: actor.id,
+    done: false,
+    createdAt: new Date().toISOString(),
+  };
+  await c.env.DB.prepare(
+    "INSERT INTO todos (id, coupleId, date, text, assigneeUserId, createdByUserId, done, createdAt) VALUES (?,?,?,?,?,?,?,?)"
+  )
+    .bind(todo.id, coupleId, todo.date, todo.text, todo.assigneeUserId, todo.createdByUserId, 0, todo.createdAt)
+    .run();
+
+  let message = `${actor.name} added a to-do "${todo.text}"`;
+  if (todo.assigneeUserId) {
+    const assignee = await c.env.DB.prepare("SELECT name FROM users WHERE id = ? AND coupleId = ?")
+      .bind(todo.assigneeUserId, coupleId)
+      .first();
+    if (assignee) message = `${actor.name} added "${todo.text}" and assigned it to ${assignee.name}`;
+  }
+  await notifyOtherUsers(c.env.DB, coupleId, actor.id, message, "todo", todo.id, "todo-created");
+
+  return c.json(todo, 201);
+});
+
+app.put("/todos/:id", async (c) => {
+  const coupleId = c.get("coupleId");
+  const id = c.req.param("id");
+  const actor = c.get("user");
+  const body = await c.req.json();
+  const existing = await c.env.DB.prepare("SELECT * FROM todos WHERE id = ? AND coupleId = ?").bind(id, coupleId).first();
+  if (!existing) return c.json({ error: "Todo not found" }, 404);
+  const text = body.text !== undefined ? body.text : existing.text;
+  const assigneeUserId = body.assigneeUserId !== undefined ? body.assigneeUserId : existing.assigneeUserId;
+  const done = body.done !== undefined ? Boolean(body.done) : !!existing.done;
+  await c.env.DB.prepare("UPDATE todos SET text=?, assigneeUserId=?, done=? WHERE id=?")
+    .bind(text, assigneeUserId, done ? 1 : 0, id)
+    .run();
+
+  if (body.done !== undefined && done && !existing.done) {
+    await notifyOtherUsers(c.env.DB, coupleId, actor.id, `${actor.name} completed to-do "${text}"`, "todo", id, "todo-completed");
+  }
+  if (body.done !== undefined && !done && existing.done) {
+    await cancelPendingNotifications(c.env.DB, id, "todo-completed");
+  }
+  if (body.assigneeUserId !== undefined && body.assigneeUserId !== existing.assigneeUserId) {
+    await cancelPendingNotifications(c.env.DB, id, "todo-assigned");
+    if (body.assigneeUserId) {
+      const assignee = await c.env.DB.prepare("SELECT name FROM users WHERE id = ? AND coupleId = ?")
+        .bind(body.assigneeUserId, coupleId)
+        .first();
+      if (assignee) {
+        await notifyOtherUsers(c.env.DB, coupleId, actor.id, `${actor.name} assigned "${text}" to ${assignee.name}`, "todo", id, "todo-assigned");
+      }
+    }
+  }
+
+  return c.json({ id, date: existing.date, text, assigneeUserId, createdByUserId: existing.createdByUserId, done, createdAt: existing.createdAt });
+});
+
+app.delete("/todos/:id", async (c) => {
+  const coupleId = c.get("coupleId");
+  const id = c.req.param("id");
+  const existing = await c.env.DB.prepare("SELECT id FROM todos WHERE id = ? AND coupleId = ?").bind(id, coupleId).first();
+  if (!existing) return c.json({ error: "Todo not found" }, 404);
+  await c.env.DB.prepare("DELETE FROM todos WHERE id = ?").bind(id).run();
+  await cancelPendingNotifications(c.env.DB, id);
+  return c.body(null, 204);
+});
+
+// ---------- Guest owners & their guest lists ----------
+
+function serializeGuest(g) {
+  return {
+    id: g.id,
+    name: g.name,
+    plusCount: g.plusCount,
+    categoryId: g.categoryId,
+    isVip: !!g.isVip,
+    included: g.included === undefined ? true : !!g.included,
+    phone: g.phone ?? "",
+    email: g.email ?? "",
+    address: g.address ?? "",
+    notes: g.notes ?? "",
+  };
+}
+
+app.get("/guest-owners", async (c) => {
+  const coupleId = c.get("coupleId");
+  const { results: owners } = await c.env.DB.prepare("SELECT * FROM guest_owners WHERE coupleId = ?").bind(coupleId).all();
+  const { results: categories } = await c.env.DB.prepare("SELECT * FROM guest_categories WHERE coupleId = ?").bind(coupleId).all();
+  const { results: guests } = await c.env.DB.prepare("SELECT * FROM guests WHERE coupleId = ?").bind(coupleId).all();
+  const catsByOwner = new Map();
+  for (const cat of categories) {
+    const list = catsByOwner.get(cat.ownerId) ?? [];
+    list.push({ id: cat.id, ownerId: cat.ownerId, title: cat.title });
+    catsByOwner.set(cat.ownerId, list);
+  }
+  const guestsByOwner = new Map();
+  for (const g of guests) {
+    const list = guestsByOwner.get(g.ownerId) ?? [];
+    list.push(serializeGuest(g));
+    guestsByOwner.set(g.ownerId, list);
+  }
+  return c.json(
+    owners.map((o) => ({
+      ...o,
+      categories: catsByOwner.get(o.id) ?? [],
+      guests: guestsByOwner.get(o.id) ?? [],
+    }))
+  );
+});
+
+// PUBLIC (guest invite link) — scoped by the owner's own random id, not by session.
+app.get("/guest-owners/:id", async (c) => {
+  const id = c.req.param("id");
+  const owner = await c.env.DB.prepare("SELECT * FROM guest_owners WHERE id = ?").bind(id).first();
+  if (!owner) return c.json({ error: "Guest list not found" }, 404);
+  const couple = await c.env.DB.prepare("SELECT partner1Name, partner2Name FROM couples WHERE id = ?")
+    .bind(owner.coupleId)
+    .first();
+  const { results: categories } = await c.env.DB.prepare("SELECT * FROM guest_categories WHERE ownerId = ?").bind(id).all();
+  const { results: guests } = await c.env.DB.prepare("SELECT * FROM guests WHERE ownerId = ?").bind(id).all();
+  return c.json({
+    ...owner,
+    partner1Name: couple?.partner1Name ?? null,
+    partner2Name: couple?.partner2Name ?? null,
+    categories: categories.map((cat) => ({ id: cat.id, ownerId: cat.ownerId, title: cat.title })),
+    guests: guests.map(serializeGuest),
+  });
+});
+
+app.post("/guest-owners", async (c) => {
+  const coupleId = c.get("coupleId");
+  const { name } = await c.req.json();
+  if (!name) return c.json({ error: "name is required" }, 400);
+  const ownerId = await generateUniqueShortId(c.env.DB, "guest_owners");
+  const owner = { id: ownerId, name, createdAt: new Date().toISOString() };
+  await c.env.DB.prepare("INSERT INTO guest_owners (id, coupleId, name, createdAt) VALUES (?,?,?,?)")
+    .bind(owner.id, coupleId, owner.name, owner.createdAt)
+    .run();
+  const defaultCategory = { id: crypto.randomUUID(), ownerId: owner.id, title: "Family" };
+  await c.env.DB.prepare("INSERT INTO guest_categories (id, coupleId, ownerId, title) VALUES (?,?,?,?)")
+    .bind(defaultCategory.id, coupleId, defaultCategory.ownerId, defaultCategory.title)
+    .run();
+  return c.json({ ...owner, categories: [defaultCategory], guests: [] }, 201);
+});
+
+app.put("/guest-owners/:id", async (c) => {
+  const coupleId = c.get("coupleId");
+  const id = c.req.param("id");
+  const { name } = await c.req.json();
+  const existing = await c.env.DB.prepare("SELECT * FROM guest_owners WHERE id = ? AND coupleId = ?").bind(id, coupleId).first();
+  if (!existing) return c.json({ error: "Guest list not found" }, 404);
+  const newName = name !== undefined ? name : existing.name;
+  await c.env.DB.prepare("UPDATE guest_owners SET name=? WHERE id=?").bind(newName, id).run();
+  return c.json({ id, name: newName, createdAt: existing.createdAt });
+});
+
+app.delete("/guest-owners/:id", async (c) => {
+  const coupleId = c.get("coupleId");
+  const id = c.req.param("id");
+  const existing = await c.env.DB.prepare("SELECT id FROM guest_owners WHERE id = ? AND coupleId = ?").bind(id, coupleId).first();
+  if (!existing) return c.json({ error: "Guest list not found" }, 404);
+  const { results: ordered } = await c.env.DB.prepare("SELECT id FROM guest_owners WHERE coupleId = ? ORDER BY createdAt ASC")
+    .bind(coupleId)
+    .all();
+  const index = ordered.findIndex((o) => o.id === id);
+  if (index !== -1 && index < 2) {
+    return c.json({ error: "The Bride and Groom lists can't be deleted" }, 400);
+  }
+  await c.env.DB.prepare("DELETE FROM guest_owners WHERE id = ?").bind(id).run();
+  await c.env.DB.prepare("DELETE FROM guests WHERE ownerId = ?").bind(id).run();
+  await c.env.DB.prepare("DELETE FROM guest_categories WHERE ownerId = ?").bind(id).run();
+  return c.body(null, 204);
+});
+
+// PUBLIC (also reachable from the guest invite link, not just the couple's
+// own app) — scoped by the owner's own random id, same model as the guest
+// add/edit/delete routes below, since there's no session for a public caller.
+app.post("/guest-owners/:id/categories", async (c) => {
+  const ownerId = c.req.param("id");
+  const { title } = await c.req.json();
+  if (!title) return c.json({ error: "title is required" }, 400);
+  const owner = await c.env.DB.prepare("SELECT id, coupleId FROM guest_owners WHERE id = ?").bind(ownerId).first();
+  if (!owner) return c.json({ error: "Guest list not found" }, 404);
+  const category = { id: crypto.randomUUID(), ownerId, title };
+  await c.env.DB.prepare("INSERT INTO guest_categories (id, coupleId, ownerId, title) VALUES (?,?,?,?)")
+    .bind(category.id, owner.coupleId, category.ownerId, category.title)
+    .run();
+  return c.json(category, 201);
+});
+
+app.put("/guest-owners/:id/categories/:categoryId", async (c) => {
+  const coupleId = c.get("coupleId");
+  const { id: ownerId, categoryId } = c.req.param();
+  const { title } = await c.req.json();
+  if (!title || !title.trim()) return c.json({ error: "title is required" }, 400);
+  const existing = await c.env.DB.prepare("SELECT id FROM guest_categories WHERE id = ? AND ownerId = ? AND coupleId = ?")
+    .bind(categoryId, ownerId, coupleId)
+    .first();
+  if (!existing) return c.json({ error: "List not found" }, 404);
+  await c.env.DB.prepare("UPDATE guest_categories SET title = ? WHERE id = ?").bind(title.trim(), categoryId).run();
+  return c.json({ id: categoryId, ownerId, title: title.trim() });
+});
+
+app.delete("/guest-owners/:id/categories/:categoryId", async (c) => {
+  const coupleId = c.get("coupleId");
+  const { id: ownerId, categoryId } = c.req.param();
+  const existing = await c.env.DB.prepare("SELECT id FROM guest_categories WHERE id = ? AND ownerId = ? AND coupleId = ?")
+    .bind(categoryId, ownerId, coupleId)
+    .first();
+  if (!existing) return c.json({ error: "List not found" }, 404);
+  await c.env.DB.prepare("DELETE FROM guests WHERE categoryId = ?").bind(categoryId).run();
+  await c.env.DB.prepare("DELETE FROM guest_categories WHERE id = ?").bind(categoryId).run();
+  return c.body(null, 204);
+});
+
+// PUBLIC (guest invite link) below — coupleId is derived from the owner row
+// itself, never from a session, since these submissions are unauthenticated.
+app.post("/guest-owners/:id/guests", async (c) => {
+  const ownerId = c.req.param("id");
+  const { name, plusCount, categoryId, isVip, phone, email, address, notes } = await c.req.json();
+  if (!name) return c.json({ error: "name is required" }, 400);
+  const owner = await c.env.DB.prepare("SELECT id, coupleId FROM guest_owners WHERE id = ?").bind(ownerId).first();
+  if (!owner) return c.json({ error: "Guest list not found" }, 404);
+  const coupleId = owner.coupleId;
+
+  let targetCategoryId = categoryId;
+  if (targetCategoryId) {
+    const category = await c.env.DB.prepare("SELECT id FROM guest_categories WHERE id = ? AND ownerId = ?")
+      .bind(targetCategoryId, ownerId)
+      .first();
+    if (!category) return c.json({ error: "List not found" }, 404);
+  } else {
+    // Public invite-link submissions omit categoryId; those always land in a
+    // plain "Guests" list (never Family, never VIP), creating it on first use.
+    let guestsCategory = await c.env.DB.prepare(
+      "SELECT id FROM guest_categories WHERE ownerId = ? AND lower(title) = 'guests'"
+    )
+      .bind(ownerId)
+      .first();
+    if (!guestsCategory) {
+      const newCategoryId = crypto.randomUUID();
+      await c.env.DB.prepare("INSERT INTO guest_categories (id, coupleId, ownerId, title) VALUES (?,?,?,?)")
+        .bind(newCategoryId, coupleId, ownerId, "Guests")
+        .run();
+      guestsCategory = { id: newCategoryId };
+    }
+    targetCategoryId = guestsCategory.id;
+  }
+
+  const guest = {
+    id: crypto.randomUUID(),
+    name,
+    plusCount: toPlusCount(plusCount),
+    categoryId: targetCategoryId,
+    isVip: categoryId ? Boolean(isVip) : false,
+    included: true,
+    phone: phone || "",
+    email: email || "",
+    address: address || "",
+    notes: notes || "",
+  };
+  await c.env.DB.prepare(
+    "INSERT INTO guests (id, coupleId, ownerId, name, plusCount, categoryId, isVip, included, phone, email, address, notes) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)"
+  )
+    .bind(
+      guest.id,
+      coupleId,
+      ownerId,
+      guest.name,
+      guest.plusCount,
+      guest.categoryId,
+      guest.isVip ? 1 : 0,
+      1,
+      guest.phone,
+      guest.email,
+      guest.address,
+      guest.notes
+    )
+    .run();
+  return c.json(guest, 201);
+});
+
+app.put("/guest-owners/:id/guests/:guestId", async (c) => {
+  const { id: ownerId, guestId } = c.req.param();
+  const body = await c.req.json();
+  const existing = await c.env.DB.prepare("SELECT * FROM guests WHERE id = ? AND ownerId = ?")
+    .bind(guestId, ownerId)
+    .first();
+  if (!existing) return c.json({ error: "Guest not found" }, 404);
+  const name = body.name !== undefined ? body.name : existing.name;
+  const plusCount = body.plusCount !== undefined ? toPlusCount(body.plusCount) : existing.plusCount;
+  const isVip = body.isVip !== undefined ? Boolean(body.isVip) : !!existing.isVip;
+  const included = body.included !== undefined ? Boolean(body.included) : existing.included === undefined ? true : !!existing.included;
+  const phone = body.phone !== undefined ? body.phone : existing.phone ?? "";
+  const email = body.email !== undefined ? body.email : existing.email ?? "";
+  const address = body.address !== undefined ? body.address : existing.address ?? "";
+  const notes = body.notes !== undefined ? body.notes : existing.notes ?? "";
+  await c.env.DB.prepare("UPDATE guests SET name=?, plusCount=?, isVip=?, included=?, phone=?, email=?, address=?, notes=? WHERE id=?")
+    .bind(name, plusCount, isVip ? 1 : 0, included ? 1 : 0, phone, email, address, notes, guestId)
+    .run();
+  return c.json({ id: guestId, name, plusCount, categoryId: existing.categoryId, isVip, included, phone, email, address, notes });
+});
+
+app.delete("/guest-owners/:id/guests/:guestId", async (c) => {
+  const { id: ownerId, guestId } = c.req.param();
+  const existing = await c.env.DB.prepare("SELECT id FROM guests WHERE id = ? AND ownerId = ?").bind(guestId, ownerId).first();
+  if (!existing) return c.json({ error: "Guest not found" }, 404);
+  await c.env.DB.prepare("DELETE FROM guests WHERE id = ?").bind(guestId).run();
+  return c.body(null, 204);
+});
+
+// ---------- Inspiration board ----------
+
+app.get("/inspiration", async (c) => {
+  const coupleId = c.get("coupleId");
+  const { results } = await c.env.DB.prepare("SELECT * FROM inspiration_items WHERE coupleId = ? ORDER BY createdAt DESC")
+    .bind(coupleId)
+    .all();
+  return c.json(results.map((i) => ({ ...i, approved: !!i.approved })));
+});
+
+app.post("/inspiration", async (c) => {
+  const coupleId = c.get("coupleId");
+  const { url, caption, categoryId } = await c.req.json();
+  if (!url || !url.trim()) return c.json({ error: "url is required" }, 400);
+  const item = {
+    id: crypto.randomUUID(),
+    url: url.trim(),
+    caption: caption || "",
+    categoryId: categoryId || null,
+    approved: false,
+    createdAt: new Date().toISOString(),
+  };
+  await c.env.DB.prepare(
+    "INSERT INTO inspiration_items (id,coupleId,url,caption,categoryId,approved,createdAt) VALUES (?,?,?,?,?,?,?)"
+  )
+    .bind(item.id, coupleId, item.url, item.caption, item.categoryId, 0, item.createdAt)
+    .run();
+  return c.json(item, 201);
+});
+
+app.put("/inspiration/:id", async (c) => {
+  const coupleId = c.get("coupleId");
+  const id = c.req.param("id");
+  const body = await c.req.json();
+  const existing = await c.env.DB.prepare("SELECT * FROM inspiration_items WHERE id = ? AND coupleId = ?").bind(id, coupleId).first();
+  if (!existing) return c.json({ error: "Inspiration item not found" }, 404);
+  const caption = body.caption !== undefined ? body.caption : existing.caption;
+  const approved = body.approved !== undefined ? Boolean(body.approved) : !!existing.approved;
+  const categoryId = body.categoryId !== undefined ? body.categoryId : existing.categoryId;
+  await c.env.DB.prepare("UPDATE inspiration_items SET caption=?, approved=?, categoryId=? WHERE id=?")
+    .bind(caption, approved ? 1 : 0, categoryId, id)
+    .run();
+  return c.json({ ...existing, caption, approved, categoryId });
+});
+
+app.delete("/inspiration/:id", async (c) => {
+  const coupleId = c.get("coupleId");
+  const id = c.req.param("id");
+  const existing = await c.env.DB.prepare("SELECT id FROM inspiration_items WHERE id = ? AND coupleId = ?").bind(id, coupleId).first();
+  if (!existing) return c.json({ error: "Inspiration item not found" }, 404);
+  await c.env.DB.prepare("DELETE FROM inspiration_items WHERE id = ?").bind(id).run();
+  return c.body(null, 204);
+});
+
+app.get("/inspiration-categories", async (c) => {
+  const coupleId = c.get("coupleId");
+  const { results } = await c.env.DB.prepare("SELECT * FROM inspiration_categories WHERE coupleId = ?").bind(coupleId).all();
+  return c.json(results);
+});
+
+app.post("/inspiration-categories", async (c) => {
+  const coupleId = c.get("coupleId");
+  const { title } = await c.req.json();
+  if (!title || !title.trim()) return c.json({ error: "title is required" }, 400);
+  const category = { id: crypto.randomUUID(), title: title.trim(), createdAt: new Date().toISOString() };
+  await c.env.DB.prepare("INSERT INTO inspiration_categories (id,coupleId,title,createdAt) VALUES (?,?,?,?)")
+    .bind(category.id, coupleId, category.title, category.createdAt)
+    .run();
+  return c.json(category, 201);
+});
+
+app.delete("/inspiration-categories/:id", async (c) => {
+  const coupleId = c.get("coupleId");
+  const id = c.req.param("id");
+  const existing = await c.env.DB.prepare("SELECT id FROM inspiration_categories WHERE id = ? AND coupleId = ?").bind(id, coupleId).first();
+  if (!existing) return c.json({ error: "Category not found" }, 404);
+  await c.env.DB.prepare("DELETE FROM inspiration_categories WHERE id = ?").bind(id).run();
+  await c.env.DB.prepare("UPDATE inspiration_items SET categoryId = NULL WHERE categoryId = ?").bind(id).run();
+  return c.body(null, 204);
+});
+
+// ---------- Link preview resolver ----------
+
+function decodeHtmlEntities(str) {
+  return str
+    .replace(/&amp;/g, "&")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">");
+}
+
+function extractOgImage(html) {
+  const metaTags = html.match(/<meta[^>]+>/gi) || [];
+  for (const tag of metaTags) {
+    const isOgImage = /(?:property|name)=["']og:image["']/i.test(tag);
+    if (!isOgImage) continue;
+    const contentMatch = tag.match(/content=["']([^"']+)["']/i);
+    if (contentMatch) return decodeHtmlEntities(contentMatch[1]);
+  }
+  return null;
+}
+
+// TikTok pages are client-side rendered, so scraping the raw HTML for
+// og:image never finds a real thumbnail. TikTok's public oEmbed endpoint
+// (no API key needed) gives the real thumbnail AND resolves short share
+// links (vm.tiktok.com, tiktok.com/t/...) to the numeric video id embedded
+// in its "html" field — the same id needed to build a playable embed URL,
+// which the client can't extract itself from a short link.
+async function resolveTikTokOembed(url, signal) {
+  const oembedUrl = `https://www.tiktok.com/oembed?url=${encodeURIComponent(url)}`;
+  const response = await fetch(oembedUrl, { signal });
+  if (!response.ok) return null;
+  const data = await response.json();
+  const idMatch = (data.html || "").match(/data-video-id="(\d+)"/);
+  return {
+    imageUrl: data.thumbnail_url || null,
+    embedUrl: idMatch ? `https://www.tiktok.com/embed/v2/${idMatch[1]}` : null,
+  };
+}
+
+app.get("/resolve-preview", async (c) => {
+  const url = c.req.query("url");
+  if (!url) return c.json({ error: "url is required" }, 400);
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 8000);
+  try {
+    let host = "";
+    try {
+      host = new URL(url).hostname;
+    } catch {
+      // fall through to generic scraping below
+    }
+
+    if (/(^|\.)tiktok\.com$/.test(host)) {
+      const resolved = await resolveTikTokOembed(url, controller.signal);
+      clearTimeout(timeout);
+      if (resolved?.imageUrl) return c.json(resolved);
+      return c.json({ error: "Could not resolve a preview image for this link" }, 502);
+    }
+
+    const response = await fetch(url, {
+      signal: controller.signal,
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
+      },
+    });
+    clearTimeout(timeout);
+    const html = await response.text();
+    const imageUrl = extractOgImage(html);
+    return c.json({ imageUrl });
+  } catch (err) {
+    clearTimeout(timeout);
+    return c.json({ error: "Could not resolve a preview image for this link" }, 502);
+  }
+});
+
+// ---------- Budget ----------
+
+app.get("/budget", async (c) => {
+  const coupleId = c.get("coupleId");
+  const couple = await c.env.DB.prepare("SELECT budgetTotal, savings FROM couples WHERE id = ?").bind(coupleId).first();
+  return c.json({ total: couple?.budgetTotal ?? 0, savings: couple?.savings ?? 0 });
+});
+
+app.put("/budget", async (c) => {
+  const coupleId = c.get("coupleId");
+  const { total, savings } = await c.req.json();
+  const couple = await c.env.DB.prepare("SELECT budgetTotal, savings FROM couples WHERE id = ?").bind(coupleId).first();
+  const newTotal = total !== undefined ? Math.max(0, Number(total) || 0) : couple?.budgetTotal ?? 0;
+  const newSavings = savings !== undefined ? Math.max(0, Number(savings) || 0) : couple?.savings ?? 0;
+  await c.env.DB.prepare("UPDATE couples SET budgetTotal = ?, savings = ? WHERE id = ?")
+    .bind(newTotal, newSavings, coupleId)
+    .run();
+  return c.json({ total: newTotal, savings: newSavings });
+});
+
+app.get("/budget-items", async (c) => {
+  const coupleId = c.get("coupleId");
+  const { results } = await c.env.DB.prepare("SELECT * FROM budget_items WHERE coupleId = ? ORDER BY createdAt DESC")
+    .bind(coupleId)
+    .all();
+  return c.json(results.map((b) => ({ ...b, paid: !!b.paid })));
+});
+
+app.post("/budget-items", async (c) => {
+  const coupleId = c.get("coupleId");
+  const { item, category, estimated, actual, paid, currency } = await c.req.json();
+  if (!item || !item.trim()) return c.json({ error: "item is required" }, 400);
+  const row = {
+    id: crypto.randomUUID(),
+    item: item.trim(),
+    category: category || "Other",
+    currency: currency === "MYR" ? "MYR" : "SGD",
+    estimated: Math.max(0, Number(estimated) || 0),
+    actual: Math.max(0, Number(actual) || 0),
+    paid: Boolean(paid),
+    createdAt: new Date().toISOString(),
+  };
+  await c.env.DB.prepare(
+    "INSERT INTO budget_items (id,coupleId,item,category,currency,estimated,actual,paid,createdAt) VALUES (?,?,?,?,?,?,?,?,?)"
+  )
+    .bind(row.id, coupleId, row.item, row.category, row.currency, row.estimated, row.actual, row.paid ? 1 : 0, row.createdAt)
+    .run();
+  return c.json(row, 201);
+});
+
+app.put("/budget-items/:id", async (c) => {
+  const coupleId = c.get("coupleId");
+  const actor = c.get("user");
+  const id = c.req.param("id");
+  const body = await c.req.json();
+  const existing = await c.env.DB.prepare("SELECT * FROM budget_items WHERE id = ? AND coupleId = ?").bind(id, coupleId).first();
+  if (!existing) return c.json({ error: "Budget item not found" }, 404);
+  const item = body.item !== undefined ? body.item : existing.item;
+  const category = body.category !== undefined ? body.category : existing.category;
+  const currency = body.currency !== undefined ? (body.currency === "MYR" ? "MYR" : "SGD") : existing.currency;
+  const estimated = body.estimated !== undefined ? Math.max(0, Number(body.estimated) || 0) : existing.estimated;
+  const actual = body.actual !== undefined ? Math.max(0, Number(body.actual) || 0) : existing.actual;
+  const paid = body.paid !== undefined ? Boolean(body.paid) : !!existing.paid;
+  await c.env.DB.prepare("UPDATE budget_items SET item=?,category=?,currency=?,estimated=?,actual=?,paid=? WHERE id=?")
+    .bind(item, category, currency, estimated, actual, paid ? 1 : 0, id)
+    .run();
+
+  if (body.paid !== undefined && paid !== !!existing.paid) {
+    if (paid) {
+      await cancelPendingNotifications(c.env.DB, id, "budget-unpaid");
+      await notifyOtherUsers(c.env.DB, coupleId, actor.id, `${actor.name} marked "${item}" as paid`, "budget", id, "budget-paid");
+    } else {
+      await cancelPendingNotifications(c.env.DB, id, "budget-paid");
+      await notifyOtherUsers(c.env.DB, coupleId, actor.id, `${actor.name} marked "${item}" as unpaid`, "budget", id, "budget-unpaid");
+    }
+  }
+
+  return c.json({ id, item, category, currency, estimated, actual, paid, createdAt: existing.createdAt });
+});
+
+app.delete("/budget-items/:id", async (c) => {
+  const coupleId = c.get("coupleId");
+  const id = c.req.param("id");
+  const existing = await c.env.DB.prepare("SELECT id FROM budget_items WHERE id = ? AND coupleId = ?").bind(id, coupleId).first();
+  if (!existing) return c.json({ error: "Budget item not found" }, 404);
+  await c.env.DB.prepare("DELETE FROM budget_items WHERE id = ?").bind(id).run();
+  await cancelPendingNotifications(c.env.DB, id);
+  return c.body(null, 204);
+});
+
+// ---------- Budget categories ----------
+
+app.get("/budget-categories", async (c) => {
+  const coupleId = c.get("coupleId");
+  const { results } = await c.env.DB.prepare("SELECT * FROM budget_categories WHERE coupleId = ?").bind(coupleId).all();
+  return c.json(results);
+});
+
+app.post("/budget-categories", async (c) => {
+  const coupleId = c.get("coupleId");
+  const { title, color } = await c.req.json();
+  if (!title || !title.trim()) return c.json({ error: "title is required" }, 400);
+  const category = {
+    id: crypto.randomUUID(),
+    title: title.trim(),
+    color: color || "#7C9885",
+    createdAt: new Date().toISOString(),
+  };
+  await c.env.DB.prepare("INSERT INTO budget_categories (id,coupleId,title,color,createdAt) VALUES (?,?,?,?,?)")
+    .bind(category.id, coupleId, category.title, category.color, category.createdAt)
+    .run();
+  return c.json(category, 201);
+});
+
+app.put("/budget-categories/:id", async (c) => {
+  const coupleId = c.get("coupleId");
+  const id = c.req.param("id");
+  const body = await c.req.json();
+  const existing = await c.env.DB.prepare("SELECT * FROM budget_categories WHERE id = ? AND coupleId = ?").bind(id, coupleId).first();
+  if (!existing) return c.json({ error: "Category not found" }, 404);
+  const title = body.title !== undefined ? body.title : existing.title;
+  const color = body.color !== undefined ? body.color : existing.color;
+  await c.env.DB.prepare("UPDATE budget_categories SET title=?, color=? WHERE id=?").bind(title, color, id).run();
+  return c.json({ id, title, color, createdAt: existing.createdAt });
+});
+
+app.delete("/budget-categories/:id", async (c) => {
+  const coupleId = c.get("coupleId");
+  const id = c.req.param("id");
+  const existing = await c.env.DB.prepare("SELECT id FROM budget_categories WHERE id = ? AND coupleId = ?").bind(id, coupleId).first();
+  if (!existing) return c.json({ error: "Category not found" }, 404);
+  await c.env.DB.prepare("DELETE FROM budget_categories WHERE id = ?").bind(id).run();
+  return c.body(null, 204);
+});
+
+// ---------- Exchange rate (MYR -> SGD) — shared across all couples ----------
+
+app.get("/exchange-rate", async (c) => {
+  const rate = await getSetting(c.env.DB, "exchangeRate", { myrToSgd: 0.3128, updatedAt: null, source: "default" });
+  return c.json(rate);
+});
+
+app.post("/exchange-rate/refresh", async (c) => {
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000);
+    const response = await fetch("https://api.frankfurter.app/latest?from=MYR&to=SGD", {
+      signal: controller.signal,
+    });
+    clearTimeout(timeout);
+    const json = await response.json();
+    const rate = json?.rates?.SGD;
+    if (!rate) throw new Error("No SGD rate in response");
+    const exchangeRate = {
+      myrToSgd: rate,
+      updatedAt: new Date().toISOString(),
+      source: "frankfurter.app (ECB reference rates)",
+    };
+    await setSetting(c.env.DB, "exchangeRate", exchangeRate);
+    return c.json(exchangeRate);
+  } catch (err) {
+    return c.json({ error: "Could not fetch a live rate right now. You can enter one manually below." }, 502);
+  }
+});
+
+app.put("/exchange-rate", async (c) => {
+  const { myrToSgd } = await c.req.json();
+  if (!myrToSgd || Number(myrToSgd) <= 0) return c.json({ error: "myrToSgd must be a positive number" }, 400);
+  const exchangeRate = { myrToSgd: Number(myrToSgd), updatedAt: new Date().toISOString(), source: "manual" };
+  await setSetting(c.env.DB, "exchangeRate", exchangeRate);
+  return c.json(exchangeRate);
+});
+
+// ---------- Vendor categories ----------
+
+app.get("/vendor-categories", async (c) => {
+  const coupleId = c.get("coupleId");
+  const { results } = await c.env.DB.prepare("SELECT * FROM vendor_categories WHERE coupleId = ?").bind(coupleId).all();
+  return c.json(results);
+});
+
+app.post("/vendor-categories", async (c) => {
+  const coupleId = c.get("coupleId");
+  const { title, color } = await c.req.json();
+  if (!title || !title.trim()) return c.json({ error: "title is required" }, 400);
+  const category = {
+    id: crypto.randomUUID(),
+    title: title.trim(),
+    color: color || "#7C9885",
+    createdAt: new Date().toISOString(),
+  };
+  await c.env.DB.prepare("INSERT INTO vendor_categories (id,coupleId,title,color,createdAt) VALUES (?,?,?,?,?)")
+    .bind(category.id, coupleId, category.title, category.color, category.createdAt)
+    .run();
+  return c.json(category, 201);
+});
+
+app.put("/vendor-categories/:id", async (c) => {
+  const coupleId = c.get("coupleId");
+  const id = c.req.param("id");
+  const body = await c.req.json();
+  const existing = await c.env.DB.prepare("SELECT * FROM vendor_categories WHERE id = ? AND coupleId = ?").bind(id, coupleId).first();
+  if (!existing) return c.json({ error: "Category not found" }, 404);
+  const title = body.title !== undefined ? body.title : existing.title;
+  const color = body.color !== undefined ? body.color : existing.color;
+  await c.env.DB.prepare("UPDATE vendor_categories SET title=?, color=? WHERE id=?").bind(title, color, id).run();
+  return c.json({ id, title, color, createdAt: existing.createdAt });
+});
+
+app.delete("/vendor-categories/:id", async (c) => {
+  const coupleId = c.get("coupleId");
+  const id = c.req.param("id");
+  const existing = await c.env.DB.prepare("SELECT id FROM vendor_categories WHERE id = ? AND coupleId = ?").bind(id, coupleId).first();
+  if (!existing) return c.json({ error: "Category not found" }, 404);
+  await c.env.DB.prepare("DELETE FROM vendor_categories WHERE id = ?").bind(id).run();
+  return c.body(null, 204);
+});
+
+// ---------- Vendors ----------
+
+app.get("/vendors", async (c) => {
+  const coupleId = c.get("coupleId");
+  const { results } = await c.env.DB.prepare("SELECT * FROM vendors WHERE coupleId = ? ORDER BY createdAt DESC").bind(coupleId).all();
+  return c.json(results);
+});
+
+app.post("/vendors", async (c) => {
+  const coupleId = c.get("coupleId");
+  const { name, category, contact, cost, status, notes } = await c.req.json();
+  if (!name || !name.trim()) return c.json({ error: "name is required" }, 400);
+  const vendor = {
+    id: crypto.randomUUID(),
+    name: name.trim(),
+    category: category || "",
+    contact: contact || "",
+    cost: Math.max(0, Number(cost) || 0),
+    status: status || "inquired",
+    notes: notes || "",
+    createdAt: new Date().toISOString(),
+  };
+  await c.env.DB.prepare(
+    "INSERT INTO vendors (id,coupleId,name,category,contact,cost,status,notes,createdAt) VALUES (?,?,?,?,?,?,?,?,?)"
+  )
+    .bind(vendor.id, coupleId, vendor.name, vendor.category, vendor.contact, vendor.cost, vendor.status, vendor.notes, vendor.createdAt)
+    .run();
+  return c.json(vendor, 201);
+});
+
+// Keeps a vendor's "Paid" status mirrored into an Uncategorized budget
+// expense: marking paid creates it (name + cost, MYR since vendor cost is
+// always entered in RM), editing name/cost while still paid keeps it in
+// sync, and un-marking paid removes it again so nothing stale is left
+// behind. The link is soft (sourceVendorId) — if the user deletes the
+// budget line manually, later vendor edits just won't recreate it.
+async function syncVendorBudgetLink(db, coupleId, vendorId, name, cost, wasPaid, isPaid, wasName, wasCost) {
+  const linked = await db.prepare("SELECT id FROM budget_items WHERE sourceVendorId = ?").bind(vendorId).first();
+
+  if (!wasPaid && isPaid) {
+    if (linked) {
+      await db.prepare("UPDATE budget_items SET item=?, estimated=?, actual=?, paid=1 WHERE id=?")
+        .bind(name, cost, cost, linked.id)
+        .run();
+    } else {
+      await db.prepare(
+        "INSERT INTO budget_items (id,coupleId,item,category,currency,estimated,actual,paid,createdAt,sourceVendorId) VALUES (?,?,?,?,?,?,?,1,?,?)"
+      )
+        .bind(crypto.randomUUID(), coupleId, name, "", "MYR", cost, cost, new Date().toISOString(), vendorId)
+        .run();
+    }
+  } else if (wasPaid && !isPaid) {
+    if (linked) await db.prepare("DELETE FROM budget_items WHERE id = ?").bind(linked.id).run();
+  } else if (wasPaid && isPaid && linked && (name !== wasName || cost !== wasCost)) {
+    await db.prepare("UPDATE budget_items SET item=?, estimated=?, actual=? WHERE id=?")
+      .bind(name, cost, cost, linked.id)
+      .run();
+  }
+}
+
+app.put("/vendors/:id", async (c) => {
+  const coupleId = c.get("coupleId");
+  const id = c.req.param("id");
+  const body = await c.req.json();
+  const existing = await c.env.DB.prepare("SELECT * FROM vendors WHERE id = ? AND coupleId = ?").bind(id, coupleId).first();
+  if (!existing) return c.json({ error: "Vendor not found" }, 404);
+  const name = body.name !== undefined ? body.name : existing.name;
+  const category = body.category !== undefined ? body.category : existing.category;
+  const contact = body.contact !== undefined ? body.contact : existing.contact;
+  const cost = body.cost !== undefined ? Math.max(0, Number(body.cost) || 0) : existing.cost;
+  const status = body.status !== undefined ? body.status : existing.status;
+  const notes = body.notes !== undefined ? body.notes : existing.notes;
+  await c.env.DB.prepare("UPDATE vendors SET name=?,category=?,contact=?,cost=?,status=?,notes=? WHERE id=?")
+    .bind(name, category, contact, cost, status, notes, id)
+    .run();
+  await syncVendorBudgetLink(c.env.DB, coupleId, id, name, cost, existing.status === "paid", status === "paid", existing.name, existing.cost);
+  return c.json({ id, name, category, contact, cost, status, notes, createdAt: existing.createdAt });
+});
+
+app.delete("/vendors/:id", async (c) => {
+  const coupleId = c.get("coupleId");
+  const id = c.req.param("id");
+  const existing = await c.env.DB.prepare("SELECT id FROM vendors WHERE id = ? AND coupleId = ?").bind(id, coupleId).first();
+  if (!existing) return c.json({ error: "Vendor not found" }, 404);
+  await c.env.DB.prepare("DELETE FROM vendors WHERE id = ?").bind(id).run();
+  await c.env.DB.prepare("DELETE FROM budget_items WHERE sourceVendorId = ?").bind(id).run();
+  return c.body(null, 204);
+});
+
+export const onRequest = handle(app);
