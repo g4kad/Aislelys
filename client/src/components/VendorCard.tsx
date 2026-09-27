@@ -1,15 +1,17 @@
 import { useState } from "react";
-import type { Vendor, VendorCategory } from "../types";
+import type { BudgetCategory, Currency, Vendor, VendorCategory } from "../types";
 import { IconChevronRight, IconTrash } from "./Icons";
 import Dropdown from "./Dropdown";
-import { VENDOR_STATUSES } from "../constants";
+import { VENDOR_STATUSES, CURRENCIES } from "../constants";
+import { formatMoney } from "../money";
 
 type Props = {
   vendor: Vendor;
   categories: VendorCategory[];
+  budgetCategories: BudgetCategory[];
   color?: string;
   defaultExpanded?: boolean;
-  onUpdate: (patch: Partial<Pick<Vendor, "name" | "category" | "contact" | "cost" | "status" | "notes">>) => void;
+  onUpdate: (patch: Partial<Pick<Vendor, "name" | "category" | "contact" | "cost" | "status" | "notes" | "currency" | "budgetCategory">>) => void;
   onDelete: () => void;
 };
 
@@ -17,7 +19,15 @@ const STATUS_LABEL: Record<string, string> = Object.fromEntries(
   VENDOR_STATUSES.map((s) => [s.value, s.label])
 );
 
-export default function VendorCard({ vendor, categories, color, defaultExpanded = false, onUpdate, onDelete }: Props) {
+export default function VendorCard({
+  vendor,
+  categories,
+  budgetCategories,
+  color,
+  defaultExpanded = false,
+  onUpdate,
+  onDelete,
+}: Props) {
   const [expanded, setExpanded] = useState(defaultExpanded);
   const [editing, setEditing] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -50,7 +60,16 @@ export default function VendorCard({ vendor, categories, color, defaultExpanded 
 
           <div className="view-block">
             <span className="view-label">Cost</span>
-            <p className="notes-text">RM {vendor.cost.toLocaleString()}</p>
+            <p className="notes-text">{formatMoney(vendor.cost, vendor.currency)}</p>
+          </div>
+
+          <div className="view-block">
+            <span className="view-label">Budget</span>
+            <p className="notes-text">
+              {vendor.status === "inquired"
+                ? "Added to your budget once booked"
+                : `On your budget · ${vendor.budgetCategory || "Uncategorized"}`}
+            </p>
           </div>
 
           <div className="view-block">
@@ -98,12 +117,35 @@ export default function VendorCard({ vendor, categories, color, defaultExpanded 
               <input type="text" value={vendor.contact} onChange={(e) => onUpdate({ contact: e.target.value })} />
             </label>
             <label>
-              Cost (RM)
+              Cost
               <input
                 type="number"
                 min={0}
                 value={vendor.cost}
                 onChange={(e) => onUpdate({ cost: Math.max(0, Number(e.target.value) || 0) })}
+              />
+            </label>
+          </div>
+
+          <div className="field-row">
+            <label>
+              Currency
+              <Dropdown
+                value={vendor.currency}
+                onChange={(v) => onUpdate({ currency: v as Currency })}
+                options={CURRENCIES}
+              />
+            </label>
+            <label>
+              Budget category
+              <Dropdown
+                value={vendor.budgetCategory}
+                onChange={(v) => onUpdate({ budgetCategory: v })}
+                options={[
+                  { value: "", label: "Uncategorized" },
+                  ...budgetCategories.map((b) => ({ value: b.title, label: b.title })),
+                ]}
+                className="category-dropdown"
               />
             </label>
           </div>

@@ -1135,6 +1135,9 @@ app.put("/budget-items/:id", async (c) => {
   await c.env.DB.prepare("UPDATE budget_items SET item=?,category=?,currency=?,estimated=?,actual=?,paid=? WHERE id=?")
     .bind(item, category, currency, estimated, actual, paid ? 1 : 0, id)
     .run();
+  if (existing.sourceVendorId) {
+    await syncBudgetItemToVendor(c.env.DB, coupleId, existing.sourceVendorId, { item, category, currency, actual, paid });
+  }
 
   if (body.paid !== undefined && paid !== !!existing.paid) {
     if (paid) {
@@ -1148,6 +1151,20 @@ app.put("/budget-items/:id", async (c) => {
 
   return c.json({ id, item, category, currency, estimated, actual, paid, createdAt: existing.createdAt });
 });
+
+// The Budget-page half of the vendor <-> budget link (see syncVendorBudgetLink):
+// a vendor-linked line's name, category, currency, actual and paid status are
+// written back to the vendor. Unticking paid moves a Paid vendor back to
+// Booked, so it stays on the budget.
+async function syncBudgetItemToVendor(db, coupleId, vendorId, line) {
+  const vendor = await db.prepare("SELECT status FROM vendors WHERE id = ? AND coupleId = ?").bind(vendorId, coupleId).first();
+  if (!vendor) return;
+  const status = line.paid ? "paid" : vendor.status === "paid" ? "booked" : vendor.status;
+  await db
+    .prepare("UPDATE vendors SET name=?, budgetCategory=?, currency=?, cost=?, status=? WHERE id=?")
+    .bind(line.item, line.category, line.currency, line.actual, status, vendorId)
+    .run();
+}
 
 app.delete("/budget-items/:id", async (c) => {
   const coupleId = c.get("coupleId");
@@ -1295,9 +1312,13 @@ app.get("/vendors", async (c) => {
   return c.json(results);
 });
 
+function toCurrency(value) {
+  return value === "SGD" ? "SGD" : "MYR";
+}
+
 app.post("/vendors", async (c) => {
   const coupleId = c.get("coupleId");
-  const { name, category, contact, cost, status, notes } = await c.req.json();
+  const { name, category, contact, cost, status, notes, currency, budgetCategory } = await c.req.json();
   if (!name || !name.trim()) return c.json({ error: "name is required" }, 400);
   const vendor = {
     id: crypto.randomUUID(),
@@ -1308,41 +1329,77 @@ app.post("/vendors", async (c) => {
     status: status || "inquired",
     notes: notes || "",
     createdAt: new Date().toISOString(),
+    currency: toCurrency(currency),
+    budgetCategory: budgetCategory || "",
   };
   await c.env.DB.prepare(
-    "INSERT INTO vendors (id,coupleId,name,category,contact,cost,status,notes,createdAt) VALUES (?,?,?,?,?,?,?,?,?)"
+    "INSERT INTO vendors (id,coupleId,name,category,contact,cost,status,notes,createdAt,currency,budgetCategory) VALUES (?,?,?,?,?,?,?,?,?,?,?)"
   )
-    .bind(vendor.id, coupleId, vendor.name, vendor.category, vendor.contact, vendor.cost, vendor.status, vendor.notes, vendor.createdAt)
+    .bind(
+      vendor.id,
+      coupleId,
+      vendor.name,
+      vendor.category,
+      vendor.contact,
+      vendor.cost,
+      vendor.status,
+      vendor.notes,
+      vendor.createdAt,
+      vendor.currency,
+      vendor.budgetCategory
+    )
     .run();
+  await syncVendorBudgetLink(c.env.DB, coupleId, null, vendor);
   return c.json(vendor, 201);
 });
 
-// Keeps a vendor's "Paid" status mirrored into an Uncategorized budget
-// expense: marking paid creates it (name + cost, MYR since vendor cost is
-// always entered in RM), editing name/cost while still paid keeps it in
-// sync, and un-marking paid removes it again so nothing stale is left
-// behind. The link is soft (sourceVendorId) — if the user deletes the
-// budget line manually, later vendor edits just won't recreate it.
-async function syncVendorBudgetLink(db, coupleId, vendorId, name, cost, wasPaid, isPaid, wasName, wasCost) {
-  const linked = await db.prepare("SELECT id FROM budget_items WHERE sourceVendorId = ?").bind(vendorId).first();
+// A vendor sits on the budget while it's Booked or Paid, as a budget line
+// linked back to it (sourceVendorId): name, budget category, currency, cost
+// (the line's "actual") and paid status all mirror the vendor. The line's
+// "estimated" starts at the cost and keeps following it, unless it's been set
+// to something different on the Budget page. Going back to Inquired removes
+// the line. The link is soft — if the line is deleted on the Budget page,
+// later vendor edits won't recreate it until the vendor is booked again.
+// Edits made on the Budget page flow back via syncBudgetItemToVendor.
+const VENDOR_BUDGET_STATUSES = new Set(["booked", "paid"]);
 
-  if (!wasPaid && isPaid) {
-    if (linked) {
-      await db.prepare("UPDATE budget_items SET item=?, estimated=?, actual=?, paid=1 WHERE id=?")
-        .bind(name, cost, cost, linked.id)
-        .run();
-    } else {
-      await db.prepare(
-        "INSERT INTO budget_items (id,coupleId,item,category,currency,estimated,actual,paid,createdAt,sourceVendorId) VALUES (?,?,?,?,?,?,?,1,?,?)"
-      )
-        .bind(crypto.randomUUID(), coupleId, name, "", "MYR", cost, cost, new Date().toISOString(), vendorId)
-        .run();
-    }
-  } else if (wasPaid && !isPaid) {
+async function syncVendorBudgetLink(db, coupleId, before, after) {
+  const wasInBudget = !!before && VENDOR_BUDGET_STATUSES.has(before.status);
+  const isInBudget = VENDOR_BUDGET_STATUSES.has(after.status);
+  const linked = await db
+    .prepare("SELECT * FROM budget_items WHERE sourceVendorId = ? AND coupleId = ?")
+    .bind(after.id, coupleId)
+    .first();
+  const paid = after.status === "paid" ? 1 : 0;
+
+  if (!isInBudget) {
     if (linked) await db.prepare("DELETE FROM budget_items WHERE id = ?").bind(linked.id).run();
-  } else if (wasPaid && isPaid && linked && (name !== wasName || cost !== wasCost)) {
-    await db.prepare("UPDATE budget_items SET item=?, estimated=?, actual=? WHERE id=?")
-      .bind(name, cost, cost, linked.id)
+    return;
+  }
+
+  if (linked) {
+    const estimated = before && linked.estimated !== before.cost ? linked.estimated : after.cost;
+    await db
+      .prepare("UPDATE budget_items SET item=?, category=?, currency=?, estimated=?, actual=?, paid=? WHERE id=?")
+      .bind(after.name, after.budgetCategory, after.currency, estimated, after.cost, paid, linked.id)
+      .run();
+  } else if (!wasInBudget) {
+    await db
+      .prepare(
+        "INSERT INTO budget_items (id,coupleId,item,category,currency,estimated,actual,paid,createdAt,sourceVendorId) VALUES (?,?,?,?,?,?,?,?,?,?)"
+      )
+      .bind(
+        crypto.randomUUID(),
+        coupleId,
+        after.name,
+        after.budgetCategory,
+        after.currency,
+        after.cost,
+        after.cost,
+        paid,
+        new Date().toISOString(),
+        after.id
+      )
       .run();
   }
 }
@@ -1353,17 +1410,25 @@ app.put("/vendors/:id", async (c) => {
   const body = await c.req.json();
   const existing = await c.env.DB.prepare("SELECT * FROM vendors WHERE id = ? AND coupleId = ?").bind(id, coupleId).first();
   if (!existing) return c.json({ error: "Vendor not found" }, 404);
-  const name = body.name !== undefined ? body.name : existing.name;
-  const category = body.category !== undefined ? body.category : existing.category;
-  const contact = body.contact !== undefined ? body.contact : existing.contact;
-  const cost = body.cost !== undefined ? Math.max(0, Number(body.cost) || 0) : existing.cost;
-  const status = body.status !== undefined ? body.status : existing.status;
-  const notes = body.notes !== undefined ? body.notes : existing.notes;
-  await c.env.DB.prepare("UPDATE vendors SET name=?,category=?,contact=?,cost=?,status=?,notes=? WHERE id=?")
-    .bind(name, category, contact, cost, status, notes, id)
+  const vendor = {
+    id,
+    name: body.name !== undefined ? body.name : existing.name,
+    category: body.category !== undefined ? body.category : existing.category,
+    contact: body.contact !== undefined ? body.contact : existing.contact,
+    cost: body.cost !== undefined ? Math.max(0, Number(body.cost) || 0) : existing.cost,
+    status: body.status !== undefined ? body.status : existing.status,
+    notes: body.notes !== undefined ? body.notes : existing.notes,
+    createdAt: existing.createdAt,
+    currency: body.currency !== undefined ? toCurrency(body.currency) : existing.currency,
+    budgetCategory: body.budgetCategory !== undefined ? body.budgetCategory : existing.budgetCategory,
+  };
+  await c.env.DB.prepare(
+    "UPDATE vendors SET name=?,category=?,contact=?,cost=?,status=?,notes=?,currency=?,budgetCategory=? WHERE id=?"
+  )
+    .bind(vendor.name, vendor.category, vendor.contact, vendor.cost, vendor.status, vendor.notes, vendor.currency, vendor.budgetCategory, id)
     .run();
-  await syncVendorBudgetLink(c.env.DB, coupleId, id, name, cost, existing.status === "paid", status === "paid", existing.name, existing.cost);
-  return c.json({ id, name, category, contact, cost, status, notes, createdAt: existing.createdAt });
+  await syncVendorBudgetLink(c.env.DB, coupleId, existing, vendor);
+  return c.json(vendor);
 });
 
 app.delete("/vendors/:id", async (c) => {

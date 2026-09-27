@@ -2403,6 +2403,22 @@
   color: #fff;
 }
 
+.vendor-link-pill {
+  font-size: 0.675rem;
+  font-weight: 600;
+  border-radius: 999px;
+  padding: 2px 8px;
+  white-space: nowrap;
+  background: var(--surface-alt);
+  color: var(--text-muted);
+}
+
+.form-hint {
+  margin: 4px 0 0;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
 /* ---------- Responsive ---------- */
 
 @media (max-width: 860px) {

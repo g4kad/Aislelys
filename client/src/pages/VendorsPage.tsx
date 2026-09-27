@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { Vendor, VendorCategory } from "../types";
+import type { BudgetCategory, Currency, Vendor, VendorCategory } from "../types";
 import * as api from "../api";
 import VendorsBoard from "../components/VendorsBoard";
 import VendorFormModal from "../components/VendorFormModal";
@@ -8,15 +8,17 @@ import { SECTION_COLORS } from "../palette";
 export default function VendorsPage() {
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [categories, setCategories] = useState<VendorCategory[]>([]);
+  const [budgetCategories, setBudgetCategories] = useState<BudgetCategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
 
   useEffect(() => {
-    Promise.all([api.getVendors(), api.getVendorCategories()])
-      .then(([v, c]) => {
+    Promise.all([api.getVendors(), api.getVendorCategories(), api.getBudgetCategories()])
+      .then(([v, c, b]) => {
         setVendors(v);
         setCategories(c);
+        setBudgetCategories(b);
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
@@ -29,6 +31,8 @@ export default function VendorsPage() {
     cost: number;
     status: string;
     notes: string;
+    currency: Currency;
+    budgetCategory: string;
   }) {
     try {
       const created = await api.createVendor(data);
@@ -38,7 +42,7 @@ export default function VendorsPage() {
     }
   }
 
-  async function handleUpdate(id: string, patch: Partial<Pick<Vendor, "name" | "category" | "contact" | "cost" | "status" | "notes">>) {
+  async function handleUpdate(id: string, patch: Partial<Pick<Vendor, "name" | "category" | "contact" | "cost" | "status" | "notes" | "currency" | "budgetCategory">>) {
     setVendors((prev) => prev.map((v) => (v.id === id ? { ...v, ...patch } : v)));
     try {
       await api.updateVendor(id, patch);
@@ -97,7 +101,7 @@ export default function VendorsPage() {
 
       <p className="page-subtitle">
         Keep track of every vendor — venue, catering, photography, and more — along with their contact
-        info, cost, and booking status.
+        info, cost, and booking status. Booked and paid vendors show up on your budget automatically.
       </p>
 
       <div className="btn-row" style={{ marginBottom: 16 }}>
@@ -109,6 +113,7 @@ export default function VendorsPage() {
       <VendorsBoard
         vendors={vendors}
         categories={categories}
+        budgetCategories={budgetCategories}
         onUpdate={handleUpdate}
         onDelete={handleDelete}
         onCreateCategory={handleCreateCategory}
@@ -119,6 +124,7 @@ export default function VendorsPage() {
       {showAddModal && (
         <VendorFormModal
           categories={categories}
+          budgetCategories={budgetCategories}
           onClose={() => setShowAddModal(false)}
           onCreate={handleCreate}
           onCreateCategory={handleCreateCategory}

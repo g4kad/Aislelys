@@ -36,6 +36,7 @@ export default function BudgetItemCard({ budgetItem, categories, mode, color, de
       <button className="card-header" onClick={toggleExpanded} aria-expanded={expanded}>
         <span className={`chevron ${expanded ? "open" : ""}`}><IconChevronRight /></span>
         <span className="card-title">{budgetItem.item}</span>
+        {budgetItem.sourceVendorId && <span className="vendor-link-pill">Vendor</span>}
         <span className={`paid-pill ${budgetItem.paid ? "paid" : ""}`}>{budgetItem.paid ? "Paid" : "Unpaid"}</span>
       </button>
 
@@ -105,10 +106,17 @@ export default function BudgetItemCard({ budgetItem, categories, mode, color, de
             Paid
           </label>
 
+          {budgetItem.sourceVendorId && (
+            <p className="form-hint">
+              Linked to a vendor — changes to the name, category, currency, actual cost and paid status also update
+              it on the Vendors page.
+            </p>
+          )}
+
           <div className="card-footer">
             {confirmDelete ? (
               <span className="confirm-row">
-                Delete this expense?
+                {budgetItem.sourceVendorId ? "Remove from budget? (The vendor stays.)" : "Delete this expense?"}
                 <button className="btn small danger" onClick={onDelete}>Delete</button>
                 <button className="btn small ghost" onClick={() => setConfirmDelete(false)}>Cancel</button>
               </span>

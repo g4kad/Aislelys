@@ -167,7 +167,9 @@ CREATE TABLE IF NOT EXISTS vendors (
   cost REAL NOT NULL DEFAULT 0,
   status TEXT NOT NULL DEFAULT 'inquired',
   notes TEXT NOT NULL DEFAULT '',
-  createdAt TEXT NOT NULL
+  createdAt TEXT NOT NULL,
+  currency TEXT NOT NULL DEFAULT 'MYR',
+  budgetCategory TEXT NOT NULL DEFAULT ''
 );
 
 CREATE TABLE IF NOT EXISTS todos (

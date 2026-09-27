@@ -119,6 +119,7 @@ export type BudgetItem = {
   actual: number;
   paid: boolean;
   createdAt: string;
+  sourceVendorId?: string | null; // set when this line mirrors a vendor
 };
 
 export type ExchangeRate = {
@@ -145,4 +146,6 @@ export type Vendor = {
   status: VendorStatus;
   notes: string;
   createdAt: string;
+  currency: Currency;
+  budgetCategory: string; // budget category title; "" = Uncategorized
 };

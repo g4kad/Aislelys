@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import type { Vendor, VendorCategory } from "../types";
+import type { BudgetCategory, Vendor, VendorCategory } from "../types";
 import VendorCard from "./VendorCard";
 import VendorCategoryManagerModal from "./VendorCategoryManagerModal";
 import { IconChevronRight } from "./Icons";
@@ -7,7 +7,8 @@ import { IconChevronRight } from "./Icons";
 type Props = {
   vendors: Vendor[];
   categories: VendorCategory[];
-  onUpdate: (id: string, patch: Partial<Pick<Vendor, "name" | "category" | "contact" | "cost" | "status" | "notes">>) => void;
+  budgetCategories: BudgetCategory[];
+  onUpdate: (id: string, patch: Partial<Pick<Vendor, "name" | "category" | "contact" | "cost" | "status" | "notes" | "currency" | "budgetCategory">>) => void;
   onDelete: (id: string) => void;
   onCreateCategory: (title: string, color: string) => void;
   onUpdateCategory: (id: string, patch: Partial<Pick<VendorCategory, "title" | "color">>) => void;
@@ -17,6 +18,7 @@ type Props = {
 export default function VendorsBoard({
   vendors,
   categories,
+  budgetCategories,
   onUpdate,
   onDelete,
   onCreateCategory,
@@ -79,6 +81,7 @@ export default function VendorsBoard({
                         key={vendor.id}
                         vendor={vendor}
                         categories={categories}
+                        budgetCategories={budgetCategories}
                         color={category.color}
                         onUpdate={(patch) => onUpdate(vendor.id, patch)}
                         onDelete={() => onDelete(vendor.id)}
@@ -111,6 +114,7 @@ export default function VendorsBoard({
                     key={vendor.id}
                     vendor={vendor}
                     categories={categories}
+                    budgetCategories={budgetCategories}
                     color="#ede2cc"
                     onUpdate={(patch) => onUpdate(vendor.id, patch)}
                     onDelete={() => onDelete(vendor.id)}

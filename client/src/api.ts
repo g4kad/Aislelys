@@ -17,6 +17,7 @@ import type {
   WeddingDate,
   User,
   Notification,
+  Currency,
 } from "./types";
 
 const BASE = "/api";
@@ -287,6 +288,8 @@ export const createVendor = (data: {
   cost: number;
   status: string;
   notes: string;
+  currency: Currency;
+  budgetCategory: string;
 }) =>
   request<Vendor>("/vendors", {
     method: "POST",
@@ -294,7 +297,7 @@ export const createVendor = (data: {
   });
 export const updateVendor = (
   id: string,
-  patch: Partial<Pick<Vendor, "name" | "category" | "contact" | "cost" | "status" | "notes">>
+  patch: Partial<Pick<Vendor, "name" | "category" | "contact" | "cost" | "status" | "notes" | "currency" | "budgetCategory">>
 ) =>
   request<Vendor>(`/vendors/${id}`, {
     method: "PUT",

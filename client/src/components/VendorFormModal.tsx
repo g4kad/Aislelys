@@ -1,12 +1,13 @@
 import { useState } from "react";
-import type { VendorCategory } from "../types";
+import type { BudgetCategory, Currency, VendorCategory } from "../types";
 import Modal from "./Modal";
 import Dropdown from "./Dropdown";
-import { VENDOR_STATUSES, GENERIC_VENDOR_CATEGORIES } from "../constants";
+import { VENDOR_STATUSES, GENERIC_VENDOR_CATEGORIES, CURRENCIES } from "../constants";
 import { useIsMobile } from "../useIsMobile";
 
 type Props = {
   categories: VendorCategory[];
+  budgetCategories: BudgetCategory[];
   onClose: () => void;
   onCreate: (data: {
     name: string;
@@ -15,16 +16,29 @@ type Props = {
     cost: number;
     status: string;
     notes: string;
+    currency: Currency;
+    budgetCategory: string;
   }) => void;
   onCreateCategory: (title: string) => Promise<VendorCategory>;
 };
 
-export default function VendorFormModal({ categories, onClose, onCreate, onCreateCategory }: Props) {
+// Suggest the budget category with the same name as the vendor category, if there is one.
+function matchingBudgetCategory(budgetCategories: BudgetCategory[], vendorCategory: string): string {
+  const match = budgetCategories.find((b) => b.title.trim().toLowerCase() === vendorCategory.trim().toLowerCase());
+  return match?.title ?? "";
+}
+
+export default function VendorFormModal({ categories, budgetCategories, onClose, onCreate, onCreateCategory }: Props) {
   const isMobile = useIsMobile();
   const [name, setName] = useState("");
   const [category, setCategory] = useState(categories[0]?.title ?? "");
   const [contact, setContact] = useState("");
   const [cost, setCost] = useState("");
+  const [currency, setCurrency] = useState<Currency>("MYR");
+  const [budgetCategory, setBudgetCategory] = useState(() =>
+    matchingBudgetCategory(budgetCategories, categories[0]?.title ?? "")
+  );
+  const [budgetCategoryTouched, setBudgetCategoryTouched] = useState(false);
   const [status, setStatus] = useState<string>("inquired");
   const [notes, setNotes] = useState("");
   const [creatingCategory, setCreatingCategory] = useState(false);
@@ -33,18 +47,23 @@ export default function VendorFormModal({ categories, onClose, onCreate, onCreat
   async function handleAddCategory() {
     if (!newCategoryTitle.trim()) return;
     const created = await onCreateCategory(newCategoryTitle.trim());
-    setCategory(created.title);
+    applyCategory(created.title);
     setNewCategoryTitle("");
     setCreatingCategory(false);
+  }
+
+  function applyCategory(title: string) {
+    setCategory(title);
+    if (!budgetCategoryTouched) setBudgetCategory(matchingBudgetCategory(budgetCategories, title));
   }
 
   async function handleCategoryChange(value: string) {
     const alreadyExists = categories.some((c) => c.title === value);
     if (!alreadyExists && value) {
       const created = await onCreateCategory(value);
-      setCategory(created.title);
+      applyCategory(created.title);
     } else {
-      setCategory(value);
+      applyCategory(value);
     }
   }
 
@@ -65,6 +84,8 @@ export default function VendorFormModal({ categories, onClose, onCreate, onCreat
       cost: Math.max(0, Number(cost) || 0),
       status,
       notes: notes.trim(),
+      currency,
+      budgetCategory,
     });
     onClose();
   }
@@ -140,7 +161,7 @@ export default function VendorFormModal({ categories, onClose, onCreate, onCreat
             />
           </label>
           <label>
-            Cost (RM)
+            Cost
             <input
               type="number"
               min={0}
@@ -150,6 +171,29 @@ export default function VendorFormModal({ categories, onClose, onCreate, onCreat
             />
           </label>
         </div>
+
+        <div className="field-row">
+          <label>
+            Currency
+            <Dropdown value={currency} onChange={(v) => setCurrency(v as Currency)} options={CURRENCIES} />
+          </label>
+          <label>
+            Budget category
+            <Dropdown
+              value={budgetCategory}
+              onChange={(v) => {
+                setBudgetCategory(v);
+                setBudgetCategoryTouched(true);
+              }}
+              options={[
+                { value: "", label: "Uncategorized" },
+                ...budgetCategories.map((b) => ({ value: b.title, label: b.title })),
+              ]}
+              className="category-dropdown"
+            />
+          </label>
+        </div>
+        <p className="form-hint">Booked and paid vendors are added to your budget automatically.</p>
 
         <label>
           Notes
