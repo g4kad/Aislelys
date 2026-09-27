@@ -7,7 +7,7 @@ import { formatSgd, toSgd } from "../money";
 import { SECTION_COLORS } from "../palette";
 
 export default function BudgetPage() {
-  const [mode, setMode] = useState<"estimated" | "actual">("estimated");
+  const [mode, setMode] = useState<"estimated" | "actual">("actual");
   const [total, setTotal] = useState(0);
   const [totalInput, setTotalInput] = useState("0");
   const [savingsInput, setSavingsInput] = useState("0");
@@ -150,17 +150,17 @@ export default function BudgetPage() {
         <div className="btn-row budget-mode-toggle">
           <button
             type="button"
-            className={`btn small ${mode === "estimated" ? "primary" : "ghost"}`}
-            onClick={() => setMode("estimated")}
-          >
-            Estimated
-          </button>
-          <button
-            type="button"
             className={`btn small ${mode === "actual" ? "primary" : "ghost"}`}
             onClick={() => setMode("actual")}
           >
             Actual
+          </button>
+          <button
+            type="button"
+            className={`btn small ${mode === "estimated" ? "primary" : "ghost"}`}
+            onClick={() => setMode("estimated")}
+          >
+            Estimated
           </button>
         </div>
       </div>
