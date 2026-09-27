@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import type { BudgetCategory, BudgetItem, Currency } from "../types";
+import type { BudgetCategory, BudgetItem, Currency, ExtraCost } from "../types";
 import * as api from "../api";
 import BudgetBoard from "../components/BudgetBoard";
 import BudgetFormModal from "../components/BudgetFormModal";
-import { formatSgd, toSgd } from "../money";
+import { budgetLineAmount, formatSgd, toSgd } from "../money";
 import { SECTION_COLORS } from "../palette";
 
 export default function BudgetPage() {
@@ -64,8 +64,8 @@ export default function BudgetPage() {
 
   const { estimatedSum, actualSum } = useMemo(
     () => ({
-      estimatedSum: items.reduce((sum, i) => sum + toSgd(i.estimated, i.currency, myrToSgd), 0),
-      actualSum: items.reduce((sum, i) => sum + toSgd(i.actual, i.currency, myrToSgd), 0),
+      estimatedSum: items.reduce((sum, i) => sum + toSgd(budgetLineAmount(i, "estimated"), i.currency, myrToSgd), 0),
+      actualSum: items.reduce((sum, i) => sum + toSgd(budgetLineAmount(i, "actual"), i.currency, myrToSgd), 0),
     }),
     [items, myrToSgd]
   );
@@ -102,6 +102,7 @@ export default function BudgetPage() {
     actual: number;
     paid: boolean;
     notes: string;
+    extras: ExtraCost[];
   }) {
     try {
       const created = await api.createBudgetItem(data);
@@ -117,7 +118,7 @@ export default function BudgetPage() {
 
   async function handleUpdate(
     id: string,
-    patch: Partial<Pick<BudgetItem, "item" | "category" | "currency" | "estimated" | "actual" | "paid" | "downpayment" | "notes">>
+    patch: Partial<Pick<BudgetItem, "item" | "category" | "currency" | "estimated" | "actual" | "paid" | "downpayment" | "notes" | "extras">>
   ) {
     setItems((prev) => prev.map((i) => (i.id === id ? { ...i, ...patch } : i)));
     try {

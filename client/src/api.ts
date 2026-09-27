@@ -18,6 +18,7 @@ import type {
   User,
   Notification,
   Currency,
+  ExtraCost,
 } from "./types";
 
 const BASE = "/api";
@@ -224,6 +225,7 @@ export const createBudgetItem = (data: {
   actual: number;
   paid: boolean;
   notes: string;
+  extras: ExtraCost[];
 }) =>
   request<BudgetItem>("/budget-items", {
     method: "POST",
@@ -231,7 +233,7 @@ export const createBudgetItem = (data: {
   });
 export const updateBudgetItem = (
   id: string,
-  patch: Partial<Pick<BudgetItem, "item" | "category" | "currency" | "estimated" | "actual" | "paid" | "downpayment" | "notes">>
+  patch: Partial<Pick<BudgetItem, "item" | "category" | "currency" | "estimated" | "actual" | "paid" | "downpayment" | "notes" | "extras">>
 ) =>
   request<BudgetItem>(`/budget-items/${id}`, {
     method: "PUT",
@@ -292,6 +294,7 @@ export const createVendor = (data: {
   currency: Currency;
   budgetCategory: string;
   downpayment: number;
+  extras: ExtraCost[];
 }) =>
   request<Vendor>("/vendors", {
     method: "POST",
@@ -299,7 +302,7 @@ export const createVendor = (data: {
   });
 export const updateVendor = (
   id: string,
-  patch: Partial<Pick<Vendor, "name" | "category" | "contact" | "cost" | "status" | "notes" | "currency" | "budgetCategory" | "downpayment">>
+  patch: Partial<Pick<Vendor, "name" | "category" | "contact" | "cost" | "status" | "notes" | "currency" | "budgetCategory" | "downpayment" | "extras">>
 ) =>
   request<Vendor>(`/vendors/${id}`, {
     method: "PUT",

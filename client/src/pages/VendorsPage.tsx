@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { BudgetCategory, Currency, Vendor, VendorCategory } from "../types";
+import type { BudgetCategory, Currency, ExtraCost, Vendor, VendorCategory } from "../types";
 import * as api from "../api";
 import VendorsBoard from "../components/VendorsBoard";
 import VendorFormModal from "../components/VendorFormModal";
@@ -34,6 +34,7 @@ export default function VendorsPage() {
     currency: Currency;
     budgetCategory: string;
     downpayment: number;
+    extras: ExtraCost[];
   }) {
     try {
       const created = await api.createVendor(data);
@@ -43,7 +44,7 @@ export default function VendorsPage() {
     }
   }
 
-  async function handleUpdate(id: string, patch: Partial<Pick<Vendor, "name" | "category" | "contact" | "cost" | "status" | "notes" | "currency" | "budgetCategory" | "downpayment">>) {
+  async function handleUpdate(id: string, patch: Partial<Pick<Vendor, "name" | "category" | "contact" | "cost" | "status" | "notes" | "currency" | "budgetCategory" | "downpayment" | "extras">>) {
     setVendors((prev) => prev.map((v) => (v.id === id ? { ...v, ...patch } : v)));
     try {
       await api.updateVendor(id, patch);

@@ -1,5 +1,6 @@
 import { useState } from "react";
-import type { BudgetCategory, Currency } from "../types";
+import type { BudgetCategory, Currency, ExtraCost } from "../types";
+import { ExtraCostsEditor } from "./ExtraCosts";
 import Modal from "./Modal";
 import Dropdown from "./Dropdown";
 import { CURRENCIES, GENERIC_BUDGET_CATEGORIES, PURCHASES_CATEGORY } from "../constants";
@@ -16,6 +17,7 @@ type Props = {
     actual: number;
     paid: boolean;
     notes: string;
+    extras: ExtraCost[];
   }) => void;
   onCreateCategory: (title: string) => Promise<BudgetCategory>;
 };
@@ -29,6 +31,7 @@ export default function BudgetFormModal({ categories, onClose, onCreate, onCreat
   const [actual, setActual] = useState("");
   const [paid, setPaid] = useState(false);
   const [notes, setNotes] = useState("");
+  const [extras, setExtras] = useState<ExtraCost[]>([]);
   const [creatingCategory, setCreatingCategory] = useState(false);
   const [newCategoryTitle, setNewCategoryTitle] = useState("");
 
@@ -70,6 +73,7 @@ export default function BudgetFormModal({ categories, onClose, onCreate, onCreat
       actual: Math.max(0, Number(actual) || 0),
       paid,
       notes: notes.trim(),
+      extras,
     });
     onClose();
   }
@@ -156,6 +160,8 @@ export default function BudgetFormModal({ categories, onClose, onCreate, onCreat
             />
           </label>
         </div>
+
+        <ExtraCostsEditor extras={extras} onChange={setExtras} />
 
         <label>
           Notes

@@ -8,7 +8,7 @@ type Props = {
   vendors: Vendor[];
   categories: VendorCategory[];
   budgetCategories: BudgetCategory[];
-  onUpdate: (id: string, patch: Partial<Pick<Vendor, "name" | "category" | "contact" | "cost" | "status" | "notes" | "currency" | "budgetCategory" | "downpayment">>) => void;
+  onUpdate: (id: string, patch: Partial<Pick<Vendor, "name" | "category" | "contact" | "cost" | "status" | "notes" | "currency" | "budgetCategory" | "downpayment" | "extras">>) => void;
   onDelete: (id: string) => void;
   onCreateCategory: (title: string, color?: string) => Promise<VendorCategory>;
   onUpdateCategory: (id: string, patch: Partial<Pick<VendorCategory, "title" | "color">>) => void;

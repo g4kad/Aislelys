@@ -2,14 +2,14 @@ import { useMemo, useState } from "react";
 import type { BudgetCategory, BudgetItem } from "../types";
 import BudgetItemCard from "./BudgetItemCard";
 import BudgetCategoryManagerModal from "./BudgetCategoryManagerModal";
-import { formatSgd, toSgd } from "../money";
+import { budgetLineAmount, formatSgd, toSgd } from "../money";
 
 type Props = {
   items: BudgetItem[];
   categories: BudgetCategory[];
   myrToSgd: number;
   mode: "estimated" | "actual";
-  onUpdate: (id: string, patch: Partial<Pick<BudgetItem, "item" | "category" | "currency" | "estimated" | "actual" | "paid" | "downpayment" | "notes">>) => void;
+  onUpdate: (id: string, patch: Partial<Pick<BudgetItem, "item" | "category" | "currency" | "estimated" | "actual" | "paid" | "downpayment" | "notes" | "extras">>) => void;
   onDelete: (id: string) => void;
   onCreateCategory: (title: string, color: string) => void;
   onUpdateCategory: (id: string, patch: Partial<Pick<BudgetCategory, "title" | "color">>) => void;
@@ -44,7 +44,7 @@ export default function BudgetBoard({
   }, [items, categories]);
 
   function categorySgd(list: BudgetItem[]) {
-    return list.reduce((sum, i) => sum + toSgd(mode === "estimated" ? i.estimated : i.actual, i.currency, myrToSgd), 0);
+    return list.reduce((sum, i) => sum + toSgd(budgetLineAmount(i, mode), i.currency, myrToSgd), 0);
   }
 
   const subtotalLabel = mode === "estimated" ? "est." : "spent";

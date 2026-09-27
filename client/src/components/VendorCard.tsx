@@ -3,7 +3,8 @@ import type { BudgetCategory, Currency, Vendor, VendorCategory } from "../types"
 import { IconChevronRight, IconTrash } from "./Icons";
 import Dropdown from "./Dropdown";
 import { VENDOR_STATUSES, CURRENCIES } from "../constants";
-import { formatMoney } from "../money";
+import { extrasTotal, formatMoney } from "../money";
+import { CostBreakdown, ExtraCostsEditor } from "./ExtraCosts";
 import { vendorCategoryOptions } from "../categoryOptions";
 
 type Props = {
@@ -13,7 +14,7 @@ type Props = {
   color?: string;
   defaultExpanded?: boolean;
   onCreateCategory: (title: string, color?: string) => Promise<VendorCategory>;
-  onUpdate: (patch: Partial<Pick<Vendor, "name" | "category" | "contact" | "cost" | "status" | "notes" | "currency" | "budgetCategory" | "downpayment">>) => void;
+  onUpdate: (patch: Partial<Pick<Vendor, "name" | "category" | "contact" | "cost" | "status" | "notes" | "currency" | "budgetCategory" | "downpayment" | "extras">>) => void;
   onDelete: () => void;
 };
 
@@ -72,7 +73,7 @@ export default function VendorCard({
 
           <div className="view-block">
             <span className="view-label">Cost</span>
-            <p className="notes-text">{formatMoney(vendor.cost, vendor.currency)}</p>
+            <CostBreakdown baseLabel="Base cost" base={vendor.cost} extras={vendor.extras ?? []} currency={vendor.currency} />
           </div>
 
           {vendor.downpayment > 0 && (
@@ -83,7 +84,10 @@ export default function VendorCard({
                 {vendor.status !== "paid" && (
                   <span className="vendor-balance">
                     {" "}
-                    · {formatMoney(Math.max(0, vendor.cost - vendor.downpayment), vendor.currency)} left to pay
+                    · {formatMoney(
+                      Math.max(0, vendor.cost + extrasTotal(vendor.extras) - vendor.downpayment),
+                      vendor.currency
+                    )} left to pay
                   </span>
                 )}
               </p>
@@ -176,6 +180,8 @@ export default function VendorCard({
             </label>
           </div>
 
+
+          <ExtraCostsEditor extras={vendor.extras ?? []} onChange={(extras) => onUpdate({ extras })} />
 
           <div className="notes-block">
             <div className="notes-block-header">

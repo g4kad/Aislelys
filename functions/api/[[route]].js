@@ -1093,7 +1093,8 @@ app.get("/budget-items", async (c) => {
   const coupleId = c.get("coupleId");
   // vendor-linked lines also carry the vendor's downpayment, and share the vendor's notes
   const { results } = await c.env.DB.prepare(
-    `SELECT b.*, v.downpayment AS downpayment, COALESCE(v.notes, b.notes) AS notes
+    `SELECT b.*, v.downpayment AS downpayment, COALESCE(v.notes, b.notes) AS notes,
+       COALESCE(v.extras, b.extras) AS extras
      FROM budget_items b LEFT JOIN vendors v ON v.id = b.sourceVendorId AND v.coupleId = b.coupleId
      WHERE b.coupleId = ? ORDER BY b.createdAt DESC`
   )
@@ -1103,10 +1104,32 @@ app.get("/budget-items", async (c) => {
     results.map(({ downpayment, ...b }) => ({
       ...b,
       paid: !!b.paid,
+      extras: parseExtras(b.extras),
       ...(b.sourceVendorId && downpayment !== null ? { downpayment } : {}),
     }))
   );
 });
+
+// Extra costs on top of a vendor's / expense's base cost, stored as a JSON
+// array of {id, label, amount}. Anything malformed is dropped.
+function sanitizeExtras(value) {
+  if (!Array.isArray(value)) return [];
+  return value
+    .filter((e) => e && typeof e === "object")
+    .map((e) => ({
+      id: typeof e.id === "string" && e.id ? e.id : crypto.randomUUID(),
+      label: typeof e.label === "string" ? e.label : "",
+      amount: Math.max(0, Number(e.amount) || 0),
+    }));
+}
+
+function parseExtras(json) {
+  try {
+    return sanitizeExtras(JSON.parse(json || "[]"));
+  } catch {
+    return [];
+  }
+}
 
 // Budget-only category for day-to-day spending: its lines never become vendors,
 // and it's never mirrored into the vendor categories.
@@ -1117,7 +1140,7 @@ const PURCHASES_CATEGORY = "Purchases";
 // unless it's filed under Purchases.
 app.post("/budget-items", async (c) => {
   const coupleId = c.get("coupleId");
-  const { item, category, estimated, actual, paid, currency, notes } = await c.req.json();
+  const { item, category, estimated, actual, paid, currency, notes, extras } = await c.req.json();
   if (!item || !item.trim()) return c.json({ error: "item is required" }, 400);
   const row = {
     id: crypto.randomUUID(),
@@ -1130,6 +1153,7 @@ app.post("/budget-items", async (c) => {
     createdAt: new Date().toISOString(),
     sourceVendorId: null,
     notes: typeof notes === "string" ? notes : "",
+    extras: sanitizeExtras(extras),
   };
   await ensureCategory(c.env.DB, coupleId, "budget", row.category);
 
@@ -1137,7 +1161,7 @@ app.post("/budget-items", async (c) => {
     const vendorId = crypto.randomUUID();
     await ensureCategory(c.env.DB, coupleId, "vendor", row.category);
     await c.env.DB.prepare(
-      "INSERT INTO vendors (id,coupleId,name,category,contact,cost,status,notes,createdAt,currency,budgetCategory,downpayment) VALUES (?,?,?,?,?,?,?,?,?,?,?,0)"
+      "INSERT INTO vendors (id,coupleId,name,category,contact,cost,status,notes,createdAt,currency,budgetCategory,downpayment,extras) VALUES (?,?,?,?,?,?,?,?,?,?,?,0,?)"
     )
       .bind(
         vendorId,
@@ -1150,7 +1174,8 @@ app.post("/budget-items", async (c) => {
         row.notes,
         row.createdAt,
         row.currency,
-        row.category
+        row.category,
+        JSON.stringify(row.extras)
       )
       .run();
     row.sourceVendorId = vendorId;
@@ -1158,7 +1183,7 @@ app.post("/budget-items", async (c) => {
   }
 
   await c.env.DB.prepare(
-    "INSERT INTO budget_items (id,coupleId,item,category,currency,estimated,actual,paid,createdAt,sourceVendorId,notes) VALUES (?,?,?,?,?,?,?,?,?,?,?)"
+    "INSERT INTO budget_items (id,coupleId,item,category,currency,estimated,actual,paid,createdAt,sourceVendorId,notes,extras) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)"
   )
     .bind(
       row.id,
@@ -1171,7 +1196,8 @@ app.post("/budget-items", async (c) => {
       row.paid ? 1 : 0,
       row.createdAt,
       row.sourceVendorId,
-      row.sourceVendorId ? "" : row.notes
+      row.sourceVendorId ? "" : row.notes,
+      row.sourceVendorId ? "[]" : JSON.stringify(row.extras)
     )
     .run();
   return c.json(row, 201);
@@ -1205,8 +1231,20 @@ app.put("/budget-items/:id", async (c) => {
         .bind(body.notes, existing.sourceVendorId, coupleId)
         .run();
     }
-  } else if (typeof body.notes === "string") {
-    await c.env.DB.prepare("UPDATE budget_items SET notes = ? WHERE id = ?").bind(body.notes, id).run();
+    if (body.extras !== undefined) {
+      await c.env.DB.prepare("UPDATE vendors SET extras = ? WHERE id = ? AND coupleId = ?")
+        .bind(JSON.stringify(sanitizeExtras(body.extras)), existing.sourceVendorId, coupleId)
+        .run();
+    }
+  } else {
+    if (typeof body.notes === "string") {
+      await c.env.DB.prepare("UPDATE budget_items SET notes = ? WHERE id = ?").bind(body.notes, id).run();
+    }
+    if (body.extras !== undefined) {
+      await c.env.DB.prepare("UPDATE budget_items SET extras = ? WHERE id = ?")
+        .bind(JSON.stringify(sanitizeExtras(body.extras)), id)
+        .run();
+    }
   }
 
   if (body.paid !== undefined && paid !== !!existing.paid) {
@@ -1388,7 +1426,7 @@ app.delete("/vendor-categories/:id", async (c) => {
 app.get("/vendors", async (c) => {
   const coupleId = c.get("coupleId");
   const { results } = await c.env.DB.prepare("SELECT * FROM vendors WHERE coupleId = ? ORDER BY createdAt DESC").bind(coupleId).all();
-  return c.json(results);
+  return c.json(results.map((v) => ({ ...v, extras: parseExtras(v.extras) })));
 });
 
 function toCurrency(value) {
@@ -1397,7 +1435,7 @@ function toCurrency(value) {
 
 app.post("/vendors", async (c) => {
   const coupleId = c.get("coupleId");
-  const { name, category, contact, cost, status, notes, currency, downpayment } = await c.req.json();
+  const { name, category, contact, cost, status, notes, currency, downpayment, extras } = await c.req.json();
   if (!name || !name.trim()) return c.json({ error: "name is required" }, 400);
   const vendor = {
     id: crypto.randomUUID(),
@@ -1411,9 +1449,10 @@ app.post("/vendors", async (c) => {
     currency: toCurrency(currency),
     budgetCategory: category || "",
     downpayment: Math.max(0, Number(downpayment) || 0),
+    extras: sanitizeExtras(extras),
   };
   await c.env.DB.prepare(
-    "INSERT INTO vendors (id,coupleId,name,category,contact,cost,status,notes,createdAt,currency,budgetCategory,downpayment) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)"
+    "INSERT INTO vendors (id,coupleId,name,category,contact,cost,status,notes,createdAt,currency,budgetCategory,downpayment,extras) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)"
   )
     .bind(
       vendor.id,
@@ -1427,7 +1466,8 @@ app.post("/vendors", async (c) => {
       vendor.createdAt,
       vendor.currency,
       vendor.budgetCategory,
-      vendor.downpayment
+      vendor.downpayment,
+      JSON.stringify(vendor.extras)
     )
     .run();
   await syncVendorBudgetLink(c.env.DB, coupleId, null, vendor);
@@ -1523,10 +1563,11 @@ app.put("/vendors/:id", async (c) => {
     createdAt: existing.createdAt,
     currency: body.currency !== undefined ? toCurrency(body.currency) : existing.currency,
     downpayment: body.downpayment !== undefined ? Math.max(0, Number(body.downpayment) || 0) : existing.downpayment,
+    extras: body.extras !== undefined ? sanitizeExtras(body.extras) : parseExtras(existing.extras),
   };
   vendor.budgetCategory = vendor.category;
   await c.env.DB.prepare(
-    "UPDATE vendors SET name=?,category=?,contact=?,cost=?,status=?,notes=?,currency=?,budgetCategory=?,downpayment=? WHERE id=?"
+    "UPDATE vendors SET name=?,category=?,contact=?,cost=?,status=?,notes=?,currency=?,budgetCategory=?,downpayment=?,extras=? WHERE id=?"
   )
     .bind(
       vendor.name,
@@ -1538,6 +1579,7 @@ app.put("/vendors/:id", async (c) => {
       vendor.currency,
       vendor.budgetCategory,
       vendor.downpayment,
+      JSON.stringify(vendor.extras),
       id
     )
     .run();

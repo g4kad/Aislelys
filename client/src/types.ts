@@ -110,6 +110,12 @@ export type BudgetCategory = {
   createdAt: string;
 };
 
+export type ExtraCost = {
+  id: string;
+  label: string;
+  amount: number; // same currency as the vendor / expense it belongs to
+};
+
 export type BudgetItem = {
   id: string;
   item: string;
@@ -122,6 +128,7 @@ export type BudgetItem = {
   sourceVendorId?: string | null; // set when this line mirrors a vendor
   downpayment?: number; // the linked vendor's downpayment (vendor lines only)
   notes?: string; // shared with the vendor on vendor lines
+  extras?: ExtraCost[]; // shared with the vendor on vendor lines
 };
 
 export type ExchangeRate = {
@@ -151,4 +158,5 @@ export type Vendor = {
   currency: Currency;
   budgetCategory: string; // budget category title; "" = Uncategorized
   downpayment: number; // in the vendor's currency
+  extras: ExtraCost[];
 };

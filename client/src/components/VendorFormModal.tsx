@@ -1,5 +1,6 @@
 import { useState } from "react";
-import type { BudgetCategory, Currency, VendorCategory } from "../types";
+import type { BudgetCategory, Currency, ExtraCost, VendorCategory } from "../types";
+import { ExtraCostsEditor } from "./ExtraCosts";
 import Modal from "./Modal";
 import Dropdown from "./Dropdown";
 import { VENDOR_STATUSES, GENERIC_VENDOR_CATEGORIES, CURRENCIES } from "../constants";
@@ -20,6 +21,7 @@ type Props = {
     currency: Currency;
     budgetCategory: string;
     downpayment: number;
+    extras: ExtraCost[];
   }) => void;
   onCreateCategory: (title: string, color?: string) => Promise<VendorCategory>;
 };
@@ -32,6 +34,7 @@ export default function VendorFormModal({ categories, budgetCategories, onClose,
   const [cost, setCost] = useState("");
   const [currency, setCurrency] = useState<Currency>("MYR");
   const [downpayment, setDownpayment] = useState("");
+  const [extras, setExtras] = useState<ExtraCost[]>([]);
   const [status, setStatus] = useState<string>("inquired");
   const [notes, setNotes] = useState("");
   const [creatingCategory, setCreatingCategory] = useState(false);
@@ -72,6 +75,7 @@ export default function VendorFormModal({ categories, budgetCategories, onClose,
       currency,
       budgetCategory: category || "",
       downpayment: Math.max(0, Number(downpayment) || 0),
+      extras,
     });
     onClose();
   }
@@ -176,6 +180,8 @@ export default function VendorFormModal({ categories, budgetCategories, onClose,
         </div>
 
         <p className="form-hint">Vendors are added to your budget automatically from Downpayment onwards.</p>
+
+        <ExtraCostsEditor extras={extras} onChange={setExtras} />
 
         <label>
           Notes

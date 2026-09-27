@@ -1,4 +1,4 @@
-import type { Currency } from "./types";
+import type { BudgetItem, Currency, ExtraCost } from "./types";
 
 export const CURRENCY_SYMBOL: Record<Currency, string> = { SGD: "S$", MYR: "RM" };
 
@@ -11,6 +11,15 @@ export function formatMoney(amount: number, currency: Currency): string {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   })}`;
+}
+
+export function extrasTotal(extras: ExtraCost[] | undefined): number {
+  return (extras ?? []).reduce((sum, e) => sum + (e.amount || 0), 0);
+}
+
+// A budget line's amount for the current view, including any extra costs.
+export function budgetLineAmount(item: BudgetItem, mode: "estimated" | "actual"): number {
+  return (mode === "estimated" ? item.estimated : item.actual) + extrasTotal(item.extras);
 }
 
 export function formatSgd(amount: number): string {

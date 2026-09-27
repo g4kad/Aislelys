@@ -148,7 +148,8 @@ CREATE TABLE IF NOT EXISTS budget_items (
   paid INTEGER NOT NULL DEFAULT 0,
   createdAt TEXT NOT NULL,
   sourceVendorId TEXT,
-  notes TEXT NOT NULL DEFAULT ''
+  notes TEXT NOT NULL DEFAULT '',
+  extras TEXT NOT NULL DEFAULT '[]'
 );
 
 CREATE TABLE IF NOT EXISTS vendor_categories (
@@ -171,7 +172,8 @@ CREATE TABLE IF NOT EXISTS vendors (
   createdAt TEXT NOT NULL,
   currency TEXT NOT NULL DEFAULT 'MYR',
   budgetCategory TEXT NOT NULL DEFAULT '',
-  downpayment REAL NOT NULL DEFAULT 0
+  downpayment REAL NOT NULL DEFAULT 0,
+  extras TEXT NOT NULL DEFAULT '[]'
 );
 
 CREATE TABLE IF NOT EXISTS todos (

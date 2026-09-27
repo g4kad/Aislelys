@@ -3,7 +3,8 @@ import type { BudgetCategory, BudgetItem, Currency } from "../types";
 import { IconChevronRight, IconTrash } from "./Icons";
 import Dropdown from "./Dropdown";
 import { CURRENCIES, PURCHASES_CATEGORY } from "../constants";
-import { formatMoney } from "../money";
+import { extrasTotal, formatMoney } from "../money";
+import { CostBreakdown, ExtraCostsEditor } from "./ExtraCosts";
 
 type Props = {
   budgetItem: BudgetItem;
@@ -11,7 +12,7 @@ type Props = {
   mode: "estimated" | "actual";
   color?: string;
   defaultExpanded?: boolean;
-  onUpdate: (patch: Partial<Pick<BudgetItem, "item" | "category" | "currency" | "estimated" | "actual" | "paid" | "downpayment" | "notes">>) => void;
+  onUpdate: (patch: Partial<Pick<BudgetItem, "item" | "category" | "currency" | "estimated" | "actual" | "paid" | "downpayment" | "notes" | "extras">>) => void;
   onDelete: () => void;
 };
 
@@ -44,9 +45,12 @@ export default function BudgetItemCard({ budgetItem, categories, mode, color, de
         <div className="card-body card-view">
           <div className="view-block">
             <span className="view-label">{mode === "estimated" ? "Estimated" : "Actual"}</span>
-            <p className="notes-text">
-              {formatMoney(mode === "estimated" ? budgetItem.estimated : budgetItem.actual, budgetItem.currency)}
-            </p>
+            <CostBreakdown
+              baseLabel="Base cost"
+              base={mode === "estimated" ? budgetItem.estimated : budgetItem.actual}
+              extras={budgetItem.extras ?? []}
+              currency={budgetItem.currency}
+            />
           </div>
 
           {budgetItem.sourceVendorId && (budgetItem.downpayment ?? 0) > 0 && (
@@ -57,7 +61,10 @@ export default function BudgetItemCard({ budgetItem, categories, mode, color, de
                 {!budgetItem.paid && (
                   <span className="vendor-balance">
                     {" "}
-                    · {formatMoney(Math.max(0, budgetItem.actual - (budgetItem.downpayment ?? 0)), budgetItem.currency)} left
+                    · {formatMoney(
+                      Math.max(0, budgetItem.actual + extrasTotal(budgetItem.extras) - (budgetItem.downpayment ?? 0)),
+                      budgetItem.currency
+                    )} left
                     to pay
                   </span>
                 )}
@@ -140,6 +147,8 @@ export default function BudgetItemCard({ budgetItem, categories, mode, color, de
             </label>
           )}
 
+          <ExtraCostsEditor extras={budgetItem.extras ?? []} onChange={(extras) => onUpdate({ extras })} />
+
           <div className="notes-block">
             <div className="notes-block-header">
               <span>Notes</span>
@@ -159,8 +168,8 @@ export default function BudgetItemCard({ budgetItem, categories, mode, color, de
 
           {budgetItem.sourceVendorId && (
             <p className="form-hint">
-              Linked to a vendor — changes to the name, category, currency, actual cost, downpayment, notes and paid
-              status also update it on the Vendors page.
+              Linked to a vendor — changes to the name, category, currency, actual cost, downpayment, extra expenses,
+              notes and paid status also update it on the Vendors page.
             </p>
           )}
 

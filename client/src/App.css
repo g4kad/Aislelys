@@ -2693,3 +2693,73 @@
 .settings-status.error {
   color: var(--danger);
 }
+
+/* ---------- Extra costs (vendors + budget) ---------- */
+
+.extras-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.extras-editor .link-btn {
+  align-self: flex-start;
+}
+
+.extras-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.extras-row input {
+  font-size: 0.9rem;
+  color: var(--text);
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background-color: var(--surface);
+  min-width: 0;
+}
+
+.extras-label {
+  flex: 1;
+}
+
+.extras-amount {
+  width: 110px;
+  flex-shrink: 0;
+}
+
+.cost-breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 0.9rem;
+  max-width: 320px;
+}
+
+.cost-breakdown-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--text);
+}
+
+.cost-breakdown-row span:first-child {
+  color: var(--text-muted);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.cost-breakdown-row.total {
+  border-top: 1px solid var(--border);
+  margin-top: 4px;
+  padding-top: 4px;
+  font-weight: 600;
+}
+
+.cost-breakdown-row.total span:first-child {
+  color: var(--text);
+}
