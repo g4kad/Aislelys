@@ -7,6 +7,7 @@ import InspirationPage from "./pages/InspirationPage";
 import BudgetPage from "./pages/BudgetPage";
 import VendorsPage from "./pages/VendorsPage";
 import SignupPage from "./pages/SignupPage";
+import SettingsPage from "./pages/SettingsPage";
 import AuthGate, { LoginPage } from "./components/AuthGate";
 import UserMenu from "./components/UserMenu";
 import { IconCalendar, IconUsers, IconWallet, IconStore, IconImage } from "./components/Icons";
@@ -16,13 +17,7 @@ import { daysUntil, formatDateShort } from "./dateUtils";
 import { coupleTitle } from "./textUtils";
 import "./App.css";
 
-function WeddingCountdown() {
-  const [date, setDate] = useState<string | null>(null);
-
-  useEffect(() => {
-    api.getWeddingDate().then((d) => setDate(d.date)).catch(() => {});
-  }, []);
-
+function WeddingCountdown({ date }: { date: string | null }) {
   if (!date) return null;
 
   const days = daysUntil(date);
@@ -40,13 +35,20 @@ function AppShell() {
   const { user, logout, accounts } = useAuth();
   const { coupleId } = useParams<{ coupleId: string }>();
   const base = `/${coupleId}`;
+  // lives here (not in the countdown) so saving it on the settings page
+  // updates the header straight away
+  const [weddingDate, setWeddingDate] = useState<string | null>(null);
+
+  useEffect(() => {
+    api.getWeddingDate().then((d) => setWeddingDate(d.date)).catch(() => {});
+  }, []);
 
   return (
     <div className="app">
       <header className="app-header">
         <div className="app-title-block">
           <h1>{coupleTitle(accounts.map((a) => a.name))}</h1>
-          <WeddingCountdown />
+          <WeddingCountdown date={weddingDate} />
         </div>
         <nav className="app-nav">
           <NavLink to={base} end className={({ isActive }) => (isActive ? "active" : "")}>
@@ -71,7 +73,7 @@ function AppShell() {
           </NavLink>
         </nav>
         <div className="app-header-actions">
-          {user && <UserMenu user={user} onLogout={logout} />}
+          {user && <UserMenu user={user} settingsPath={`${base}/settings`} onLogout={logout} />}
         </div>
       </header>
 
@@ -82,6 +84,10 @@ function AppShell() {
           <Route path="/budget" element={<BudgetPage />} />
           <Route path="/vendors" element={<VendorsPage />} />
           <Route path="/inspiration" element={<InspirationPage />} />
+          <Route
+            path="/settings"
+            element={<SettingsPage weddingDate={weddingDate} onWeddingDateChange={setWeddingDate} />}
+          />
         </Routes>
       </main>
     </div>

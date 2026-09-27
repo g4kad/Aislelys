@@ -6,7 +6,7 @@ export type Section = {
 };
 
 export type WeddingDate = {
-  date: string; // YYYY-MM-DD
+  date: string | null; // YYYY-MM-DD, null when not set
 };
 
 export type Task = {

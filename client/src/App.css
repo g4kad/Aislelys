@@ -220,6 +220,25 @@
   padding: 8px;
 }
 
+.user-menu-settings {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 8px;
+  border-radius: 8px;
+  text-decoration: none;
+  transition: background 0.15s, color 0.15s;
+}
+
+.user-menu-settings:hover {
+  background: var(--surface-alt);
+  color: var(--text);
+}
+
 .user-menu-logout {
   width: 100%;
   display: flex;
@@ -2602,4 +2621,50 @@
   line-height: 1.4;
   min-width: 0;
   text-align: center;
+}
+
+/* ---------- Settings page ---------- */
+
+.settings-page {
+  max-width: 560px;
+}
+
+.settings-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 22px;
+}
+
+.settings-card h3 {
+  font-size: 1.05rem;
+  margin: 0 0 4px;
+}
+
+.settings-card .page-subtitle {
+  margin-bottom: 16px;
+}
+
+.settings-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.settings-form .title-field {
+  flex: 1;
+  min-width: 180px;
+  margin-top: 0;
+}
+
+.settings-status {
+  margin: 12px 0 0;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.settings-status.error {
+  color: var(--danger);
 }

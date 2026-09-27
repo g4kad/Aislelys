@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import type { Notification, User } from "../types";
 import * as api from "../api";
-import { IconLogOut } from "./Icons";
+import { IconLogOut, IconSettings } from "./Icons";
 import { colorForKey } from "../palette";
 
 function timeAgo(iso: string) {
@@ -17,10 +18,11 @@ function timeAgo(iso: string) {
 
 type Props = {
   user: User;
+  settingsPath: string;
   onLogout: () => void;
 };
 
-export default function UserMenu({ user, onLogout }: Props) {
+export default function UserMenu({ user, settingsPath, onLogout }: Props) {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -124,6 +126,10 @@ export default function UserMenu({ user, onLogout }: Props) {
             </ul>
           )}
           <div className="user-menu-footer">
+            <Link to={settingsPath} className="user-menu-settings" onClick={() => setOpen(false)}>
+              <IconSettings size={13} />
+              Settings
+            </Link>
             <button type="button" className="user-menu-logout" onClick={onLogout}>
               <IconLogOut size={13} />
               Log out

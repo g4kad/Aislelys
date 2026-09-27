@@ -178,6 +178,16 @@ export function IconBell({ className, size = 18 }: IconProps) {
   );
 }
 
+export function IconSettings({ className, size = 14 }: IconProps) {
+  return (
+    <svg className={className} width={size} height={size} viewBox="0 0 16 16" {...stroke}>
+      <circle cx="8" cy="8" r="2" />
+      <path d="M8 1.5v1.8M8 12.7v1.8M1.5 8h1.8M12.7 8h1.8M3.4 3.4l1.3 1.3M11.3 11.3l1.3 1.3M3.4 12.6l1.3-1.3M11.3 4.7l1.3-1.3" />
+      <circle cx="8" cy="8" r="4.3" />
+    </svg>
+  );
+}
+
 export function IconLogOut({ className, size = 14 }: IconProps) {
   return (
     <svg className={className} width={size} height={size} viewBox="0 0 16 16" {...stroke}>

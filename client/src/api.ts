@@ -58,6 +58,8 @@ export const markAllNotificationsRead = () => request<void>("/notifications/read
 
 // Wedding date
 export const getWeddingDate = () => request<WeddingDate>("/wedding-date");
+export const updateWeddingDate = (date: string | null) =>
+  request<WeddingDate>("/wedding-date", { method: "PUT", body: JSON.stringify({ date }) });
 
 // Day to-dos
 export const getTodos = () => request<TodoItem[]>("/todos");

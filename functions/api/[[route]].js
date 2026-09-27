@@ -302,6 +302,26 @@ app.get("/wedding-date", async (c) => {
   return c.json({ date: couple?.weddingDate ?? null });
 });
 
+app.put("/wedding-date", async (c) => {
+  const coupleId = c.get("coupleId");
+  const actor = c.get("user");
+  const { date } = await c.req.json();
+  if (date !== null && !(typeof date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(date) && !isNaN(Date.parse(date)))) {
+    return c.json({ error: "date must be YYYY-MM-DD or null" }, 400);
+  }
+  await c.env.DB.prepare("UPDATE couples SET weddingDate = ? WHERE id = ?").bind(date, coupleId).run();
+  const message = date
+    ? `${actor.name} changed the wedding date to ${new Date(`${date}T00:00:00Z`).toLocaleDateString("en-US", {
+        timeZone: "UTC",
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      })}`
+    : `${actor.name} cleared the wedding date`;
+  await notifyOtherUsers(c.env.DB, coupleId, actor.id, message, "couple", coupleId, "wedding-date");
+  return c.json({ date });
+});
+
 // ---------- Image uploads (for inspiration photos taken/picked on mobile) ----------
 
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
