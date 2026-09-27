@@ -11,7 +11,7 @@ type Props = {
   budgetCategories: BudgetCategory[];
   color?: string;
   defaultExpanded?: boolean;
-  onUpdate: (patch: Partial<Pick<Vendor, "name" | "category" | "contact" | "cost" | "status" | "notes" | "currency" | "budgetCategory">>) => void;
+  onUpdate: (patch: Partial<Pick<Vendor, "name" | "category" | "contact" | "cost" | "status" | "notes" | "currency" | "budgetCategory" | "downpayment">>) => void;
   onDelete: () => void;
 };
 
@@ -62,6 +62,21 @@ export default function VendorCard({
             <span className="view-label">Cost</span>
             <p className="notes-text">{formatMoney(vendor.cost, vendor.currency)}</p>
           </div>
+
+          {vendor.downpayment > 0 && (
+            <div className="view-block">
+              <span className="view-label">Downpayment</span>
+              <p className="notes-text">
+                {formatMoney(vendor.downpayment, vendor.currency)}
+                {vendor.status !== "paid" && (
+                  <span className="vendor-balance">
+                    {" "}
+                    · {formatMoney(Math.max(0, vendor.cost - vendor.downpayment), vendor.currency)} left to pay
+                  </span>
+                )}
+              </p>
+            </div>
+          )}
 
           <div className="view-block">
             <span className="view-label">Budget</span>
@@ -136,6 +151,18 @@ export default function VendorCard({
                 options={CURRENCIES}
               />
             </label>
+            <label>
+              Downpayment
+              <input
+                type="number"
+                min={0}
+                value={vendor.downpayment}
+                onChange={(e) => onUpdate({ downpayment: Math.max(0, Number(e.target.value) || 0) })}
+              />
+            </label>
+          </div>
+
+          <div className="field-row">
             <label>
               Budget category
               <Dropdown

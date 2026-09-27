@@ -1155,11 +1155,15 @@ app.put("/budget-items/:id", async (c) => {
 // The Budget-page half of the vendor <-> budget link (see syncVendorBudgetLink):
 // a vendor-linked line's name, category, currency, actual and paid status are
 // written back to the vendor. Unticking paid moves a Paid vendor back to
-// Booked, so it stays on the budget.
+// Downpayment (if one was recorded) or Booked, so it stays on the budget.
 async function syncBudgetItemToVendor(db, coupleId, vendorId, line) {
-  const vendor = await db.prepare("SELECT status FROM vendors WHERE id = ? AND coupleId = ?").bind(vendorId, coupleId).first();
+  const vendor = await db
+    .prepare("SELECT status, downpayment FROM vendors WHERE id = ? AND coupleId = ?")
+    .bind(vendorId, coupleId)
+    .first();
   if (!vendor) return;
-  const status = line.paid ? "paid" : vendor.status === "paid" ? "booked" : vendor.status;
+  const unpaidStatus = vendor.downpayment > 0 ? "downpayment" : "booked";
+  const status = line.paid ? "paid" : vendor.status === "paid" ? unpaidStatus : vendor.status;
   await db
     .prepare("UPDATE vendors SET name=?, budgetCategory=?, currency=?, cost=?, status=? WHERE id=?")
     .bind(line.item, line.category, line.currency, line.actual, status, vendorId)
@@ -1318,7 +1322,7 @@ function toCurrency(value) {
 
 app.post("/vendors", async (c) => {
   const coupleId = c.get("coupleId");
-  const { name, category, contact, cost, status, notes, currency, budgetCategory } = await c.req.json();
+  const { name, category, contact, cost, status, notes, currency, budgetCategory, downpayment } = await c.req.json();
   if (!name || !name.trim()) return c.json({ error: "name is required" }, 400);
   const vendor = {
     id: crypto.randomUUID(),
@@ -1331,9 +1335,10 @@ app.post("/vendors", async (c) => {
     createdAt: new Date().toISOString(),
     currency: toCurrency(currency),
     budgetCategory: budgetCategory || "",
+    downpayment: Math.max(0, Number(downpayment) || 0),
   };
   await c.env.DB.prepare(
-    "INSERT INTO vendors (id,coupleId,name,category,contact,cost,status,notes,createdAt,currency,budgetCategory) VALUES (?,?,?,?,?,?,?,?,?,?,?)"
+    "INSERT INTO vendors (id,coupleId,name,category,contact,cost,status,notes,createdAt,currency,budgetCategory,downpayment) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)"
   )
     .bind(
       vendor.id,
@@ -1346,14 +1351,15 @@ app.post("/vendors", async (c) => {
       vendor.notes,
       vendor.createdAt,
       vendor.currency,
-      vendor.budgetCategory
+      vendor.budgetCategory,
+      vendor.downpayment
     )
     .run();
   await syncVendorBudgetLink(c.env.DB, coupleId, null, vendor);
   return c.json(vendor, 201);
 });
 
-// A vendor sits on the budget while it's Booked or Paid, as a budget line
+// A vendor sits on the budget once it's Booked (or has a Downpayment, or is Paid), as a budget line
 // linked back to it (sourceVendorId): name, budget category, currency, cost
 // (the line's "actual") and paid status all mirror the vendor. The line's
 // "estimated" starts at the cost and keeps following it, unless it's been set
@@ -1361,7 +1367,7 @@ app.post("/vendors", async (c) => {
 // the line. The link is soft — if the line is deleted on the Budget page,
 // later vendor edits won't recreate it until the vendor is booked again.
 // Edits made on the Budget page flow back via syncBudgetItemToVendor.
-const VENDOR_BUDGET_STATUSES = new Set(["booked", "paid"]);
+const VENDOR_BUDGET_STATUSES = new Set(["booked", "downpayment", "paid"]);
 
 async function syncVendorBudgetLink(db, coupleId, before, after) {
   const wasInBudget = !!before && VENDOR_BUDGET_STATUSES.has(before.status);
@@ -1421,11 +1427,23 @@ app.put("/vendors/:id", async (c) => {
     createdAt: existing.createdAt,
     currency: body.currency !== undefined ? toCurrency(body.currency) : existing.currency,
     budgetCategory: body.budgetCategory !== undefined ? body.budgetCategory : existing.budgetCategory,
+    downpayment: body.downpayment !== undefined ? Math.max(0, Number(body.downpayment) || 0) : existing.downpayment,
   };
   await c.env.DB.prepare(
-    "UPDATE vendors SET name=?,category=?,contact=?,cost=?,status=?,notes=?,currency=?,budgetCategory=? WHERE id=?"
+    "UPDATE vendors SET name=?,category=?,contact=?,cost=?,status=?,notes=?,currency=?,budgetCategory=?,downpayment=? WHERE id=?"
   )
-    .bind(vendor.name, vendor.category, vendor.contact, vendor.cost, vendor.status, vendor.notes, vendor.currency, vendor.budgetCategory, id)
+    .bind(
+      vendor.name,
+      vendor.category,
+      vendor.contact,
+      vendor.cost,
+      vendor.status,
+      vendor.notes,
+      vendor.currency,
+      vendor.budgetCategory,
+      vendor.downpayment,
+      id
+    )
     .run();
   await syncVendorBudgetLink(c.env.DB, coupleId, existing, vendor);
   return c.json(vendor);

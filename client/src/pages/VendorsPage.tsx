@@ -33,6 +33,7 @@ export default function VendorsPage() {
     notes: string;
     currency: Currency;
     budgetCategory: string;
+    downpayment: number;
   }) {
     try {
       const created = await api.createVendor(data);
@@ -42,7 +43,7 @@ export default function VendorsPage() {
     }
   }
 
-  async function handleUpdate(id: string, patch: Partial<Pick<Vendor, "name" | "category" | "contact" | "cost" | "status" | "notes" | "currency" | "budgetCategory">>) {
+  async function handleUpdate(id: string, patch: Partial<Pick<Vendor, "name" | "category" | "contact" | "cost" | "status" | "notes" | "currency" | "budgetCategory" | "downpayment">>) {
     setVendors((prev) => prev.map((v) => (v.id === id ? { ...v, ...patch } : v)));
     try {
       await api.updateVendor(id, patch);

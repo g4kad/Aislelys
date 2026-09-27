@@ -2398,6 +2398,15 @@
   color: #a66a1f;
 }
 
+.status-pill.status-downpayment {
+  background: #d7e6d3;
+  color: #3f7a48;
+}
+
+.vendor-balance {
+  color: var(--text-muted);
+}
+
 .status-pill.status-paid {
   background: #479352;
   color: #fff;

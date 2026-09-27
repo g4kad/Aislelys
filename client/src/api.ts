@@ -290,6 +290,7 @@ export const createVendor = (data: {
   notes: string;
   currency: Currency;
   budgetCategory: string;
+  downpayment: number;
 }) =>
   request<Vendor>("/vendors", {
     method: "POST",
@@ -297,7 +298,7 @@ export const createVendor = (data: {
   });
 export const updateVendor = (
   id: string,
-  patch: Partial<Pick<Vendor, "name" | "category" | "contact" | "cost" | "status" | "notes" | "currency" | "budgetCategory">>
+  patch: Partial<Pick<Vendor, "name" | "category" | "contact" | "cost" | "status" | "notes" | "currency" | "budgetCategory" | "downpayment">>
 ) =>
   request<Vendor>(`/vendors/${id}`, {
     method: "PUT",

@@ -18,6 +18,7 @@ type Props = {
     notes: string;
     currency: Currency;
     budgetCategory: string;
+    downpayment: number;
   }) => void;
   onCreateCategory: (title: string) => Promise<VendorCategory>;
 };
@@ -35,6 +36,7 @@ export default function VendorFormModal({ categories, budgetCategories, onClose,
   const [contact, setContact] = useState("");
   const [cost, setCost] = useState("");
   const [currency, setCurrency] = useState<Currency>("MYR");
+  const [downpayment, setDownpayment] = useState("");
   const [budgetCategory, setBudgetCategory] = useState(() =>
     matchingBudgetCategory(budgetCategories, categories[0]?.title ?? "")
   );
@@ -86,6 +88,7 @@ export default function VendorFormModal({ categories, budgetCategories, onClose,
       notes: notes.trim(),
       currency,
       budgetCategory,
+      downpayment: Math.max(0, Number(downpayment) || 0),
     });
     onClose();
   }
@@ -177,6 +180,19 @@ export default function VendorFormModal({ categories, budgetCategories, onClose,
             Currency
             <Dropdown value={currency} onChange={(v) => setCurrency(v as Currency)} options={CURRENCIES} />
           </label>
+          <label>
+            Downpayment
+            <input
+              type="number"
+              min={0}
+              placeholder="0"
+              value={downpayment}
+              onChange={(e) => setDownpayment(e.target.value)}
+            />
+          </label>
+        </div>
+
+        <div className="field-row">
           <label>
             Budget category
             <Dropdown

@@ -169,7 +169,8 @@ CREATE TABLE IF NOT EXISTS vendors (
   notes TEXT NOT NULL DEFAULT '',
   createdAt TEXT NOT NULL,
   currency TEXT NOT NULL DEFAULT 'MYR',
-  budgetCategory TEXT NOT NULL DEFAULT ''
+  budgetCategory TEXT NOT NULL DEFAULT '',
+  downpayment REAL NOT NULL DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS todos (

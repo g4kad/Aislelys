@@ -1,6 +1,7 @@
-export const VENDOR_STATUSES: { value: "inquired" | "booked" | "paid"; label: string }[] = [
+export const VENDOR_STATUSES: { value: "inquired" | "booked" | "downpayment" | "paid"; label: string }[] = [
   { value: "inquired", label: "Inquired" },
   { value: "booked", label: "Booked" },
+  { value: "downpayment", label: "Downpayment" },
   { value: "paid", label: "Paid" },
 ];
 
