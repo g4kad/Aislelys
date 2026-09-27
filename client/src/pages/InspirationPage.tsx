@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { InspirationCategory, InspirationItem } from "../types";
 import * as api from "../api";
 import InspirationCard from "../components/InspirationCard";
 import InspirationFormModal from "../components/InspirationFormModal";
+import ImageLightbox, { type LightboxSlide } from "../components/ImageLightbox";
 import Dropdown from "../components/Dropdown";
 import { IconCheck, IconClose, IconTrash } from "../components/Icons";
 import { useIsMobile } from "../useIsMobile";
@@ -20,6 +21,20 @@ export default function InspirationPage() {
   const [confirmDeleteCategoryId, setConfirmDeleteCategoryId] = useState<string | null>(null);
   const addCategoryRef = useRef<HTMLFormElement>(null);
   const isMobile = useIsMobile(480);
+  // image URL each card is actually displaying (after any preview resolving),
+  // keyed by item id — only plain images go in the viewer
+  const [imageSrcs, setImageSrcs] = useState<Record<string, string>>({});
+  const [lightboxItemId, setLightboxItemId] = useState<string | null>(null);
+
+  const handleImageReady = useCallback((id: string, src: string | null) => {
+    setImageSrcs((prev) => {
+      if ((prev[id] ?? null) === src) return prev;
+      const next = { ...prev };
+      if (src) next[id] = src;
+      else delete next[id];
+      return next;
+    });
+  }, []);
 
   useEffect(() => {
     if (!showAddCategory) return;
@@ -56,6 +71,15 @@ export default function InspirationPage() {
       return true;
     });
   }, [items, selectedCategoryId, approvedOnly]);
+
+  const lightboxSlides = useMemo<LightboxSlide[]>(
+    () =>
+      filteredItems
+        .filter((i) => imageSrcs[i.id])
+        .map((i) => ({ id: i.id, src: imageSrcs[i.id], caption: i.caption, originalUrl: i.url })),
+    [filteredItems, imageSrcs]
+  );
+  const lightboxIndex = lightboxSlides.findIndex((s) => s.id === lightboxItemId);
 
   const approvedCountFor = useMemo(() => {
     return (categoryId: string | null) =>
@@ -299,9 +323,20 @@ export default function InspirationPage() {
               onToggleApproved={() => handleToggleApproved(item.id)}
               onChangeCategory={(categoryId) => handleChangeItemCategory(item.id, categoryId)}
               onDelete={() => handleDelete(item.id)}
+              onImageReady={(src) => handleImageReady(item.id, src)}
+              onOpenImage={() => setLightboxItemId(item.id)}
             />
           ))}
         </div>
+      )}
+
+      {lightboxIndex >= 0 && (
+        <ImageLightbox
+          slides={lightboxSlides}
+          index={lightboxIndex}
+          onIndexChange={(i) => setLightboxItemId(lightboxSlides[i].id)}
+          onClose={() => setLightboxItemId(null)}
+        />
       )}
     </div>
   );

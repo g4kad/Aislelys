@@ -3,7 +3,6 @@ import type { InspirationCategory, InspirationItem } from "../types";
 import { getYouTubeEmbedUrl, getVimeoEmbedUrl, getInstagramEmbedUrl, getTikTokEmbedUrl, getHostname } from "../inspirationUtils";
 import { IconClose, IconEdit, IconExternalLink, IconHeart, IconTrash } from "./Icons";
 import Dropdown from "./Dropdown";
-import ImageLightbox from "./ImageLightbox";
 import * as api from "../api";
 
 type Props = {
@@ -12,9 +11,21 @@ type Props = {
   onToggleApproved: () => void;
   onChangeCategory: (categoryId: string | null) => void;
   onDelete: () => void;
+  // tells the page which image (if any) this card is showing, so the viewer
+  // can page through them
+  onImageReady: (src: string | null) => void;
+  onOpenImage: () => void;
 };
 
-export default function InspirationCard({ item, categories, onToggleApproved, onChangeCategory, onDelete }: Props) {
+export default function InspirationCard({
+  item,
+  categories,
+  onToggleApproved,
+  onChangeCategory,
+  onDelete,
+  onImageReady,
+  onOpenImage,
+}: Props) {
   const [imgFailed, setImgFailed] = useState(false);
   const [resolvedUrl, setResolvedUrl] = useState<string | null>(null);
   const [resolvedEmbedUrl, setResolvedEmbedUrl] = useState<string | null>(null);
@@ -22,7 +33,6 @@ export default function InspirationCard({ item, categories, onToggleApproved, on
   const [resolveFailed, setResolveFailed] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [editingCategory, setEditingCategory] = useState(false);
-  const [lightboxOpen, setLightboxOpen] = useState(false);
 
   const youtubeEmbed = getYouTubeEmbedUrl(item.url);
   const vimeoEmbed = getVimeoEmbedUrl(item.url);
@@ -72,6 +82,11 @@ export default function InspirationCard({ item, categories, onToggleApproved, on
 
   const displayImageUrl = imgFailed ? resolvedUrl : item.url;
   const isPlainImage = !videoEmbedUrl && !instagramEmbed && !tiktokEmbed && !!displayImageUrl;
+  const reportedImage = isPlainImage ? displayImageUrl : null;
+
+  useEffect(() => {
+    onImageReady(reportedImage);
+  }, [reportedImage, onImageReady]);
 
   const categoryOptions = [
     { value: "", label: "No category" },
@@ -94,7 +109,7 @@ export default function InspirationCard({ item, categories, onToggleApproved, on
             onClick={(e) => {
               // clicks on the card's own buttons/dropdown shouldn't open the viewer
               if (editingCategory || (e.target as HTMLElement).closest("button, a, .dropdown")) return;
-              setLightboxOpen(true);
+              onOpenImage();
             }}
           >
             <button
@@ -143,15 +158,6 @@ export default function InspirationCard({ item, categories, onToggleApproved, on
         </div>
 
         {item.caption && <p className="pin-caption">{item.caption}</p>}
-
-        {lightboxOpen && displayImageUrl && (
-          <ImageLightbox
-            src={displayImageUrl}
-            caption={item.caption}
-            originalUrl={item.url}
-            onClose={() => setLightboxOpen(false)}
-          />
-        )}
       </div>
     );
   }
