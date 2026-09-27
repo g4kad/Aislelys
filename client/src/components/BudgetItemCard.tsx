@@ -11,7 +11,7 @@ type Props = {
   mode: "estimated" | "actual";
   color?: string;
   defaultExpanded?: boolean;
-  onUpdate: (patch: Partial<Pick<BudgetItem, "item" | "category" | "currency" | "estimated" | "actual" | "paid">>) => void;
+  onUpdate: (patch: Partial<Pick<BudgetItem, "item" | "category" | "currency" | "estimated" | "actual" | "paid" | "downpayment">>) => void;
   onDelete: () => void;
 };
 
@@ -48,6 +48,22 @@ export default function BudgetItemCard({ budgetItem, categories, mode, color, de
               {formatMoney(mode === "estimated" ? budgetItem.estimated : budgetItem.actual, budgetItem.currency)}
             </p>
           </div>
+
+          {budgetItem.sourceVendorId && (budgetItem.downpayment ?? 0) > 0 && (
+            <div className="view-block">
+              <span className="view-label">Downpayment</span>
+              <p className="notes-text">
+                {formatMoney(budgetItem.downpayment ?? 0, budgetItem.currency)}
+                {!budgetItem.paid && (
+                  <span className="vendor-balance">
+                    {" "}
+                    · {formatMoney(Math.max(0, budgetItem.actual - (budgetItem.downpayment ?? 0)), budgetItem.currency)} left
+                    to pay
+                  </span>
+                )}
+              </p>
+            </div>
+          )}
 
           <div className="card-footer">
             <button className="btn small ghost card-footer-right" onClick={() => setEditing(true)}>Edit</button>
@@ -86,7 +102,8 @@ export default function BudgetItemCard({ budgetItem, categories, mode, color, de
               <input
                 type="number"
                 min={0}
-                value={budgetItem.estimated}
+                placeholder="0"
+                value={budgetItem.estimated || ""}
                 onChange={(e) => onUpdate({ estimated: Math.max(0, Number(e.target.value) || 0) })}
               />
             </label>
@@ -95,11 +112,25 @@ export default function BudgetItemCard({ budgetItem, categories, mode, color, de
               <input
                 type="number"
                 min={0}
-                value={budgetItem.actual}
+                placeholder="0"
+                value={budgetItem.actual || ""}
                 onChange={(e) => onUpdate({ actual: Math.max(0, Number(e.target.value) || 0) })}
               />
             </label>
           </div>
+
+          {budgetItem.sourceVendorId && (
+            <label className="title-field">
+              Downpayment
+              <input
+                type="number"
+                min={0}
+                placeholder="0"
+                value={budgetItem.downpayment || ""}
+                onChange={(e) => onUpdate({ downpayment: Math.max(0, Number(e.target.value) || 0) })}
+              />
+            </label>
+          )}
 
           <label className="checkbox-field">
             <input type="checkbox" checked={budgetItem.paid} onChange={(e) => onUpdate({ paid: e.target.checked })} />
@@ -108,8 +139,8 @@ export default function BudgetItemCard({ budgetItem, categories, mode, color, de
 
           {budgetItem.sourceVendorId && (
             <p className="form-hint">
-              Linked to a vendor — changes to the name, category, currency, actual cost and paid status also update
-              it on the Vendors page.
+              Linked to a vendor — changes to the name, category, currency, actual cost, downpayment and paid status
+              also update it on the Vendors page.
             </p>
           )}
 

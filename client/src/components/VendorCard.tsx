@@ -148,7 +148,8 @@ export default function VendorCard({
               <input
                 type="number"
                 min={0}
-                value={vendor.cost}
+                placeholder="0"
+                value={vendor.cost || ""}
                 onChange={(e) => onUpdate({ cost: Math.max(0, Number(e.target.value) || 0) })}
               />
             </label>
@@ -168,7 +169,8 @@ export default function VendorCard({
               <input
                 type="number"
                 min={0}
-                value={vendor.downpayment}
+                placeholder="0"
+                value={vendor.downpayment || ""}
                 onChange={(e) => onUpdate({ downpayment: Math.max(0, Number(e.target.value) || 0) })}
               />
             </label>

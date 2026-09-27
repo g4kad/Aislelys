@@ -230,7 +230,7 @@ export const createBudgetItem = (data: {
   });
 export const updateBudgetItem = (
   id: string,
-  patch: Partial<Pick<BudgetItem, "item" | "category" | "currency" | "estimated" | "actual" | "paid">>
+  patch: Partial<Pick<BudgetItem, "item" | "category" | "currency" | "estimated" | "actual" | "paid" | "downpayment">>
 ) =>
   request<BudgetItem>(`/budget-items/${id}`, {
     method: "PUT",

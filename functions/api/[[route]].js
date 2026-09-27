@@ -1091,10 +1091,21 @@ app.put("/budget", async (c) => {
 
 app.get("/budget-items", async (c) => {
   const coupleId = c.get("coupleId");
-  const { results } = await c.env.DB.prepare("SELECT * FROM budget_items WHERE coupleId = ? ORDER BY createdAt DESC")
+  // vendor-linked lines also carry the vendor's downpayment, shown on the Budget page
+  const { results } = await c.env.DB.prepare(
+    `SELECT b.*, v.downpayment AS downpayment
+     FROM budget_items b LEFT JOIN vendors v ON v.id = b.sourceVendorId AND v.coupleId = b.coupleId
+     WHERE b.coupleId = ? ORDER BY b.createdAt DESC`
+  )
     .bind(coupleId)
     .all();
-  return c.json(results.map((b) => ({ ...b, paid: !!b.paid })));
+  return c.json(
+    results.map(({ downpayment, ...b }) => ({
+      ...b,
+      paid: !!b.paid,
+      ...(b.sourceVendorId && downpayment !== null ? { downpayment } : {}),
+    }))
+  );
 });
 
 app.post("/budget-items", async (c) => {
@@ -1137,6 +1148,11 @@ app.put("/budget-items/:id", async (c) => {
     .run();
   if (existing.sourceVendorId) {
     await syncBudgetItemToVendor(c.env.DB, coupleId, existing.sourceVendorId, { item, category, currency, actual, paid });
+    if (body.downpayment !== undefined) {
+      await c.env.DB.prepare("UPDATE vendors SET downpayment = ? WHERE id = ? AND coupleId = ?")
+        .bind(Math.max(0, Number(body.downpayment) || 0), existing.sourceVendorId, coupleId)
+        .run();
+    }
   }
 
   if (body.paid !== undefined && paid !== !!existing.paid) {

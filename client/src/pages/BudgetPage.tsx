@@ -112,7 +112,7 @@ export default function BudgetPage() {
 
   async function handleUpdate(
     id: string,
-    patch: Partial<Pick<BudgetItem, "item" | "category" | "currency" | "estimated" | "actual" | "paid">>
+    patch: Partial<Pick<BudgetItem, "item" | "category" | "currency" | "estimated" | "actual" | "paid" | "downpayment">>
   ) {
     setItems((prev) => prev.map((i) => (i.id === id ? { ...i, ...patch } : i)));
     try {

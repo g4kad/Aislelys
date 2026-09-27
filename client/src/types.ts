@@ -120,6 +120,7 @@ export type BudgetItem = {
   paid: boolean;
   createdAt: string;
   sourceVendorId?: string | null; // set when this line mirrors a vendor
+  downpayment?: number; // the linked vendor's downpayment (vendor lines only)
 };
 
 export type ExchangeRate = {
