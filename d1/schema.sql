@@ -147,7 +147,8 @@ CREATE TABLE IF NOT EXISTS budget_items (
   actual REAL NOT NULL DEFAULT 0,
   paid INTEGER NOT NULL DEFAULT 0,
   createdAt TEXT NOT NULL,
-  sourceVendorId TEXT
+  sourceVendorId TEXT,
+  notes TEXT NOT NULL DEFAULT ''
 );
 
 CREATE TABLE IF NOT EXISTS vendor_categories (

@@ -11,7 +11,7 @@ type Props = {
   mode: "estimated" | "actual";
   color?: string;
   defaultExpanded?: boolean;
-  onUpdate: (patch: Partial<Pick<BudgetItem, "item" | "category" | "currency" | "estimated" | "actual" | "paid" | "downpayment">>) => void;
+  onUpdate: (patch: Partial<Pick<BudgetItem, "item" | "category" | "currency" | "estimated" | "actual" | "paid" | "downpayment" | "notes">>) => void;
   onDelete: () => void;
 };
 
@@ -64,6 +64,11 @@ export default function BudgetItemCard({ budgetItem, categories, mode, color, de
               </p>
             </div>
           )}
+
+          <div className="view-block">
+            <span className="view-label">Notes</span>
+            <p className="notes-text">{budgetItem.notes || <em>No notes yet.</em>}</p>
+          </div>
 
           <div className="card-footer">
             <button className="btn small ghost card-footer-right" onClick={() => setEditing(true)}>Edit</button>
@@ -135,6 +140,18 @@ export default function BudgetItemCard({ budgetItem, categories, mode, color, de
             </label>
           )}
 
+          <div className="notes-block">
+            <div className="notes-block-header">
+              <span>Notes</span>
+            </div>
+            <textarea
+              value={budgetItem.notes ?? ""}
+              onChange={(e) => onUpdate({ notes: e.target.value })}
+              rows={3}
+              placeholder="Add notes for this expense…"
+            />
+          </div>
+
           <label className="checkbox-field">
             <input type="checkbox" checked={budgetItem.paid} onChange={(e) => onUpdate({ paid: e.target.checked })} />
             Paid
@@ -142,8 +159,8 @@ export default function BudgetItemCard({ budgetItem, categories, mode, color, de
 
           {budgetItem.sourceVendorId && (
             <p className="form-hint">
-              Linked to a vendor — changes to the name, category, currency, actual cost, downpayment and paid status
-              also update it on the Vendors page.
+              Linked to a vendor — changes to the name, category, currency, actual cost, downpayment, notes and paid
+              status also update it on the Vendors page.
             </p>
           )}
 

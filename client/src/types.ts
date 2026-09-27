@@ -121,6 +121,7 @@ export type BudgetItem = {
   createdAt: string;
   sourceVendorId?: string | null; // set when this line mirrors a vendor
   downpayment?: number; // the linked vendor's downpayment (vendor lines only)
+  notes?: string; // shared with the vendor on vendor lines
 };
 
 export type ExchangeRate = {

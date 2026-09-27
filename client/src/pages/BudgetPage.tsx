@@ -101,6 +101,7 @@ export default function BudgetPage() {
     estimated: number;
     actual: number;
     paid: boolean;
+    notes: string;
   }) {
     try {
       const created = await api.createBudgetItem(data);
@@ -116,7 +117,7 @@ export default function BudgetPage() {
 
   async function handleUpdate(
     id: string,
-    patch: Partial<Pick<BudgetItem, "item" | "category" | "currency" | "estimated" | "actual" | "paid" | "downpayment">>
+    patch: Partial<Pick<BudgetItem, "item" | "category" | "currency" | "estimated" | "actual" | "paid" | "downpayment" | "notes">>
   ) {
     setItems((prev) => prev.map((i) => (i.id === id ? { ...i, ...patch } : i)));
     try {

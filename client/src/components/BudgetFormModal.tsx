@@ -15,6 +15,7 @@ type Props = {
     estimated: number;
     actual: number;
     paid: boolean;
+    notes: string;
   }) => void;
   onCreateCategory: (title: string) => Promise<BudgetCategory>;
 };
@@ -27,6 +28,7 @@ export default function BudgetFormModal({ categories, onClose, onCreate, onCreat
   const [estimated, setEstimated] = useState("");
   const [actual, setActual] = useState("");
   const [paid, setPaid] = useState(false);
+  const [notes, setNotes] = useState("");
   const [creatingCategory, setCreatingCategory] = useState(false);
   const [newCategoryTitle, setNewCategoryTitle] = useState("");
 
@@ -67,6 +69,7 @@ export default function BudgetFormModal({ categories, onClose, onCreate, onCreat
       estimated: Math.max(0, Number(estimated) || 0),
       actual: Math.max(0, Number(actual) || 0),
       paid,
+      notes: notes.trim(),
     });
     onClose();
   }
@@ -153,6 +156,16 @@ export default function BudgetFormModal({ categories, onClose, onCreate, onCreat
             />
           </label>
         </div>
+
+        <label>
+          Notes
+          <textarea
+            rows={3}
+            placeholder="Any details worth remembering…"
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+          />
+        </label>
 
         <label className="checkbox-field">
           <input type="checkbox" checked={paid} onChange={(e) => setPaid(e.target.checked)} />

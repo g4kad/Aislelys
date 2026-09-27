@@ -9,7 +9,7 @@ type Props = {
   categories: BudgetCategory[];
   myrToSgd: number;
   mode: "estimated" | "actual";
-  onUpdate: (id: string, patch: Partial<Pick<BudgetItem, "item" | "category" | "currency" | "estimated" | "actual" | "paid" | "downpayment">>) => void;
+  onUpdate: (id: string, patch: Partial<Pick<BudgetItem, "item" | "category" | "currency" | "estimated" | "actual" | "paid" | "downpayment" | "notes">>) => void;
   onDelete: (id: string) => void;
   onCreateCategory: (title: string, color: string) => void;
   onUpdateCategory: (id: string, patch: Partial<Pick<BudgetCategory, "title" | "color">>) => void;
