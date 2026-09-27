@@ -4,6 +4,7 @@ import Modal from "./Modal";
 import Dropdown from "./Dropdown";
 import { VENDOR_STATUSES, GENERIC_VENDOR_CATEGORIES, CURRENCIES } from "../constants";
 import { useIsMobile } from "../useIsMobile";
+import { vendorCategoryOptions } from "../categoryOptions";
 
 type Props = {
   categories: VendorCategory[];
@@ -20,14 +21,8 @@ type Props = {
     budgetCategory: string;
     downpayment: number;
   }) => void;
-  onCreateCategory: (title: string) => Promise<VendorCategory>;
+  onCreateCategory: (title: string, color?: string) => Promise<VendorCategory>;
 };
-
-// Suggest the budget category with the same name as the vendor category, if there is one.
-function matchingBudgetCategory(budgetCategories: BudgetCategory[], vendorCategory: string): string {
-  const match = budgetCategories.find((b) => b.title.trim().toLowerCase() === vendorCategory.trim().toLowerCase());
-  return match?.title ?? "";
-}
 
 export default function VendorFormModal({ categories, budgetCategories, onClose, onCreate, onCreateCategory }: Props) {
   const isMobile = useIsMobile();
@@ -37,10 +32,6 @@ export default function VendorFormModal({ categories, budgetCategories, onClose,
   const [cost, setCost] = useState("");
   const [currency, setCurrency] = useState<Currency>("MYR");
   const [downpayment, setDownpayment] = useState("");
-  const [budgetCategory, setBudgetCategory] = useState(() =>
-    matchingBudgetCategory(budgetCategories, categories[0]?.title ?? "")
-  );
-  const [budgetCategoryTouched, setBudgetCategoryTouched] = useState(false);
   const [status, setStatus] = useState<string>("inquired");
   const [notes, setNotes] = useState("");
   const [creatingCategory, setCreatingCategory] = useState(false);
@@ -49,32 +40,24 @@ export default function VendorFormModal({ categories, budgetCategories, onClose,
   async function handleAddCategory() {
     if (!newCategoryTitle.trim()) return;
     const created = await onCreateCategory(newCategoryTitle.trim());
-    applyCategory(created.title);
+    setCategory(created.title);
     setNewCategoryTitle("");
     setCreatingCategory(false);
-  }
-
-  function applyCategory(title: string) {
-    setCategory(title);
-    if (!budgetCategoryTouched) setBudgetCategory(matchingBudgetCategory(budgetCategories, title));
   }
 
   async function handleCategoryChange(value: string) {
     const alreadyExists = categories.some((c) => c.title === value);
     if (!alreadyExists && value) {
-      const created = await onCreateCategory(value);
-      applyCategory(created.title);
+      // picking a budget category adds it to the vendor categories too, same colour
+      const fromBudget = budgetCategories.find((b) => b.title === value);
+      const created = await onCreateCategory(value, fromBudget?.color);
+      setCategory(created.title);
     } else {
-      applyCategory(value);
+      setCategory(value);
     }
   }
 
-  const existingTitles = new Set(categories.map((c) => c.title.trim().toLowerCase()));
-  const suggestions = GENERIC_VENDOR_CATEGORIES.filter((title) => !existingTitles.has(title.toLowerCase()));
-  const categoryOptions = [
-    ...categories.map((c) => ({ value: c.title, label: c.title })),
-    ...suggestions.map((title) => ({ value: title, label: title })),
-  ];
+  const categoryOptions = vendorCategoryOptions(categories, budgetCategories, GENERIC_VENDOR_CATEGORIES);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -87,7 +70,7 @@ export default function VendorFormModal({ categories, budgetCategories, onClose,
       status,
       notes: notes.trim(),
       currency,
-      budgetCategory,
+      budgetCategory: category || "",
       downpayment: Math.max(0, Number(downpayment) || 0),
     });
     onClose();
@@ -192,23 +175,6 @@ export default function VendorFormModal({ categories, budgetCategories, onClose,
           </label>
         </div>
 
-        <div className="field-row">
-          <label>
-            Budget category
-            <Dropdown
-              value={budgetCategory}
-              onChange={(v) => {
-                setBudgetCategory(v);
-                setBudgetCategoryTouched(true);
-              }}
-              options={[
-                { value: "", label: "Uncategorized" },
-                ...budgetCategories.map((b) => ({ value: b.title, label: b.title })),
-              ]}
-              className="category-dropdown"
-            />
-          </label>
-        </div>
         <p className="form-hint">Vendors are added to your budget automatically from Downpayment onwards.</p>
 
         <label>

@@ -4,6 +4,7 @@ import { IconChevronRight, IconTrash } from "./Icons";
 import Dropdown from "./Dropdown";
 import { VENDOR_STATUSES, CURRENCIES } from "../constants";
 import { formatMoney } from "../money";
+import { vendorCategoryOptions } from "../categoryOptions";
 
 type Props = {
   vendor: Vendor;
@@ -11,6 +12,7 @@ type Props = {
   budgetCategories: BudgetCategory[];
   color?: string;
   defaultExpanded?: boolean;
+  onCreateCategory: (title: string, color?: string) => Promise<VendorCategory>;
   onUpdate: (patch: Partial<Pick<Vendor, "name" | "category" | "contact" | "cost" | "status" | "notes" | "currency" | "budgetCategory" | "downpayment">>) => void;
   onDelete: () => void;
 };
@@ -25,12 +27,22 @@ export default function VendorCard({
   budgetCategories,
   color,
   defaultExpanded = false,
+  onCreateCategory,
   onUpdate,
   onDelete,
 }: Props) {
   const [expanded, setExpanded] = useState(defaultExpanded);
   const [editing, setEditing] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+
+  // the category is shared with the budget, so both move together
+  async function handleCategoryChange(title: string) {
+    if (title && !categories.some((c) => c.title === title)) {
+      const fromBudget = budgetCategories.find((b) => b.title === title);
+      await onCreateCategory(title, fromBudget?.color);
+    }
+    onUpdate({ category: title, budgetCategory: title });
+  }
 
   function toggleExpanded() {
     setExpanded((v) => {
@@ -83,7 +95,7 @@ export default function VendorCard({
             <p className="notes-text">
               {vendor.status === "inquired"
                 ? "Added to your budget from Downpayment onwards"
-                : `On your budget · ${vendor.budgetCategory || "Uncategorized"}`}
+                : `On your budget · ${vendor.category || "Uncategorized"}`}
             </p>
           </div>
 
@@ -110,9 +122,9 @@ export default function VendorCard({
               Category
               <Dropdown
                 value={vendor.category}
-                onChange={(v) => onUpdate({ category: v })}
+                onChange={handleCategoryChange}
                 placeholder="No category"
-                options={categories.map((c) => ({ value: c.title, label: c.title }))}
+                options={vendorCategoryOptions(categories, budgetCategories)}
                 className="category-dropdown"
               />
             </label>
@@ -162,20 +174,6 @@ export default function VendorCard({
             </label>
           </div>
 
-          <div className="field-row">
-            <label>
-              Budget category
-              <Dropdown
-                value={vendor.budgetCategory}
-                onChange={(v) => onUpdate({ budgetCategory: v })}
-                options={[
-                  { value: "", label: "Uncategorized" },
-                  ...budgetCategories.map((b) => ({ value: b.title, label: b.title })),
-                ]}
-                className="category-dropdown"
-              />
-            </label>
-          </div>
 
           <div className="notes-block">
             <div className="notes-block-header">

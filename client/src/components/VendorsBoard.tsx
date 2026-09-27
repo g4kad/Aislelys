@@ -10,7 +10,7 @@ type Props = {
   budgetCategories: BudgetCategory[];
   onUpdate: (id: string, patch: Partial<Pick<Vendor, "name" | "category" | "contact" | "cost" | "status" | "notes" | "currency" | "budgetCategory" | "downpayment">>) => void;
   onDelete: (id: string) => void;
-  onCreateCategory: (title: string, color: string) => void;
+  onCreateCategory: (title: string, color?: string) => Promise<VendorCategory>;
   onUpdateCategory: (id: string, patch: Partial<Pick<VendorCategory, "title" | "color">>) => void;
   onDeleteCategory: (id: string) => void;
 };
@@ -82,6 +82,7 @@ export default function VendorsBoard({
                         vendor={vendor}
                         categories={categories}
                         budgetCategories={budgetCategories}
+                        onCreateCategory={onCreateCategory}
                         color={category.color}
                         onUpdate={(patch) => onUpdate(vendor.id, patch)}
                         onDelete={() => onDelete(vendor.id)}
@@ -115,6 +116,7 @@ export default function VendorsBoard({
                     vendor={vendor}
                     categories={categories}
                     budgetCategories={budgetCategories}
+                    onCreateCategory={onCreateCategory}
                     color="#ede2cc"
                     onUpdate={(patch) => onUpdate(vendor.id, patch)}
                     onDelete={() => onDelete(vendor.id)}
