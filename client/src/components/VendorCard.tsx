@@ -82,7 +82,7 @@ export default function VendorCard({
             <span className="view-label">Budget</span>
             <p className="notes-text">
               {vendor.status === "inquired"
-                ? "Added to your budget once booked"
+                ? "Added to your budget from Downpayment onwards"
                 : `On your budget · ${vendor.budgetCategory || "Uncategorized"}`}
             </p>
           </div>

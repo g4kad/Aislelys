@@ -209,7 +209,7 @@ export default function VendorFormModal({ categories, budgetCategories, onClose,
             />
           </label>
         </div>
-        <p className="form-hint">Booked and paid vendors are added to your budget automatically.</p>
+        <p className="form-hint">Vendors are added to your budget automatically from Downpayment onwards.</p>
 
         <label>
           Notes

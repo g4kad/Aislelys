@@ -1155,15 +1155,11 @@ app.put("/budget-items/:id", async (c) => {
 // The Budget-page half of the vendor <-> budget link (see syncVendorBudgetLink):
 // a vendor-linked line's name, category, currency, actual and paid status are
 // written back to the vendor. Unticking paid moves a Paid vendor back to
-// Downpayment (if one was recorded) or Booked, so it stays on the budget.
+// Booked, so it stays on the budget.
 async function syncBudgetItemToVendor(db, coupleId, vendorId, line) {
-  const vendor = await db
-    .prepare("SELECT status, downpayment FROM vendors WHERE id = ? AND coupleId = ?")
-    .bind(vendorId, coupleId)
-    .first();
+  const vendor = await db.prepare("SELECT status FROM vendors WHERE id = ? AND coupleId = ?").bind(vendorId, coupleId).first();
   if (!vendor) return;
-  const unpaidStatus = vendor.downpayment > 0 ? "downpayment" : "booked";
-  const status = line.paid ? "paid" : vendor.status === "paid" ? unpaidStatus : vendor.status;
+  const status = line.paid ? "paid" : vendor.status === "paid" ? "booked" : vendor.status;
   await db
     .prepare("UPDATE vendors SET name=?, budgetCategory=?, currency=?, cost=?, status=? WHERE id=?")
     .bind(line.item, line.category, line.currency, line.actual, status, vendorId)
@@ -1359,7 +1355,7 @@ app.post("/vendors", async (c) => {
   return c.json(vendor, 201);
 });
 
-// A vendor sits on the budget once it's Booked (or has a Downpayment, or is Paid), as a budget line
+// A vendor sits on the budget once it has a Downpayment (or is Booked or Paid), as a budget line
 // linked back to it (sourceVendorId): name, budget category, currency, cost
 // (the line's "actual") and paid status all mirror the vendor. The line's
 // "estimated" starts at the cost and keeps following it, unless it's been set
@@ -1367,7 +1363,7 @@ app.post("/vendors", async (c) => {
 // the line. The link is soft — if the line is deleted on the Budget page,
 // later vendor edits won't recreate it until the vendor is booked again.
 // Edits made on the Budget page flow back via syncBudgetItemToVendor.
-const VENDOR_BUDGET_STATUSES = new Set(["booked", "downpayment", "paid"]);
+const VENDOR_BUDGET_STATUSES = new Set(["downpayment", "booked", "paid"]);
 
 async function syncVendorBudgetLink(db, coupleId, before, after) {
   const wasInBudget = !!before && VENDOR_BUDGET_STATUSES.has(before.status);

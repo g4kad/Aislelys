@@ -102,7 +102,7 @@ export default function VendorsPage() {
 
       <p className="page-subtitle">
         Keep track of every vendor — venue, catering, photography, and more — along with their contact
-        info, cost, and booking status. Booked and paid vendors show up on your budget automatically.
+        info, cost, and booking status. Vendors show up on your budget automatically once you’ve paid a downpayment.
       </p>
 
       <div className="btn-row" style={{ marginBottom: 16 }}>

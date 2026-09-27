@@ -128,7 +128,7 @@ export type ExchangeRate = {
   source: string;
 };
 
-export type VendorStatus = "inquired" | "booked" | "downpayment" | "paid";
+export type VendorStatus = "inquired" | "downpayment" | "booked" | "paid";
 
 export type VendorCategory = {
   id: string;
