@@ -233,7 +233,7 @@ function Frame({
   return (
     <div
       ref={ref}
-      className={`hp-shot-wrap bloom-${bloom} ${bloomSmall ? "bloom-small" : ""} ${reached ? "bloomed" : ""}`}
+      className={`hp-shot-wrap ${className}-wrap bloom-${bloom} ${bloomSmall ? "bloom-small" : ""} ${reached ? "bloomed" : ""}`}
     >
       {bloom !== "none" && <span className="hp-bloom" aria-hidden="true" />}
       {cornerBloom && <span className="hp-bloom hp-bloom-corner" aria-hidden="true" />}
