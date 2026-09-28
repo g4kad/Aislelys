@@ -2641,7 +2641,8 @@
 .lightbox-footer {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
+  gap: 12px;
   padding-top: 12px;
   color: #fff;
 }
@@ -2650,7 +2651,12 @@
   font-size: 0.95rem;
   line-height: 1.4;
   min-width: 0;
-  text-align: center;
+}
+
+.pin-save-btn.lightbox-approve {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
 }
 
 /* ---------- Settings page ---------- */

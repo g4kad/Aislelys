@@ -25,6 +25,9 @@ export default function InspirationPage() {
   // keyed by item id — only plain images go in the viewer
   const [imageSrcs, setImageSrcs] = useState<Record<string, string>>({});
   const [lightboxItemId, setLightboxItemId] = useState<string | null>(null);
+  // the images the viewer was opened with — kept fixed while it's open, so
+  // un-approving one in "approved only" doesn't yank it out from under you
+  const [lightboxIds, setLightboxIds] = useState<string[]>([]);
 
   const handleImageReady = useCallback((id: string, src: string | null) => {
     setImageSrcs((prev) => {
@@ -72,13 +75,22 @@ export default function InspirationPage() {
     });
   }, [items, selectedCategoryId, approvedOnly]);
 
+  const itemsById = useMemo(() => new Map(items.map((i) => [i.id, i])), [items]);
   const lightboxSlides = useMemo<LightboxSlide[]>(
     () =>
-      filteredItems
-        .filter((i) => imageSrcs[i.id])
-        .map((i) => ({ id: i.id, src: imageSrcs[i.id], caption: i.caption })),
-    [filteredItems, imageSrcs]
+      lightboxIds.flatMap((id) => {
+        const item = itemsById.get(id);
+        return item && imageSrcs[id]
+          ? [{ id, src: imageSrcs[id], caption: item.caption, approved: item.approved }]
+          : [];
+      }),
+    [lightboxIds, itemsById, imageSrcs]
   );
+
+  function openLightbox(itemId: string) {
+    setLightboxIds(filteredItems.filter((i) => imageSrcs[i.id]).map((i) => i.id));
+    setLightboxItemId(itemId);
+  }
   const lightboxIndex = lightboxSlides.findIndex((s) => s.id === lightboxItemId);
 
   const approvedCountFor = useMemo(() => {
@@ -324,7 +336,7 @@ export default function InspirationPage() {
               onChangeCategory={(categoryId) => handleChangeItemCategory(item.id, categoryId)}
               onDelete={() => handleDelete(item.id)}
               onImageReady={(src) => handleImageReady(item.id, src)}
-              onOpenImage={() => setLightboxItemId(item.id)}
+              onOpenImage={() => openLightbox(item.id)}
             />
           ))}
         </div>
@@ -335,6 +347,7 @@ export default function InspirationPage() {
           slides={lightboxSlides}
           index={lightboxIndex}
           onIndexChange={(i) => setLightboxItemId(lightboxSlides[i].id)}
+          onToggleApproved={(id) => handleToggleApproved(id)}
           onClose={() => setLightboxItemId(null)}
         />
       )}

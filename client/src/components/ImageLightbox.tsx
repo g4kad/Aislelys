@@ -1,16 +1,18 @@
 import { useEffect, useRef, useState } from "react";
-import { IconChevronLeft, IconChevronRight, IconClose } from "./Icons";
+import { IconChevronLeft, IconChevronRight, IconClose, IconHeart } from "./Icons";
 
 export type LightboxSlide = {
   id: string;
   src: string;
   caption: string;
+  approved: boolean;
 };
 
 type Props = {
   slides: LightboxSlide[];
   index: number;
   onIndexChange: (index: number) => void;
+  onToggleApproved: (id: string) => void;
   onClose: () => void;
 };
 
@@ -19,7 +21,7 @@ type Props = {
 const SWIPE_DISTANCE = 60;
 const SWIPE_VELOCITY = 0.4;
 
-export default function ImageLightbox({ slides, index, onIndexChange, onClose }: Props) {
+export default function ImageLightbox({ slides, index, onIndexChange, onToggleApproved, onClose }: Props) {
   const [dragX, setDragX] = useState(0);
   const [dragging, setDragging] = useState(false);
   const touch = useRef<{ x: number; y: number; t: number; axis: "x" | "y" | null } | null>(null);
@@ -159,11 +161,18 @@ export default function ImageLightbox({ slides, index, onIndexChange, onClose }:
         }}
       >
         <img key={slide.id} src={slide.src} alt={slide.caption} draggable={false} />
-        {slide.caption && (
-          <figcaption className="lightbox-footer">
-            <span className="lightbox-caption">{slide.caption}</span>
-          </figcaption>
-        )}
+        <figcaption className="lightbox-footer">
+          {slide.caption ? <span className="lightbox-caption">{slide.caption}</span> : <span />}
+          <button
+            type="button"
+            className={`pin-save-btn lightbox-approve ${slide.approved ? "saved" : ""}`}
+            title={slide.approved ? "Approved" : "Mark as approved"}
+            aria-pressed={slide.approved}
+            onClick={() => onToggleApproved(slide.id)}
+          >
+            <IconHeart filled={slide.approved} size={18} />
+          </button>
+        </figcaption>
       </figure>
     </div>
   );
