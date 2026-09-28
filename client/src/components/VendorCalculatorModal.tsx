@@ -3,15 +3,12 @@ import type { Currency, Vendor, VendorCategory } from "../types";
 import Modal from "./Modal";
 import * as api from "../api";
 import { extrasTotal, formatMoney, formatSgd, toSgd } from "../money";
-import { VENDOR_STATUSES } from "../constants";
 
 type Props = {
   vendors: Vendor[];
   categories: VendorCategory[];
   onClose: () => void;
 };
-
-const STATUS_LABEL: Record<string, string> = Object.fromEntries(VENDOR_STATUSES.map((s) => [s.value, s.label]));
 
 function vendorTotal(v: Vendor) {
   return v.cost + extrasTotal(v.extras);
@@ -91,10 +88,7 @@ export default function VendorCalculatorModal({ vendors, categories, onClose }: 
                 {group.vendors.map((v) => (
                   <label className={`calculator-row ${selected.has(v.id) ? "on" : ""}`} key={v.id}>
                     <input type="checkbox" checked={selected.has(v.id)} onChange={() => toggle(v.id)} />
-                    <span className="calculator-name">
-                      {v.name}
-                      <span className={`status-pill status-${v.status}`}>{STATUS_LABEL[v.status] ?? v.status}</span>
-                    </span>
+                    <span className="calculator-name">{v.name}</span>
                     <span className="calculator-amount">{formatMoney(vendorTotal(v), v.currency)}</span>
                   </label>
                 ))}
