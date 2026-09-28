@@ -1306,7 +1306,7 @@ html:has(.hp) {
   animation-delay: -4s;
 }
 
-/* the Remaining card tucks into the top-right corner, clear of the cards */
+/* the Wedding budget card tucks into the top-right corner, clear of the cards */
 .hp-hero-visual .hp-shot-badge {
   top: 0;
   right: 0;
@@ -1348,8 +1348,11 @@ html:has(.hp) {
     display: none;
   }
 
+  /* 20% smaller on phones (scaled from its corner so it stays tucked in) */
   .hp-hero-visual .hp-shot-badge {
     width: 180px;
+    scale: 0.8;
+    transform-origin: top right;
   }
 }
 

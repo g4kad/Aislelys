@@ -5,8 +5,8 @@ import {
   BudgetPreview,
   FamilyListsPreview,
   GuestListPreview,
-  RemainingBadge,
   TaskPreview,
+  WeddingBudgetBadge,
   WeddingCardsPreview,
 } from "./AppPreviews";
 import "./home.css";
@@ -211,7 +211,7 @@ export default function HomePage() {
           <div className="hp-hero-visual">
             <div className="hp-hero-backdrop" />
             <WeddingCardsPreview />
-            <RemainingBadge />
+            <WeddingBudgetBadge />
           </div>
         </section>
 

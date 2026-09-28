@@ -361,7 +361,7 @@ export function TaskPreview() {
   );
 }
 
-export function BudgetCellsPreview({ only }: { only?: "remaining" }) {
+export function BudgetCellsPreview() {
   const spent = BUDGET_ITEMS.reduce((sum, i) => sum + budgetLineAmount(i), 0);
   const remaining = BUDGET_TOTAL - spent;
   const remainingCell = (
@@ -370,7 +370,6 @@ export function BudgetCellsPreview({ only }: { only?: "remaining" }) {
       <span className="budget-stat-value positive">{formatDollars(remaining)}</span>
     </div>
   );
-  if (only === "remaining") return remainingCell;
   return (
     <div className="budget-summary">
       <div className="budget-summary-stat">
@@ -390,11 +389,15 @@ export function BudgetCellsPreview({ only }: { only?: "remaining" }) {
   );
 }
 
-export function RemainingBadge() {
+// The hero's corner card: the couple's total wedding budget.
+export function WeddingBudgetBadge() {
   const [ref, shown] = useRevealOnScroll<HTMLDivElement>();
   return (
     <div ref={ref} className={`hp-shot-badge hp-reveal hp-reveal-late ${shown ? "is-shown" : ""}`} aria-hidden="true">
-      <BudgetCellsPreview only="remaining" />
+      <div className="budget-summary-stat">
+        <span className="budget-stat-label">Wedding budget</span>
+        <span className="budget-stat-value">{formatDollars(BUDGET_TOTAL)}</span>
+      </div>
     </div>
   );
 }
