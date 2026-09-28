@@ -102,6 +102,10 @@ export default function SectionsBoard(props: Props) {
     return { bySection };
   }, [events, sections]);
 
+  // sections with nothing in them this month are hidden, not deleted — they
+  // stay in "Manage cards" and the section pickers
+  const visibleSections = sections.filter((s) => groups.bySection.has(s.id));
+
   function handleDragEnd(e: DragEndEvent) {
     const { active, over } = e;
     if (!over || active.id === over.id) return;
@@ -121,33 +125,30 @@ export default function SectionsBoard(props: Props) {
       </div>
 
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-        <SortableContext items={sections.map((s) => s.id)} strategy={verticalListSortingStrategy}>
+        <SortableContext items={visibleSections.map((s) => s.id)} strategy={verticalListSortingStrategy}>
           <div className="board-sections">
-            {sections.map((section) => {
+            {visibleSections.length === 0 && <p className="empty-hint">No tasks this month.</p>}
+            {visibleSections.map((section) => {
               const sectionEvents = groups.bySection.get(section.id) ?? [];
               return (
                 <SortableSection key={section.id} section={section} count={sectionEvents.length}>
-                  {sectionEvents.length === 0 ? (
-                    <p className="empty-hint">No tasks in this section yet.</p>
-                  ) : (
-                    <div className="card-list">
-                      {sectionEvents.map((ev) => (
-                        <EventCard
-                          key={ev.id}
-                          event={ev}
-                          section={section}
-                          sections={sections}
-                          expanded={expandedEventId === ev.id}
-                          onToggleExpand={() => toggleExpand(ev.id)}
-                          onUpdateEvent={(patch) => props.onUpdateEvent(ev.id, patch)}
-                          onDeleteEvent={() => props.onDeleteEvent(ev.id)}
-                          onAddTask={(name, assignee) => props.onAddTask(ev.id, name, assignee)}
-                          onUpdateTask={(taskId, patch) => props.onUpdateTask(ev.id, taskId, patch)}
-                          onDeleteTask={(taskId) => props.onDeleteTask(ev.id, taskId)}
-                        />
-                      ))}
-                    </div>
-                  )}
+                  <div className="card-list">
+                    {sectionEvents.map((ev) => (
+                      <EventCard
+                        key={ev.id}
+                        event={ev}
+                        section={section}
+                        sections={sections}
+                        expanded={expandedEventId === ev.id}
+                        onToggleExpand={() => toggleExpand(ev.id)}
+                        onUpdateEvent={(patch) => props.onUpdateEvent(ev.id, patch)}
+                        onDeleteEvent={() => props.onDeleteEvent(ev.id)}
+                        onAddTask={(name, assignee) => props.onAddTask(ev.id, name, assignee)}
+                        onUpdateTask={(taskId, patch) => props.onUpdateTask(ev.id, taskId, patch)}
+                        onDeleteTask={(taskId) => props.onDeleteTask(ev.id, taskId)}
+                      />
+                    ))}
+                  </div>
                 </SortableSection>
               );
             })}
