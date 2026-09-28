@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { BudgetCategory, BudgetItem, EventItem, GuestOwner, Section, User } from "../types";
 import { DemoAuthProvider } from "../auth";
 import SectionsBoard from "../components/SectionsBoard";
@@ -187,7 +187,56 @@ const OWNERS: GuestOwner[] = [
   familyList("g-theo", "Theo's parents", 0),
 ];
 
-function Frame({ label, children, className = "" }: { label: string; children: ReactNode; className?: string }) {
+// Fades a lily in behind a screen once the screen reaches the middle of the
+// viewport (a 1px band across the middle; see rootMargin). It stays shown.
+function useReachedMiddle<T extends Element>() {
+  const ref = useRef<T>(null);
+  const [reached, setReached] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || reached) return;
+    if (typeof IntersectionObserver === "undefined") {
+      setReached(true);
+      return;
+    }
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) {
+          setReached(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: "-50% 0px -50% 0px" }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [reached]);
+  return [ref, reached] as const;
+}
+
+function Frame({
+  label,
+  children,
+  className = "",
+  bloom = "right",
+}: {
+  label: string;
+  children: ReactNode;
+  className?: string;
+  bloom?: "left" | "right";
+}) {
+  const [ref, reached] = useReachedMiddle<HTMLDivElement>();
+  return (
+    <div ref={ref} className={`hp-shot-wrap bloom-${bloom} ${reached ? "bloomed" : ""}`}>
+      <span className="hp-bloom" aria-hidden="true" />
+      <FrameWindow label={label} className={className}>
+        {children}
+      </FrameWindow>
+    </div>
+  );
+}
+
+function FrameWindow({ label, children, className }: { label: string; children: ReactNode; className: string }) {
   return (
     <div className={`hp-shot ${className}`} aria-hidden="true">
       <div className="hp-shot-bar">
@@ -234,7 +283,7 @@ export function TaskPreview() {
   const venue = SECTIONS[0];
   const [visit, , , tasting] = EVENTS;
   return (
-    <Frame label="Planner · task breakdown" className="hp-shot-tasks">
+    <Frame label="Planner · task breakdown" className="hp-shot-tasks" bloom="left">
       <div className="card-list">
         <EventCard event={visit} section={venue} sections={SECTIONS} expanded onToggleExpand={noop} {...eventHandlers} />
         <EventCard event={tasting} section={venue} sections={SECTIONS} expanded={false} onToggleExpand={noop} {...eventHandlers} />
@@ -282,7 +331,7 @@ export function RemainingBadge() {
 
 export function BudgetPreview() {
   return (
-    <Frame label="Budget" className="hp-shot-budget">
+    <Frame label="Budget" className="hp-shot-budget" bloom="left">
       <BudgetCellsPreview />
       <BudgetBoard
         items={BUDGET_ITEMS}
@@ -311,7 +360,7 @@ const guestHandlers = {
 
 export function GuestListPreview() {
   return (
-    <Frame label="Guest List" className="hp-shot-guests">
+    <Frame label="Guest List" className="hp-shot-guests" bloom="left">
       <div className="card-list">
         <GuestOwnerCard owner={OWNERS[0]} expanded onToggleExpand={noop} deletable={false} nameEditable={false} {...guestHandlers} />
       </div>

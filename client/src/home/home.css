@@ -1002,7 +1002,16 @@ html:has(.hp) {
   flex-direction: column;
 }
 
-.hp-guests-grid .hp-share .hp-shot {
+.hp-guests-grid .hp-share > .hp-shot-wrap {
+  flex: 1;
+}
+
+.hp-guests-grid .hp-shot-wrap {
+  display: flex;
+  flex-direction: column;
+}
+
+.hp-guests-grid .hp-shot-wrap > .hp-shot {
   flex: 1;
 }
 
@@ -1080,4 +1089,66 @@ html:has(.hp) {
   font-size: 0.9375rem;
   font-weight: 600;
   white-space: nowrap;
+}
+
+/* ---------- lily behind each screen ---------- */
+
+.hp-shot-wrap {
+  position: relative;
+  isolation: isolate;
+}
+
+.hp-shot-wrap > .hp-shot {
+  z-index: 1;
+}
+
+.hp-bloom {
+  position: absolute;
+  z-index: 0;
+  top: -14%;
+  width: min(62%, 420px);
+  aspect-ratio: 750 / 926;
+  background: url("/lily-bloom.png") center / contain no-repeat;
+  opacity: 0;
+  transition: opacity 1.2s ease;
+  pointer-events: none;
+}
+
+.bloom-right .hp-bloom {
+  right: -16%;
+}
+
+.bloom-left .hp-bloom {
+  left: -16%;
+  transform: scaleX(-1);
+}
+
+.hp-shot-wrap.bloomed .hp-bloom {
+  opacity: 0.3;
+}
+
+/* on the sage band the sage flower would vanish — use a light version */
+.hp-guests .hp-bloom {
+  filter: brightness(2.2) saturate(0.6);
+}
+
+@media (max-width: 640px) {
+  .hp-bloom {
+    width: 58%;
+    top: -10%;
+  }
+
+  .bloom-right .hp-bloom {
+    right: -12%;
+  }
+
+  .bloom-left .hp-bloom {
+    left: -12%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hp-bloom {
+    transition: none;
+  }
 }
