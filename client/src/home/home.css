@@ -1188,3 +1188,13 @@ html:has(.hp) {
     font-size: 1.05rem;
   }
 }
+
+/* budget window: nudge its flowers up, measured by each flower's own height
+   so the move looks the same on desktop and phones */
+.hp-shot-budget-wrap .hp-bloom:not(.hp-bloom-corner) {
+  transform: translateY(-10%);
+}
+
+.hp-shot-budget-wrap .hp-bloom.hp-bloom-corner {
+  transform: translateY(-30%);
+}
