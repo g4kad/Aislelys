@@ -1587,3 +1587,25 @@ html:has(.hp) {
     display: none;
   }
 }
+
+/* the sand box: just a little bigger than the window and offset to the
+   right and down, like a shadow behind it (window: top 9.6%, left 19.9%,
+   71.8% × 79.3%) */
+.hp-hero-visual .hp-hero-backdrop {
+  top: 14%;
+  left: 24.5%;
+  right: auto;
+  bottom: auto;
+  width: 74%;
+  height: 81.5%;
+}
+
+@media (max-width: 640px) {
+  /* phones (window: top 48px, left 10%, 86% × 420px) */
+  .hp-hero-visual .hp-hero-backdrop {
+    top: 66px;
+    left: 15%;
+    width: 87%;
+    height: 426px;
+  }
+}
