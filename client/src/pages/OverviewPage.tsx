@@ -72,7 +72,6 @@ export default function OverviewPage({ weddingDate }: Props) {
           <>
             <p className="overview-days">{days.toLocaleString()}</p>
             <p className="overview-hero-label">{days === 1 ? "day to go" : "days to go"}</p>
-            <p className="overview-hero-date">{formatDateLong(weddingDate!)}</p>
           </>
         ) : days === 0 ? (
           <>
