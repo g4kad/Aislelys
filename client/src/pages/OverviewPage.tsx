@@ -61,29 +61,31 @@ export default function OverviewPage({ weddingDate }: Props) {
   return (
     <div className="overview-page">
       <section className="overview-hero">
-        {days === null ? (
-          <>
-            <p className="overview-hero-label">Your big day</p>
-            <p className="overview-hero-empty">
-              Set your wedding date in <Link to={`${base}/settings`}>Settings</Link> to start the countdown.
-            </p>
-          </>
-        ) : days > 0 ? (
-          <>
-            <p className="overview-days">{days.toLocaleString()}</p>
-            <p className="overview-hero-label">{days === 1 ? "day to go" : "days to go"}</p>
-          </>
-        ) : days === 0 ? (
-          <>
-            <p className="overview-days overview-days-today">Today</p>
-            <p className="overview-hero-label">is the day!</p>
-          </>
-        ) : (
-          <>
-            <p className="overview-hero-label">Married since</p>
-            <p className="overview-hero-date overview-hero-date-large">{formatDateLong(weddingDate!)}</p>
-          </>
-        )}
+        <div className="overview-countdown">
+          {days === null ? (
+            <>
+              <p className="overview-hero-label">Your big day</p>
+              <p className="overview-hero-empty">
+                Set your wedding date in <Link to={`${base}/settings`}>Settings</Link> to start the countdown.
+              </p>
+            </>
+          ) : days > 0 ? (
+            <>
+              <p className="overview-days">{days.toLocaleString()}</p>
+              <p className="overview-hero-label">{days === 1 ? "day to go" : "days to go"}</p>
+            </>
+          ) : days === 0 ? (
+            <>
+              <p className="overview-days overview-days-today">Today</p>
+              <p className="overview-hero-label">is the day!</p>
+            </>
+          ) : (
+            <>
+              <p className="overview-hero-label">Married since</p>
+              <p className="overview-hero-date overview-hero-date-large">{formatDateLong(weddingDate!)}</p>
+            </>
+          )}
+        </div>
 
         <figure className="overview-quote">
           <blockquote>“{quote.text}”</blockquote>

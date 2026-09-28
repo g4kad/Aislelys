@@ -3208,3 +3208,38 @@
     margin-top: 24px;
   }
 }
+
+.overview-countdown {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* desktop: countdown on the left half, a larger quote on the right half */
+@media (min-width: 721px) {
+  .overview-hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: center;
+    padding: 48px 0;
+  }
+
+  .overview-quote {
+    margin: 0;
+    max-width: none;
+    padding: 8px 48px;
+    border-top: none;
+    border-left: 1px solid var(--hero-rule);
+    text-align: left;
+  }
+
+  .overview-quote blockquote {
+    font-size: 1.6rem;
+    line-height: 1.4;
+  }
+
+  .overview-quote figcaption {
+    margin-top: 12px;
+    font-size: 0.9rem;
+  }
+}
