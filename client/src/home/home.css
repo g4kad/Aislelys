@@ -1090,9 +1090,6 @@ html:has(.hp) {
   font-weight: 600;
   white-space: nowrap;
 }
-
-/* ---------- lily behind each screen ---------- */
-
 .hp-shot-wrap {
   position: relative;
   isolation: isolate;
@@ -1102,92 +1099,11 @@ html:has(.hp) {
   z-index: 1;
 }
 
-.hp-bloom {
-  position: absolute;
-  z-index: 0;
-  top: -14%;
-  width: min(62%, 420px);
-  aspect-ratio: 750 / 926;
-  background: url("/lily-bloom.png?v=2") center / contain no-repeat;
-  opacity: 0.3;
-  pointer-events: none;
-}
-
-.bloom-right .hp-bloom {
-  right: -16%;
-}
-
-.bloom-left .hp-bloom {
-  left: -16%;
-}
-
-/* Mira's guest list and the budget: 10% smaller, and higher up */
-.bloom-small .hp-bloom {
-  width: min(55.8%, 378px);
-  top: -26%;
-}
-
-/* the budget's second flower, tucked under the bottom-right corner */
-.hp-bloom.hp-bloom-corner,
-.bloom-left .hp-bloom.hp-bloom-corner {
-  top: auto;
-  left: auto;
-  right: -14%;
-  bottom: -18%;
-  width: min(50%, 340px);
-  background-image: url("/lily-bloom-2.png?v=1");
-}
-
-/* the budget's top-left flower sits lower than the guest list's */
-.hp-shot-budget-wrap .hp-bloom:not(.hp-bloom-corner) {
-  top: -12%;
-}
-
-@media (max-width: 640px) {
-  /* the budget window is tall on phones, so a % offset lifts the flower far
-     above it — pin it to the window's top edge instead */
-  .hp-shot-budget-wrap .hp-bloom:not(.hp-bloom-corner) {
-    top: -40px;
-  }
-}
-
-/* on the sage band the sage flower would vanish — use a light version */
-.hp-guests .hp-bloom {
-  filter: brightness(2.2) saturate(0.6);
-}
-
-@media (max-width: 640px) {
-  .hp-bloom {
-    width: 58%;
-    top: -10%;
-  }
-
-  .bloom-right .hp-bloom {
-    right: -12%;
-  }
-
-  .bloom-left .hp-bloom {
-    left: -12%;
-  }
-}
-
-
 @media (max-width: 640px) {
   /* keep "S$ 40,000.00" on one line in the 2 × 2 budget cells */
   .hp-shot .budget-stat-value {
     font-size: 1.05rem;
   }
-}
-
-/* budget window: nudge its flowers up, measured by each flower's own height
-   so the move looks the same on desktop and phones */
-.hp-shot-budget-wrap .hp-bloom:not(.hp-bloom-corner) {
-  transform: translateY(-10%);
-  width: min(53%, 359px); /* 5% smaller than the other small flowers */
-}
-
-.hp-shot-budget-wrap .hp-bloom.hp-bloom-corner {
-  transform: translateY(-30%);
 }
 
 /* ---------- Mira's guest list: a working example ---------- */

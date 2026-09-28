@@ -216,23 +216,15 @@ function Frame({
   label,
   children,
   className = "",
-  bloom = "right",
-  bloomSmall = false,
-  cornerBloom = false,
   interactive = false,
 }: {
   label: string;
   children: ReactNode;
   className?: string;
-  bloom?: "left" | "right" | "none";
-  bloomSmall?: boolean; // 10% smaller and sitting higher
-  cornerBloom?: boolean; // a second flower at the bottom-right
   interactive?: boolean; // clickable (e.g. open a guest list); still saves nothing
 }) {
   return (
-    <div className={`hp-shot-wrap ${className}-wrap bloom-${bloom} ${bloomSmall ? "bloom-small" : ""}`}>
-      {bloom !== "none" && <span className="hp-bloom" aria-hidden="true" />}
-      {cornerBloom && <span className="hp-bloom hp-bloom-corner" aria-hidden="true" />}
+    <div className={`hp-shot-wrap ${className}-wrap`}>
       <FrameWindow label={label} className={className} interactive={interactive}>
         {children}
       </FrameWindow>
@@ -283,7 +275,7 @@ const eventHandlers = {
 
 export function WeddingCardsPreview() {
   return (
-    <Frame label="Planner · Wedding Cards" className="hp-shot-cards" bloom="none">
+    <Frame label="Planner · Wedding Cards" className="hp-shot-cards">
       <SectionsBoard
         events={EVENTS}
         sections={SECTIONS}
@@ -302,7 +294,7 @@ export function TaskPreview() {
   const venue = SECTIONS[0];
   const [visit, , , tasting] = EVENTS;
   return (
-    <Frame label="Planner · task breakdown" className="hp-shot-tasks" bloom="left">
+    <Frame label="Planner · task breakdown" className="hp-shot-tasks">
       <div className="card-list">
         <EventCard event={visit} section={venue} sections={SECTIONS} expanded onToggleExpand={noop} {...eventHandlers} />
         <EventCard event={tasting} section={venue} sections={SECTIONS} expanded={false} onToggleExpand={noop} {...eventHandlers} />
@@ -350,7 +342,7 @@ export function RemainingBadge() {
 
 export function BudgetPreview() {
   return (
-    <Frame label="Budget" className="hp-shot-budget" bloom="left" bloomSmall cornerBloom>
+    <Frame label="Budget" className="hp-shot-budget">
       <BudgetCellsPreview />
       <BudgetBoard
         items={BUDGET_ITEMS}
@@ -380,7 +372,7 @@ const guestHandlers = {
 
 export function GuestListPreview() {
   return (
-    <Frame label="Guest List" className="hp-shot-guests hp-shot-guests-main" bloom="left" bloomSmall interactive>
+    <Frame label="Guest List" className="hp-shot-guests hp-shot-guests-main" interactive>
       <div className="card-list">
         <GuestOwnerCard owner={OWNERS[0]} expanded onToggleExpand={noop} deletable={false} nameEditable={false} {...guestHandlers} />
       </div>
@@ -393,7 +385,7 @@ export function GuestListPreview() {
 export function FamilyListsPreview() {
   const [openId, setOpenId] = useState<string | null>(null);
   return (
-    <Frame label="Guest List · family lists" className="hp-shot-guests hp-shot-guests-family" bloom="none" interactive>
+    <Frame label="Guest List · family lists" className="hp-shot-guests hp-shot-guests-family" interactive>
       <div className="card-list">
         {OWNERS.slice(1).map((owner) => (
           <GuestOwnerCard
