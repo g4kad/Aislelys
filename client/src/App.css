@@ -2794,3 +2794,24 @@
 .cost-breakdown-row.total span:first-child {
   color: var(--text);
 }
+
+/* ---------- Guest list: add-guest list picker ---------- */
+
+.guest-add-list-picker {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.guest-add-list-picker .dropdown {
+  min-width: 130px;
+}
+
+.guest-added-hint {
+  flex-basis: 100%;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}

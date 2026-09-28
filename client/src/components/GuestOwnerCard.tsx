@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import type { Guest, GuestCategory, GuestOwner } from "../types";
 import { IconChevronRight, IconClose, IconEdit, IconEye, IconEyeOff, IconHeart, IconTrash } from "./Icons";
 import { guestNamePlaceholder } from "../textUtils";
+import Dropdown from "./Dropdown";
 
 type Props = {
   owner: GuestOwner;
@@ -27,6 +28,7 @@ function attendeeTotal(list: Guest[]) {
 
 type SectionProps = {
   category: GuestCategory;
+  lists: GuestCategory[]; // all of this person's lists, for the "add to" picker
   guests: Guest[];
   editing: boolean;
   open: boolean;
@@ -40,6 +42,7 @@ type SectionProps = {
 
 function CategorySection({
   category,
+  lists,
   guests,
   editing,
   open,
@@ -53,6 +56,9 @@ function CategorySection({
   const [name, setName] = useState("");
   const [count, setCount] = useState("");
   const [vip, setVip] = useState(false);
+  // which list the new guest goes into — starts on the list you're in
+  const [targetListId, setTargetListId] = useState(category.id);
+  const [addedTo, setAddedTo] = useState<string | null>(null);
   const [confirmDeleteCategory, setConfirmDeleteCategory] = useState(false);
   const [renaming, setRenaming] = useState(false);
   const [draftTitle, setDraftTitle] = useState(category.title);
@@ -83,11 +89,58 @@ function CategorySection({
     e.preventDefault();
     if (!name.trim()) return;
     const plusCount = count === "" ? 0 : Math.max(0, Math.floor(Number(count)) || 0);
-    onAddGuest(name.trim(), plusCount, category.id, vip);
+    const target = lists.find((l) => l.id === targetListId) ?? category;
+    onAddGuest(name.trim(), plusCount, target.id, vip);
     setName("");
     setCount("");
     setVip(false);
+    if (target.id !== category.id) {
+      setAddedTo(target.title);
+      setTimeout(() => setAddedTo(null), 2500);
+    }
   }
+
+  const addForm = (
+    <form className="guest-add-form" onSubmit={submit}>
+      <button
+        type="button"
+        className={`icon-btn vip-toggle ${vip ? "active" : ""}`}
+        title={vip ? "Will be marked VIP" : "Mark as VIP"}
+        onClick={() => setVip((v) => !v)}
+      >
+        <IconHeart filled={vip} size={13} />
+      </button>
+      <input
+        type="text"
+        placeholder={guestNamePlaceholder(category.title)}
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+      />
+      <label className="plus-input-label">
+        +
+        <input
+          className="plus-input"
+          type="number"
+          min={0}
+          placeholder="0"
+          value={count}
+          onChange={(e) => setCount(e.target.value)}
+        />
+      </label>
+      {lists.length > 1 && (
+        <label className="guest-add-list-picker">
+          <span>List</span>
+          <Dropdown
+            value={targetListId}
+            onChange={setTargetListId}
+            options={lists.map((l) => ({ value: l.id, label: l.title }))}
+          />
+        </label>
+      )}
+      <button className="btn small" type="submit">Add guest</button>
+      {addedTo && <span className="guest-added-hint">Added to {addedTo}</span>}
+    </form>
+  );
 
   function startRenaming() {
     setDraftTitle(category.title);
@@ -170,7 +223,8 @@ function CategorySection({
       {open && (
         <div className="guest-subsection-body">
           {!editing ? (
-            guests.length > 0 && (
+            <>
+              {guests.length > 0 && (
               <div className="guest-names-box">
                 <ul className="task-view-list">
                   {guests.map((g) => (
@@ -214,7 +268,9 @@ function CategorySection({
                   ))}
                 </ul>
               </div>
-            )
+              )}
+              {addForm}
+            </>
           ) : (
             <>
               <ul className="task-list">
@@ -324,34 +380,7 @@ function CategorySection({
                   );
                 })}
               </ul>
-              <form className="guest-add-form" onSubmit={submit}>
-                <button
-                  type="button"
-                  className={`icon-btn vip-toggle ${vip ? "active" : ""}`}
-                  title={vip ? "Will be marked VIP" : "Mark as VIP"}
-                  onClick={() => setVip((v) => !v)}
-                >
-                  <IconHeart filled={vip} size={13} />
-                </button>
-                <input
-                  type="text"
-                  placeholder={guestNamePlaceholder(category.title)}
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                />
-                <label className="plus-input-label">
-                  +
-                  <input
-                    className="plus-input"
-                    type="number"
-                    min={0}
-                    placeholder="0"
-                    value={count}
-                    onChange={(e) => setCount(e.target.value)}
-                  />
-                </label>
-                <button className="btn small" type="submit">Add</button>
-              </form>
+              {addForm}
             </>
           )}
         </div>
@@ -477,6 +506,7 @@ export default function GuestOwnerCard({
                 <CategorySection
                   key={cat.id}
                   category={cat}
+                  lists={owner.categories}
                   guests={owner.guests.filter((g) => g.categoryId === cat.id)}
                   editing={false}
                   open={openCategoryId === cat.id}
@@ -511,6 +541,7 @@ export default function GuestOwnerCard({
                 <CategorySection
                   key={cat.id}
                   category={cat}
+                  lists={owner.categories}
                   guests={owner.guests.filter((g) => g.categoryId === cat.id)}
                   editing
                   open={openCategoryId === cat.id}
