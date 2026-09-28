@@ -301,20 +301,50 @@ const eventHandlers = {
   onDeleteTask: noop,
 };
 
+// Hero: an (empty) Wedding Cards window as the backdrop, with each section
+// floating on its own in front of it — still the real board component, one
+// section at a time.
+function FloatingSection({ section, index }: { section: Section; index: number }) {
+  const [ref, shown] = useRevealOnScroll<HTMLDivElement>();
+  return (
+    <div
+      ref={ref}
+      className={`hp-float-card hp-float-${index + 1} hp-reveal ${shown ? "is-shown" : ""}`}
+      aria-hidden="true"
+    >
+      <div className="hp-float-inner" inert>
+        <DemoAuthProvider accounts={PARTNERS}>
+          <SectionsBoard
+            events={EVENTS.filter((e) => e.sectionId === section.id)}
+            sections={[section]}
+            onCreateSection={noopAsync}
+            onUpdateSection={noop}
+            onDeleteSection={noop}
+            onReorderSections={noop}
+            onOpenAddTask={noop}
+            {...eventHandlers}
+          />
+        </DemoAuthProvider>
+      </div>
+    </div>
+  );
+}
+
 export function WeddingCardsPreview() {
   return (
-    <Frame label="Planner · Wedding Cards" className="hp-shot-cards">
-      <SectionsBoard
-        events={EVENTS}
-        sections={SECTIONS}
-        onCreateSection={noopAsync}
-        onUpdateSection={noop}
-        onDeleteSection={noop}
-        onReorderSections={noop}
-        onOpenAddTask={noop}
-        {...eventHandlers}
-      />
-    </Frame>
+    <>
+      <Frame label="Planner · Wedding Cards" className="hp-shot-cards">
+        <div className="hp-ghost-board">
+          <span />
+          <span />
+          <span />
+          <span />
+        </div>
+      </Frame>
+      {SECTIONS.map((section, i) => (
+        <FloatingSection key={section.id} section={section} index={i} />
+      ))}
+    </>
   );
 }
 

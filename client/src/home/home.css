@@ -1207,3 +1207,154 @@ html:has(.hp) {
   mix-blend-mode: multiply;
   pointer-events: none;
 }
+
+/* ---------- hero: sections floating in front of the Wedding Cards window ---------- */
+
+.hp-hero-visual {
+  height: 580px;
+  padding: 0;
+}
+
+.hp-hero-visual .hp-shot-cards-wrap {
+  position: absolute;
+  top: 28px;
+  left: 0;
+  right: 48px;
+  height: 460px;
+}
+
+.hp-hero-visual .hp-shot {
+  margin-right: 0;
+  height: 100%;
+}
+
+/* the window behind is just a hint of the app */
+.hp-ghost-board {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.hp-ghost-board span {
+  display: block;
+  height: 64px;
+  border-radius: 12px;
+  border: 1px dashed var(--hp-line);
+  background: var(--hp-cream);
+}
+
+.hp-ghost-board span:nth-child(2) {
+  height: 110px;
+}
+
+.hp-float-card {
+  position: absolute;
+  z-index: 2;
+}
+
+.hp-float-card .board-toolbar,
+.hp-float-card .board-footer {
+  display: none;
+}
+
+.hp-float-card .board-section {
+  box-shadow: 0 26px 50px -24px rgba(43, 28, 1, 0.4);
+}
+
+.hp-float-1 {
+  top: 84px;
+  left: -28px;
+  width: 72%;
+}
+
+.hp-float-2 {
+  top: 262px;
+  right: 0;
+  width: 62%;
+  transition-delay: 0.15s;
+}
+
+.hp-float-3 {
+  top: 398px;
+  left: 6%;
+  width: 60%;
+  transition-delay: 0.3s;
+}
+
+/* a slow drift, each card on its own rhythm */
+@keyframes hp-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-7px);
+  }
+}
+
+.hp-float-inner {
+  animation: hp-float 7s ease-in-out infinite;
+}
+
+.hp-float-2 .hp-float-inner {
+  animation-duration: 8.5s;
+  animation-delay: -2s;
+}
+
+.hp-float-3 .hp-float-inner {
+  animation-duration: 6.5s;
+  animation-delay: -4s;
+}
+
+/* the Remaining card tucks into the top-right corner, clear of the cards */
+.hp-hero-visual .hp-shot-badge {
+  top: 0;
+  right: 0;
+  bottom: auto;
+  z-index: 3;
+  width: 230px;
+}
+
+@media (max-width: 640px) {
+  .hp-hero-visual {
+    height: 560px;
+  }
+
+  .hp-hero-visual .hp-shot-cards-wrap {
+    right: 16px;
+    top: 36px;
+    height: 440px;
+  }
+
+  .hp-float-1 {
+    left: -8px;
+    width: 94%;
+    top: 96px;
+  }
+
+  .hp-float-2 {
+    width: 92%;
+    top: 272px;
+  }
+
+  .hp-float-3 {
+    left: 2%;
+    width: 92%;
+    top: 404px;
+  }
+
+  /* room for the task names on a narrow screen */
+  .hp-float-card .event-card-date {
+    display: none;
+  }
+
+  .hp-hero-visual .hp-shot-badge {
+    width: 180px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hp-float-inner {
+    animation: none;
+  }
+}
