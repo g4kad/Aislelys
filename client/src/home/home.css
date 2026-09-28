@@ -179,29 +179,22 @@
 .hp-wordmark {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  font-family: var(--heading);
-  font-size: 1.75rem;
-  letter-spacing: -0.01em;
-  color: var(--hp-ink);
+  gap: 12px;
 }
 
 .hp-wordmark img {
-  border-radius: 8px;
   display: block;
 }
 
-.hp-wordmark-accent {
-  font-style: italic;
-  color: var(--hp-gold-em);
+.hp-wordmark-icon {
+  border-radius: 8px;
 }
 
-.hp-wordmark.light {
-  color: var(--hp-on-sage);
-}
-
-.hp-wordmark.light .hp-wordmark-accent {
-  color: #e6cfa6;
+/* the logotype's artwork is 798 × 211; its x-height sits low, so it reads
+   best a little shorter than the icon */
+.hp-wordmark-type {
+  height: 26px;
+  width: auto;
 }
 
 .hp-nav-links {
@@ -809,13 +802,13 @@
     height: 64px;
   }
 
-  .hp-wordmark {
-    font-size: 1.5rem;
-  }
-
-  .hp-wordmark img {
+  .hp-wordmark-icon {
     width: 28px;
     height: 28px;
+  }
+
+  .hp-wordmark-type {
+    height: 21px;
   }
 
   .hp-link-btn {

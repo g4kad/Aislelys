@@ -63,13 +63,19 @@ function Heart({ filled }: { filled: boolean }) {
   );
 }
 
+// The icon plus the official "aislelys" logotype (sage on light backgrounds,
+// a cream copy of the same artwork on the sage footer).
 function Wordmark({ light = false }: { light?: boolean }) {
   return (
     <span className={`hp-wordmark ${light ? "light" : ""}`}>
-      <img src="/favicon.png" alt="" width={34} height={34} />
-      <span>
-        Aisle<span className="hp-wordmark-accent">lys</span>
-      </span>
+      <img className="hp-wordmark-icon" src="/favicon.png" alt="" width={34} height={34} />
+      <img
+        className="hp-wordmark-type"
+        src={light ? "/logo-aislelys-cream.png" : "/logo-aislelys.png"}
+        alt="Aislelys"
+        width={798}
+        height={211}
+      />
     </span>
   );
 }
