@@ -1157,7 +1157,7 @@
   flex: 1;
   min-width: 0;
   font: inherit;
-  font-size: 0.92rem;
+  font-size: 0.8rem; /* guest names: same size as the list names above them */
   color: inherit;
   text-align: left;
   background: none;
