@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import * as api from "../api";
 import {
   BudgetPreview,
-  FamilyInvitePreview,
+  FamilyListsPreview,
   GuestListPreview,
   RemainingBadge,
   TaskPreview,
@@ -262,11 +262,15 @@ export default function HomePage() {
           <div className="hp-guests-grid">
             <GuestListPreview />
             <div className="hp-share">
-              <div className="hp-share-card">
+              <div className="hp-share-card" aria-hidden="true">
                 <div className="hp-share-title">Invite family to add guests</div>
-                <p>Each parent gets their own list and a private link — they add names straight into it.</p>
+                <p>Share a private link. They add names straight into their own list.</p>
+                <div className="hp-share-link">
+                  <span>{window.location.host}/guests/…</span>
+                  <span className="hp-share-copy">Copy link</span>
+                </div>
               </div>
-              <FamilyInvitePreview />
+              <FamilyListsPreview />
             </div>
           </div>
         </section>

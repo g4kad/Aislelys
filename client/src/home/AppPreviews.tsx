@@ -130,6 +130,24 @@ const BUDGET_ITEMS: BudgetItem[] = [
 const BUDGET_TOTAL = 40000;
 const BUDGET_SAVINGS = 28500;
 
+function familyList(id: string, name: string, count: number): GuestOwner {
+  const categoryId = `${id}-family`;
+  return {
+    id,
+    name,
+    createdAt: "",
+    categories: [{ id: categoryId, ownerId: id, title: "Family" }],
+    guests: Array.from({ length: count }, (_, i) => ({
+      id: `${id}-${i}`,
+      name: `Guest ${i + 1}`,
+      plusCount: 0,
+      categoryId,
+      isVip: false,
+      included: true,
+    })),
+  };
+}
+
 const OWNERS: GuestOwner[] = [
   {
     id: "g-couple",
@@ -150,7 +168,7 @@ const OWNERS: GuestOwner[] = [
   },
   {
     id: "g-mum",
-    name: "Mum",
+    name: "Mum's list",
     createdAt: "",
     categories: [
       { id: "gm-family", ownerId: "g-mum", title: "Family" },
@@ -165,6 +183,8 @@ const OWNERS: GuestOwner[] = [
       included: true,
     })),
   },
+  familyList("g-dad", "Dad's list", 9),
+  familyList("g-theo", "Theo's parents", 0),
 ];
 
 function Frame({ label, children, className = "" }: { label: string; children: ReactNode; className?: string }) {
@@ -299,11 +319,14 @@ export function GuestListPreview() {
   );
 }
 
-export function FamilyInvitePreview() {
+// The family's own lists, closed: just each list's name and guest count.
+export function FamilyListsPreview() {
   return (
-    <Frame label="Guest List · Mum's list" className="hp-shot-guests">
+    <Frame label="Guest List · family lists" className="hp-shot-guests">
       <div className="card-list">
-        <GuestOwnerCard owner={OWNERS[1]} expanded onToggleExpand={noop} showInviteLink {...guestHandlers} />
+        {OWNERS.slice(1).map((owner) => (
+          <GuestOwnerCard key={owner.id} owner={owner} expanded={false} onToggleExpand={noop} {...guestHandlers} />
+        ))}
       </div>
     </Frame>
   );
