@@ -1022,3 +1022,10 @@ html:has(.hp) {
 .hp-shot .budget-summary {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
+
+/* the add-guest fields in the pictures match the List dropdown's size — no
+   one can tap them, so the app's 16px phone floor (anti-zoom) isn't needed */
+.hp-shot .guest-add-form input[type="text"],
+.hp-shot .guest-add-form .plus-input {
+  font-size: 0.85rem !important;
+}

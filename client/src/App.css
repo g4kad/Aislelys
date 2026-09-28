@@ -1531,7 +1531,7 @@
   border-radius: 8px;
   border: 1px solid var(--border);
   min-width: 120px;
-  font-size: 0.92rem;
+  font-size: 0.85rem; /* same as the List dropdown beside it */
 }
 
 .plus-input-label {
