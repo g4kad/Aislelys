@@ -223,12 +223,12 @@ function Frame({
   label: string;
   children: ReactNode;
   className?: string;
-  bloom?: "left" | "right";
+  bloom?: "left" | "right" | "none";
 }) {
   const [ref, reached] = useReachedMiddle<HTMLDivElement>();
   return (
     <div ref={ref} className={`hp-shot-wrap bloom-${bloom} ${reached ? "bloomed" : ""}`}>
-      <span className="hp-bloom" aria-hidden="true" />
+      {bloom !== "none" && <span className="hp-bloom" aria-hidden="true" />}
       <FrameWindow label={label} className={className}>
         {children}
       </FrameWindow>
@@ -264,7 +264,7 @@ const eventHandlers = {
 
 export function WeddingCardsPreview() {
   return (
-    <Frame label="Planner · Wedding Cards" className="hp-shot-cards">
+    <Frame label="Planner · Wedding Cards" className="hp-shot-cards" bloom="none">
       <SectionsBoard
         events={EVENTS}
         sections={SECTIONS}
@@ -371,7 +371,7 @@ export function GuestListPreview() {
 // The family's own lists, closed: just each list's name and guest count.
 export function FamilyListsPreview() {
   return (
-    <Frame label="Guest List · family lists" className="hp-shot-guests">
+    <Frame label="Guest List · family lists" className="hp-shot-guests" bloom="none">
       <div className="card-list">
         {OWNERS.slice(1).map((owner) => (
           <GuestOwnerCard key={owner.id} owner={owner} expanded={false} onToggleExpand={noop} {...guestHandlers} />
