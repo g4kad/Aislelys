@@ -1193,6 +1193,7 @@ html:has(.hp) {
    so the move looks the same on desktop and phones */
 .hp-shot-budget-wrap .hp-bloom:not(.hp-bloom-corner) {
   transform: translateY(-10%);
+  width: min(53%, 359px); /* 5% smaller than the other small flowers */
 }
 
 .hp-shot-budget-wrap .hp-bloom.hp-bloom-corner {
