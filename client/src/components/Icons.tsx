@@ -149,6 +149,16 @@ export function IconLayers({ className, size = 15 }: IconProps) {
   );
 }
 
+export function IconHome({ className, size = 15 }: IconProps) {
+  return (
+    <svg className={className} width={size} height={size} viewBox="0 0 16 16" {...stroke}>
+      <path d="M2.5 7.2L8 2.5l5.5 4.7" />
+      <path d="M4 6v7.5h8V6" />
+      <path d="M6.7 13.5V10h2.6v3.5" />
+    </svg>
+  );
+}
+
 export function IconImage({ className, size = 15 }: IconProps) {
   return (
     <svg className={className} width={size} height={size} viewBox="0 0 16 16" {...stroke}>

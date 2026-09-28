@@ -8,9 +8,10 @@ import BudgetPage from "./pages/BudgetPage";
 import VendorsPage from "./pages/VendorsPage";
 import SignupPage from "./pages/SignupPage";
 import SettingsPage from "./pages/SettingsPage";
+import OverviewPage from "./pages/OverviewPage";
 import AuthGate, { LoginPage } from "./components/AuthGate";
 import UserMenu from "./components/UserMenu";
-import { IconCalendar, IconUsers, IconWallet, IconStore, IconImage } from "./components/Icons";
+import { IconCalendar, IconUsers, IconWallet, IconStore, IconImage, IconHome } from "./components/Icons";
 import { AuthProvider, useAuth } from "./auth";
 import * as api from "./api";
 import { daysUntil, formatDateShort } from "./dateUtils";
@@ -52,6 +53,10 @@ function AppShell() {
         </div>
         <nav className="app-nav">
           <NavLink to={base} end className={({ isActive }) => (isActive ? "active" : "")}>
+            <IconHome className="app-nav-icon" />
+            Overview
+          </NavLink>
+          <NavLink to={`${base}/planner`} className={({ isActive }) => (isActive ? "active" : "")}>
             <IconCalendar className="app-nav-icon" />
             Planner
           </NavLink>
@@ -79,7 +84,8 @@ function AppShell() {
 
       <main className="app-main">
         <Routes>
-          <Route path="/" element={<PlannerPage />} />
+          <Route path="/" element={<OverviewPage weddingDate={weddingDate} />} />
+          <Route path="/planner" element={<PlannerPage />} />
           <Route path="/guest-list" element={<GuestListPage />} />
           <Route path="/budget" element={<BudgetPage />} />
           <Route path="/vendors" element={<VendorsPage />} />
