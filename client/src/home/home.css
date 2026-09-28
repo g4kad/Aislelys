@@ -1633,3 +1633,21 @@ html:has(.hp) {
     order: 2;
   }
 }
+
+/* how it works: the number on the left, heading + body beside it */
+.hp-step {
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 18px;
+}
+
+.hp-step-n {
+  flex-shrink: 0;
+}
+
+.hp-step-text {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}

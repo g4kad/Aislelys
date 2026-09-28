@@ -341,8 +341,10 @@ export default function HomePage() {
             {STEPS.map((s) => (
               <div className="hp-step" key={s.n}>
                 <span className="hp-step-n">{s.n}</span>
-                <span className="hp-step-title">{s.title}</span>
-                <span className="hp-step-body">{s.body}</span>
+                <span className="hp-step-text">
+                  <span className="hp-step-title">{s.title}</span>
+                  <span className="hp-step-body">{s.body}</span>
+                </span>
               </div>
             ))}
           </div>
