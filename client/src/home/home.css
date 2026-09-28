@@ -529,7 +529,7 @@
 }
 
 .hp-inspo-by {
-  margin-top: -3px; /* 5px under the caption (the item's gap is 8px) */
+  margin-top: -5px; /* 3px under the caption (the item's gap is 8px) */
   font-size: 0.8125rem;
   color: var(--hp-body);
 }
