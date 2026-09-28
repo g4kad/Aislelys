@@ -55,7 +55,7 @@ const EVENTS: EventItem[] = [
     tasks: [
       task("t1", "Confirm the time with the venue", MIRA, true),
       task("t2", "List questions about the rain plan", THEO, true),
-      task("t3", "Measure the terrace for long tables", THEO),
+      task("t3", "Measure the terrace", THEO),
     ],
     createdAt: new Date().toISOString(),
   },
@@ -396,13 +396,38 @@ export function WeddingCardsPreview() {
   );
 }
 
+// The planner picture ticks its last open task off and back on, on a loop,
+// so visitors see a task being crossed off (still for reduced motion).
+const LOOP_OPEN_MS = 2000;
+const LOOP_DONE_MS = 2600;
+
 export function TaskPreview() {
   const venue = SECTIONS[0];
   const [visit, , , tasting] = EVENTS;
+  const [ticked, setTicked] = useState(false);
+
+  useEffect(() => {
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
+    let timer: number;
+    const step = (next: boolean) => {
+      timer = window.setTimeout(() => {
+        setTicked(next);
+        step(!next);
+      }, next ? LOOP_OPEN_MS : LOOP_DONE_MS);
+    };
+    step(true);
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  const animated = {
+    ...visit,
+    tasks: visit.tasks.map((t) => (t.id === "t3" ? { ...t, done: ticked } : t)),
+  };
+
   return (
     <Frame label="Planner · task breakdown" className="hp-shot-tasks">
       <div className="card-list">
-        <EventCard event={visit} section={venue} sections={SECTIONS} expanded onToggleExpand={noop} {...eventHandlers} />
+        <EventCard event={animated} section={venue} sections={SECTIONS} expanded onToggleExpand={noop} {...eventHandlers} />
         <EventCard event={tasting} section={venue} sections={SECTIONS} expanded={false} onToggleExpand={noop} {...eventHandlers} />
       </div>
     </Frame>

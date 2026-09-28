@@ -1722,3 +1722,51 @@ html:has(.hp) {
     background-image: var(--hp-inspo-img-m);
   }
 }
+
+/* planner picture: the looping task. The strike is drawn left-to-right
+   (a background line that grows) instead of appearing all at once, and the
+   tick pops in. Only the third task in the open card is animated. */
+.hp-shot-tasks .card-list > .card:first-child .task-view-item:nth-child(3) .task-name {
+  /* only as wide as the words, so the line ends with them; the avatar
+     stays pushed to the right */
+  flex: 0 1 auto;
+  margin-right: auto;
+  text-decoration: none;
+  background-image: linear-gradient(currentColor, currentColor);
+  background-repeat: no-repeat;
+  background-position: 0 55%;
+  background-size: 0% 1.5px;
+  transition: background-size 0.55s ease-out, color 0.3s ease;
+}
+
+.hp-shot-tasks .card-list > .card:first-child .task-view-item:nth-child(3) .task-name.done {
+  background-size: 100% 1.5px;
+}
+
+.hp-shot-tasks .card-list > .card:first-child .task-view-item:nth-child(3) .task-status.done {
+  animation: hp-tick-pop 0.35s ease-out;
+}
+
+@keyframes hp-tick-pop {
+  0% {
+    transform: scale(0.4);
+    opacity: 0;
+  }
+  70% {
+    transform: scale(1.25);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hp-shot-tasks .task-name {
+    transition: none;
+  }
+
+  .hp-shot-tasks .task-status.done {
+    animation: none;
+  }
+}
