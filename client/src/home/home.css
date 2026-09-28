@@ -1725,8 +1725,8 @@ html:has(.hp) {
 
 /* planner picture: the looping task. The strike is drawn left-to-right
    (a background line that grows) instead of appearing all at once, and the
-   tick pops in. Only the third task in the open card is animated. */
-.hp-shot-tasks .card-list > .card:first-child .task-view-item:nth-child(3) .task-name {
+   tick pops in. All three tasks in the open card are animated in turn. */
+.hp-shot-tasks .card-list > .card:first-child .task-view-item .task-name {
   /* only as wide as the words, so the line ends with them; the avatar
      stays pushed to the right */
   flex: 0 1 auto;
@@ -1739,11 +1739,11 @@ html:has(.hp) {
   transition: background-size 0.55s ease-out, color 0.3s ease;
 }
 
-.hp-shot-tasks .card-list > .card:first-child .task-view-item:nth-child(3) .task-name.done {
+.hp-shot-tasks .card-list > .card:first-child .task-view-item .task-name.done {
   background-size: 100% 1.5px;
 }
 
-.hp-shot-tasks .card-list > .card:first-child .task-view-item:nth-child(3) .task-status.done {
+.hp-shot-tasks .card-list > .card:first-child .task-view-item .task-status.done {
   animation: hp-tick-pop 0.35s ease-out;
 }
 

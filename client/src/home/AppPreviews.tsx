@@ -53,8 +53,8 @@ const EVENTS: EventItem[] = [
     sectionId: "s-venue",
     notes: "Ask about the rain plan and when we can get in to set up.",
     tasks: [
-      task("t1", "Confirm the time with the venue", MIRA, true),
-      task("t2", "List questions about the rain plan", THEO, true),
+      task("t1", "Confirm the time", MIRA, true),
+      task("t2", "List rain-plan questions", THEO, true),
       task("t3", "Measure the terrace", THEO),
     ],
     createdAt: new Date().toISOString(),
@@ -396,32 +396,39 @@ export function WeddingCardsPreview() {
   );
 }
 
-// The planner picture ticks its last open task off and back on, on a loop,
-// so visitors see a task being crossed off (still for reduced motion).
-const LOOP_OPEN_MS = 2000;
-const LOOP_DONE_MS = 2600;
+// The planner picture crosses its three tasks off one by one, holds, then
+// resets and starts again (still, all ticked, for reduced motion).
+const LOOP_START_MS = 1200; // all open
+const LOOP_STEP_MS = 800; // between one tick and the next
+const LOOP_HOLD_MS = 2400; // all done
 
 export function TaskPreview() {
   const venue = SECTIONS[0];
   const [visit, , , tasting] = EVENTS;
-  const [ticked, setTicked] = useState(false);
+  const [tickedCount, setTickedCount] = useState(0);
 
   useEffect(() => {
-    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) {
+      setTickedCount(visit.tasks.length);
+      return;
+    }
+    const total = visit.tasks.length;
     let timer: number;
-    const step = (next: boolean) => {
+    const step = (count: number) => {
+      const wait = count === 0 ? LOOP_START_MS : count === total ? LOOP_HOLD_MS : LOOP_STEP_MS;
       timer = window.setTimeout(() => {
-        setTicked(next);
-        step(!next);
-      }, next ? LOOP_OPEN_MS : LOOP_DONE_MS);
+        const next = count === total ? 0 : count + 1;
+        setTickedCount(next);
+        step(next);
+      }, wait);
     };
-    step(true);
+    step(0);
     return () => window.clearTimeout(timer);
-  }, []);
+  }, [visit.tasks.length]);
 
   const animated = {
     ...visit,
-    tasks: visit.tasks.map((t) => (t.id === "t3" ? { ...t, done: ticked } : t)),
+    tasks: visit.tasks.map((t, i) => ({ ...t, done: i < tickedCount })),
   };
 
   return (
