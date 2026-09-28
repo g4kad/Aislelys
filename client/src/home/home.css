@@ -1651,3 +1651,10 @@ html:has(.hp) {
   gap: 8px;
   min-width: 0;
 }
+
+/* step cards hug their content, so the space under the text matches the
+   30px above it */
+.hp-step {
+  min-height: 0;
+  padding: 30px;
+}
