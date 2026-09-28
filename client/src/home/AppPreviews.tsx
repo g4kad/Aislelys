@@ -5,6 +5,7 @@ import SectionsBoard from "../components/SectionsBoard";
 import EventCard from "../components/EventCard";
 import BudgetBoard from "../components/BudgetBoard";
 import GuestOwnerCard from "../components/GuestOwnerCard";
+import InspirationCard from "../components/InspirationCard";
 import { budgetLineAmount, formatDollars } from "../money";
 import { toDateKey } from "../dateUtils";
 
@@ -330,6 +331,33 @@ function FloatingSection({ section, index }: { section: Section; index: number }
   );
 }
 
+// A photo from the Inspiration board, as the app shows it (approve heart,
+// edit and remove buttons, caption on the image), floating in the hero.
+function FloatingPhoto() {
+  const [ref, shown] = useRevealOnScroll<HTMLDivElement>();
+  return (
+    <div ref={ref} className={`hp-float-card hp-float-photo hp-reveal ${shown ? "is-shown" : ""}`} aria-hidden="true">
+      <div className="hp-float-inner" inert>
+        <InspirationCard
+          item={{
+            id: "hero-rings",
+            url: "/hero-rings.jpg",
+            caption: "Our rings",
+            categoryId: null,
+            approved: true,
+            createdAt: "",
+          }}
+          onToggleApproved={noop}
+          onEdit={noop}
+          onDelete={noop}
+          onImageReady={noop}
+          onOpenImage={noop}
+        />
+      </div>
+    </div>
+  );
+}
+
 export function WeddingCardsPreview() {
   return (
     <>
@@ -344,6 +372,7 @@ export function WeddingCardsPreview() {
       {SECTIONS.map((section, i) => (
         <FloatingSection key={section.id} section={section} index={i} />
       ))}
+      <FloatingPhoto />
     </>
   );
 }

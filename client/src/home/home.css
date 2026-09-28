@@ -1361,3 +1361,45 @@ html:has(.hp) {
     animation: none;
   }
 }
+
+/* the rings photo: an Inspiration pin card, its buttons always showing */
+.hp-float-photo {
+  top: 392px;
+  right: -20px;
+  width: 36%;
+  z-index: 3;
+  transition-delay: 0.45s;
+}
+
+.hp-float-photo .pin-card {
+  margin: 0;
+  border-radius: 16px;
+  box-shadow: 0 26px 50px -22px rgba(43, 28, 1, 0.5);
+}
+
+.hp-float-photo .pin-image-wrap img {
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+}
+
+.hp-float-photo .pin-overlay {
+  opacity: 1;
+}
+
+.hp-float-photo .hp-float-inner {
+  animation-duration: 7.5s;
+  animation-delay: -1s;
+}
+
+@media (max-width: 640px) {
+  /* below the Beauty card on phones, with room made for it */
+  .hp-hero-visual {
+    height: 640px;
+  }
+
+  .hp-float-photo {
+    top: 500px;
+    right: -6px;
+    width: 46%;
+  }
+}
