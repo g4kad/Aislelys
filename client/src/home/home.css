@@ -1400,7 +1400,12 @@ html:has(.hp) {
     width: 92%;
   }
 
+  /* phones: the budget card sits beside the rings photo, on its left */
   .hp-hero-visual .hp-shot-badge {
-    bottom: 36px;
+    top: 318px;
+    bottom: auto;
+    left: 4px;
+    right: auto;
+    transform-origin: top left;
   }
 }
