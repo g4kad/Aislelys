@@ -966,9 +966,9 @@
   white-space: nowrap;
 }
 
-/* planner card headers: 12px, just under the card title */
+/* planner card headers: 10px, smaller than the card title */
 .card-date.event-card-date {
-  font-size: 0.75rem;
+  font-size: 0.625rem;
 }
 
 .task-pill {
