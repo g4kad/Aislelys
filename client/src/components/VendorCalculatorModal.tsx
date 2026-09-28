@@ -67,7 +67,6 @@ export default function VendorCalculatorModal({ vendors, categories, onClose }: 
   const myrSum = byCurrency("MYR");
   const sgdSum = byCurrency("SGD");
   const totalSgd = chosen.reduce((sum, v) => sum + toSgd(vendorTotal(v), v.currency, myrToSgd), 0);
-  const downpaymentsSgd = chosen.reduce((sum, v) => sum + toSgd(v.downpayment || 0, v.currency, myrToSgd), 0);
 
   return (
     <Modal title="Cost calculator" onClose={onClose} className="calculator-modal">
@@ -124,18 +123,13 @@ export default function VendorCalculatorModal({ vendors, categories, onClose }: 
             </span>
           </div>
         )}
-        {downpaymentsSgd > 0 && (
-          <div className="calculator-summary-row muted">
-            <span>Downpayments already paid</span>
-            <span>{formatSgd(downpaymentsSgd)}</span>
-          </div>
-        )}
         <div className="calculator-summary-row total">
-          <span>Estimated total</span>
-          <span>
-            {formatSgd(totalSgd)}
-            {myrSum > 0 && <span className="calculator-alt"> ≈ {formatMoney(totalSgd / myrToSgd, "MYR")}</span>}
-          </span>
+          <span>Total</span>
+          <span>{formatSgd(totalSgd)}</span>
+        </div>
+        <div className="calculator-summary-row calculator-alt">
+          <span>In RM</span>
+          <span>≈ {formatMoney(totalSgd / myrToSgd, "MYR")}</span>
         </div>
       </div>
     </Modal>

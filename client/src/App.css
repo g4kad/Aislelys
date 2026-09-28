@@ -2834,6 +2834,7 @@
 
 .calculator-intro {
   margin-bottom: 16px;
+  font-size: calc(0.92rem - 2px);
 }
 
 .calculator-list {
@@ -2849,7 +2850,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 0.8rem;
+  font-size: calc(0.8rem - 2px);
   font-weight: 700;
   color: var(--text-muted);
   text-transform: uppercase;
@@ -2891,12 +2892,12 @@
   align-items: center;
   flex-wrap: wrap;
   gap: 6px;
-  font-size: 0.9rem;
+  font-size: 0.675rem; /* same as the status tags */
   color: var(--text);
 }
 
 .calculator-amount {
-  font-size: 0.9rem;
+  font-size: 0.675rem;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
   color: var(--text);
@@ -2916,7 +2917,7 @@
   justify-content: space-between;
   align-items: baseline;
   gap: 12px;
-  font-size: 0.85rem;
+  font-size: calc(0.85rem - 2px);
   color: var(--text);
 }
 
@@ -2925,13 +2926,15 @@
 }
 
 .calculator-summary-row.total {
-  font-size: 1.1rem;
+  font-size: calc(1.1rem - 2px);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
 
-.calculator-alt {
-  font-size: 0.85rem;
+.calculator-summary-row.calculator-alt {
+  margin-top: -4px;
+  font-size: calc(0.85rem - 2px);
   font-weight: 500;
   color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
 }
