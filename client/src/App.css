@@ -3029,9 +3029,9 @@
 }
 
 .overview-quote {
-  margin: 28px 0 0;
+  margin: 25px 0 0;
   max-width: 46ch;
-  padding-top: 20px;
+  padding-top: 17px;
   border-top: 1px solid var(--hero-rule);
 }
 
@@ -3205,7 +3205,7 @@
   }
 
   .overview-quote {
-    margin-top: 24px;
+    margin-top: 21px;
   }
 }
 
