@@ -79,14 +79,14 @@
 }
 
 .hp-lede {
-  font-size: clamp(1.05rem, 1.4vw, 1.25rem);
+  font-size: calc(clamp(1.05rem, 1.4vw, 1.25rem) - 2px);
   line-height: 1.55;
   color: var(--hp-body);
   max-width: 34em;
 }
 
 .hp-body {
-  font-size: 1.125rem;
+  font-size: calc(1.125rem - 2px);
   line-height: 1.6;
   color: var(--hp-body);
 }
@@ -295,7 +295,7 @@
 }
 
 .hp-pillar-line {
-  font-size: 0.9375rem;
+  font-size: calc(0.9375rem - 2px);
   line-height: 1.5;
   color: var(--hp-body);
 }
@@ -426,7 +426,7 @@
 }
 
 .hp-share-card p {
-  font-size: 0.9375rem;
+  font-size: calc(0.9375rem - 2px);
   line-height: 1.55;
   color: var(--hp-on-sage-soft);
 }
@@ -574,7 +574,7 @@
 }
 
 .hp-step-body {
-  font-size: 1rem;
+  font-size: calc(1rem - 2px);
   line-height: 1.55;
   color: var(--hp-body);
 }
