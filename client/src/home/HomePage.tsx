@@ -246,7 +246,7 @@ export default function HomePage() {
               ))}
             </ul>
           </div>
-          <div className="hp-plan-stage">
+          <div className="hp-plan-stage hp-stage-motif">
             <TaskPreview />
           </div>
         </section>

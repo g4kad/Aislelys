@@ -1188,8 +1188,8 @@ html:has(.hp) {
   }
 }
 
-/* budget: on the same sand stage as the planner, with the inspiration
-   tiles' lily motif faintly behind the window */
+/* the planner and budget stages: the inspiration tiles' lily motif,
+   faintly behind the window */
 .hp-stage-motif {
   position: relative;
   isolation: isolate;
