@@ -1199,3 +1199,37 @@ html:has(.hp) {
 .hp-shot-budget-wrap .hp-bloom.hp-bloom-corner {
   transform: translateY(-30%);
 }
+
+/* ---------- Mira's guest list: a working example ---------- */
+
+/* its lists open and close like the app, but adding a guest or editing
+   would save nothing here, so those stay switched off */
+.hp-shot-live .guest-add-form,
+.hp-shot-live .guest-owner-card > .card-body > .card-footer {
+  pointer-events: none;
+}
+
+.hp-shot-live .hp-shot-body {
+  cursor: auto;
+  user-select: auto;
+}
+
+/* the window never grows when a list opens: it keeps the size of its row
+   (set by the family-lists column), and anything longer fades out */
+.hp-guests-grid .hp-shot-guests-main-wrap {
+  contain: size;
+}
+
+.hp-shot-guests-main .hp-shot-body {
+  min-height: 0;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(to bottom, #000 80%, transparent);
+  mask-image: linear-gradient(to bottom, #000 80%, transparent);
+}
+
+@media (max-width: 1080px) {
+  /* stacked: no neighbour to take the height from, so give it one */
+  .hp-guests-grid .hp-shot-guests-main-wrap {
+    height: 460px;
+  }
+}

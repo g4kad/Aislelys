@@ -159,9 +159,28 @@ const OWNERS: GuestOwner[] = [
       { id: "gc-work", ownerId: "g-couple", title: "Work mates" },
     ],
     guests: [
-      { id: "gg1", name: "Grandma Lina", plusCount: 0, categoryId: "gc-family", isVip: true, included: true },
+      {
+        id: "gg1",
+        name: "Grandma Lina",
+        plusCount: 0,
+        categoryId: "gc-family",
+        isVip: true,
+        included: true,
+        phone: "012-345 6789",
+        address: "Taman Tun, Kuala Lumpur",
+        notes: "Front table, near the aisle",
+      },
       { id: "gg2", name: "Aunt Carmen", plusCount: 1, categoryId: "gc-family", isVip: false, included: true },
-      { id: "gg3", name: "Rafi Santos", plusCount: 1, categoryId: "gc-school", isVip: true, included: true },
+      {
+        id: "gg3",
+        name: "Rafi Santos",
+        plusCount: 1,
+        categoryId: "gc-school",
+        isVip: true,
+        included: true,
+        email: "rafi@example.com",
+        notes: "Vegetarian",
+      },
       { id: "gg4", name: "Daniel Koh", plusCount: 0, categoryId: "gc-school", isVip: false, included: true },
       { id: "gg5", name: "Jess Tan", plusCount: 1, categoryId: "gc-work", isVip: false, included: true },
     ],
@@ -221,6 +240,7 @@ function Frame({
   bloom = "right",
   bloomSmall = false,
   cornerBloom = false,
+  interactive = false,
 }: {
   label: string;
   children: ReactNode;
@@ -228,6 +248,7 @@ function Frame({
   bloom?: "left" | "right" | "none";
   bloomSmall?: boolean; // 10% smaller and sitting higher
   cornerBloom?: boolean; // a second flower at the bottom-right
+  interactive?: boolean; // clickable (e.g. open a guest list); still saves nothing
 }) {
   const [ref, reached] = useReachedMiddle<HTMLDivElement>();
   return (
@@ -237,16 +258,31 @@ function Frame({
     >
       {bloom !== "none" && <span className="hp-bloom" aria-hidden="true" />}
       {cornerBloom && <span className="hp-bloom hp-bloom-corner" aria-hidden="true" />}
-      <FrameWindow label={label} className={className}>
+      <FrameWindow label={label} className={className} interactive={interactive}>
         {children}
       </FrameWindow>
     </div>
   );
 }
 
-function FrameWindow({ label, children, className }: { label: string; children: ReactNode; className: string }) {
+function FrameWindow({
+  label,
+  children,
+  className,
+  interactive,
+}: {
+  label: string;
+  children: ReactNode;
+  className: string;
+  interactive: boolean;
+}) {
   return (
-    <div className={`hp-shot ${className}`} aria-hidden="true">
+    <div
+      className={`hp-shot ${className} ${interactive ? "hp-shot-live" : ""}`}
+      aria-hidden={interactive ? undefined : "true"}
+      aria-label={interactive ? `Example: ${label}` : undefined}
+      role={interactive ? "group" : undefined}
+    >
       <div className="hp-shot-bar">
         <span className="hp-shot-dots">
           <i />
@@ -255,7 +291,7 @@ function FrameWindow({ label, children, className }: { label: string; children: 
         </span>
         <span className="hp-shot-label">{label}</span>
       </div>
-      <div className="hp-shot-body" inert>
+      <div className="hp-shot-body" inert={!interactive}>
         <DemoAuthProvider accounts={PARTNERS}>{children}</DemoAuthProvider>
       </div>
     </div>
@@ -369,7 +405,7 @@ const guestHandlers = {
 
 export function GuestListPreview() {
   return (
-    <Frame label="Guest List" className="hp-shot-guests" bloom="left" bloomSmall>
+    <Frame label="Guest List" className="hp-shot-guests hp-shot-guests-main" bloom="left" bloomSmall interactive>
       <div className="card-list">
         <GuestOwnerCard owner={OWNERS[0]} expanded onToggleExpand={noop} deletable={false} nameEditable={false} {...guestHandlers} />
       </div>
