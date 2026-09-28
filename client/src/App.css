@@ -966,6 +966,11 @@
   white-space: nowrap;
 }
 
+/* planner card headers: 12px, just under the card title */
+.card-date.event-card-date {
+  font-size: 0.75rem;
+}
+
 .task-pill {
   background: var(--surface-alt);
   color: var(--text-muted);
