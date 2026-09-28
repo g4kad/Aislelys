@@ -162,7 +162,7 @@ export default function ImageLightbox({ slides, index, onIndexChange, onToggleAp
       >
         <img key={slide.id} src={slide.src} alt={slide.caption} draggable={false} />
         <figcaption className="lightbox-footer">
-          {slide.caption ? <span className="lightbox-caption">{slide.caption}</span> : <span />}
+          {slide.caption && <span className="lightbox-caption">{slide.caption}</span>}
           <button
             type="button"
             className={`pin-save-btn lightbox-approve ${slide.approved ? "saved" : ""}`}
