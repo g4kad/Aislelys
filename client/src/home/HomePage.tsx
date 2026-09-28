@@ -1,6 +1,14 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import * as api from "../api";
+import {
+  BudgetPreview,
+  FamilyInvitePreview,
+  GuestListPreview,
+  RemainingBadge,
+  TaskPreview,
+  WeddingCardsPreview,
+} from "./AppPreviews";
 import "./home.css";
 
 // Public marketing page at the site root. Kept separate from the app: its own
@@ -14,46 +22,10 @@ const PILLARS = [
   { num: "04", name: "Inspiration", line: "One board for every idea. Heart the ones you both love.", href: "#inspiration" },
 ];
 
-const HERO_CARDS = [
-  { title: "Shortlist three florists", cat: "Décor", color: "#B99767", meta: "Due Fri", who: "T", ink: true },
-  { title: "Send final numbers to caterer", cat: "Food", color: "#7C9885", meta: "Assigned by Theo", who: "M" },
-  { title: "Book the hair & makeup trial", cat: "Beauty", color: "#C98E77", meta: "Due 12 Oct", who: "M" },
-];
-
 const PLANNER_POINTS = [
   "Both of you add and edit plans",
   "Assign tasks to each other",
   "Your own categories, sorted into wedding cards",
-];
-
-const PLAN_CARDS = [
-  { cat: "Venue", due: "This week", title: "Second visit to the garden venue", who: "M", by: "Mira · added it herself" },
-  { cat: "Décor", due: "Fri", title: "Shortlist three florists", who: "T", by: "Theo · assigned by Mira", ink: true },
-  { cat: "Attire", due: "20 Oct", title: "First suit fitting", who: "T", by: "Theo · added it himself", ink: true },
-  { cat: "Music", due: "Nov", title: "Pick the first-dance song", who: "M", by: "Mira · assigned by Theo" },
-];
-
-const GUEST_TABS = ["Family", "School mates", "Work mates"];
-
-const GUESTS = [
-  { init: "GL", name: "Grandma Lina", vip: true, group: "Family", src: "Added by Mum" },
-  { init: "RS", name: "Rafi Santos", vip: true, group: "School mates", src: "Added by Theo" },
-  { init: "AC", name: "Aunt Carmen", vip: false, group: "Family", src: "Added by Dad" },
-  { init: "JT", name: "Jess Tan", vip: false, group: "Work mates", src: "Added by Mira" },
-  { init: "UB", name: "Uncle Ben", vip: false, group: "Family", src: "Added by Mum" },
-];
-
-const CONTRIBUTORS = [
-  { init: "M", name: "Mum's list", status: "Added 3 today", count: 14 },
-  { init: "D", name: "Dad's list", status: "Last added last week", count: 9 },
-  { init: "L", name: "Theo's parents", status: "Link sent", count: 0 },
-];
-
-const VENDORS = [
-  { name: "Garden venue", cat: "Venue", amount: "$14,000", status: "Paid", tone: "paid" },
-  { name: "Photographer", cat: "Photo & film", amount: "$4,200", status: "Booked", tone: "booked" },
-  { name: "Caterer", cat: "Food", amount: "$9,320", status: "Downpayment", tone: "downpayment" },
-  { name: "Florist", cat: "Décor", amount: "$2,800", status: "Inquired", tone: "inquired" },
 ];
 
 const BUDGET_POINTS = [
@@ -230,48 +202,10 @@ export default function HomePage() {
             </div>
           </div>
 
-          <div className="hp-hero-visual" aria-hidden="true">
+          <div className="hp-hero-visual">
             <div className="hp-hero-backdrop" />
-            <div className="hp-hero-panel">
-              <div className="hp-hero-panel-head">
-                <span className="hp-hero-panel-title">Wedding cards</span>
-                <span className="hp-avatars">
-                  <span className="hp-avatar hp-avatar-gold">M</span>
-                  <span className="hp-avatar hp-avatar-ink">T</span>
-                </span>
-              </div>
-              {HERO_CARDS.map((c) => (
-                <div className="hp-task" key={c.title} style={{ borderLeftColor: c.color }}>
-                  <span className="hp-task-box" />
-                  <span className="hp-task-body">
-                    <span className="hp-task-title">{c.title}</span>
-                    <span className="hp-task-meta">
-                      <span className="hp-chip">{c.cat}</span>
-                      {c.meta}
-                    </span>
-                  </span>
-                  <span className={`hp-avatar ${c.ink ? "hp-avatar-ink" : "hp-avatar-gold"}`}>{c.who}</span>
-                </div>
-              ))}
-            </div>
-            <div className="hp-hero-budget">
-              <span className="hp-hero-budget-label">Budget remaining</span>
-              <span className="hp-hero-budget-value">$12,480</span>
-              <span className="hp-meter">
-                <span style={{ width: "69%" }} />
-              </span>
-              <span className="hp-hero-budget-foot">of $40,000 · updated just now</span>
-            </div>
-            <div className="hp-hero-toast">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-                <circle cx="9" cy="7" r="4" />
-                <path d="M19 8v6M22 11h-6" />
-              </svg>
-              <span>
-                <strong>Mum</strong> added 14 guests to her list
-              </span>
-            </div>
+            <WeddingCardsPreview />
+            <RemainingBadge />
           </div>
         </section>
 
@@ -306,20 +240,8 @@ export default function HomePage() {
               ))}
             </ul>
           </div>
-          <div className="hp-plan-grid" aria-hidden="true">
-            {PLAN_CARDS.map((c) => (
-              <div className="hp-plan-card" key={c.title}>
-                <div className="hp-plan-card-top">
-                  <span className="hp-plan-card-cat">{c.cat}</span>
-                  <span>{c.due}</span>
-                </div>
-                <div className="hp-plan-card-title">{c.title}</div>
-                <div className="hp-plan-card-foot">
-                  <span className={`hp-avatar ${c.ink ? "hp-avatar-ink" : "hp-avatar-gold"}`}>{c.who}</span>
-                  <span>{c.by}</span>
-                </div>
-              </div>
-            ))}
+          <div className="hp-plan-stage">
+            <TaskPreview />
           </div>
         </section>
 
@@ -337,106 +259,21 @@ export default function HomePage() {
               they add their own guests, and it all lands in one place. No more chasing names across group chats.
             </p>
           </div>
-          <div className="hp-guests-grid" aria-hidden="true">
-            <div className="hp-guest-panel">
-              <div className="hp-tabs">
-                <span className="hp-tab active">All guests</span>
-                {GUEST_TABS.map((t) => (
-                  <span className="hp-tab" key={t}>
-                    {t}
-                  </span>
-                ))}
-              </div>
-              <div>
-                {GUESTS.map((g) => (
-                  <div className="hp-guest-row" key={g.name}>
-                    <span className="hp-guest-init">{g.init}</span>
-                    <span className="hp-guest-name">{g.name}</span>
-                    {g.vip && (
-                      <span className="hp-vip">
-                        <Heart filled />
-                        VIP
-                      </span>
-                    )}
-                    <span className="hp-guest-group">{g.group}</span>
-                    <span className="hp-guest-src">{g.src}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
+          <div className="hp-guests-grid">
+            <GuestListPreview />
             <div className="hp-share">
               <div className="hp-share-card">
                 <div className="hp-share-title">Invite family to add guests</div>
-                <p>Share a private link. They add names straight into their own list.</p>
-                <div className="hp-share-link">
-                  <span>{window.location.host}/guests/…</span>
-                  <span className="hp-share-copy">Copy link</span>
-                </div>
+                <p>Each parent gets their own list and a private link — they add names straight into it.</p>
               </div>
-              {CONTRIBUTORS.map((k) => (
-                <div className="hp-contributor" key={k.name}>
-                  <span className="hp-contributor-init">{k.init}</span>
-                  <span className="hp-contributor-body">
-                    <span className="hp-contributor-name">{k.name}</span>
-                    <span className="hp-contributor-status">{k.status}</span>
-                  </span>
-                  <span className="hp-contributor-count">{k.count}</span>
-                </div>
-              ))}
+              <FamilyInvitePreview />
             </div>
           </div>
         </section>
 
         {/* BUDGET */}
         <section id="budget" className="hp-wrap hp-split hp-split-reverse">
-          <div className="hp-budget-card" aria-hidden="true">
-            <div className="hp-budget-stats">
-              <div className="hp-stat">
-                <span>Total budget</span>
-                <strong>$40,000</strong>
-              </div>
-              <div className="hp-stat">
-                <span>Savings so far</span>
-                <strong>$28,500</strong>
-              </div>
-              <div className="hp-stat hp-stat-ink">
-                <span>Remaining</span>
-                <strong>$12,480</strong>
-              </div>
-            </div>
-            <div>
-              <div className="hp-bar">
-                <span className="hp-bar-paid" style={{ width: "46%" }} />
-                <span className="hp-bar-committed" style={{ width: "23%" }} />
-              </div>
-              <div className="hp-legend">
-                <span>
-                  <i className="hp-bar-paid" />
-                  Paid
-                </span>
-                <span>
-                  <i className="hp-bar-committed" />
-                  Committed
-                </span>
-                <span>
-                  <i className="hp-bar-left" />
-                  Remaining
-                </span>
-              </div>
-            </div>
-            <div>
-              {VENDORS.map((v) => (
-                <div className="hp-vendor" key={v.name}>
-                  <span className="hp-vendor-body">
-                    <span className="hp-vendor-name">{v.name}</span>
-                    <span className="hp-vendor-cat">{v.cat}</span>
-                  </span>
-                  <span className="hp-vendor-amount">{v.amount}</span>
-                  <span className={`hp-status hp-status-${v.tone}`}>{v.status}</span>
-                </div>
-              ))}
-            </div>
-          </div>
+          <BudgetPreview />
           <div className="hp-split-copy">
             <p className="hp-eyebrow">Budget &amp; vendors</p>
             <h2 className="hp-h2">Know what's left before you say yes.</h2>

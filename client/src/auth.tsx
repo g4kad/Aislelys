@@ -62,6 +62,19 @@ export function AuthProvider({ coupleId, children }: { coupleId: string; childre
   );
 }
 
+// A stand-in for showing app components outside a real planner (the public
+// Home page's previews): fixed sample partners, nobody signed in, no network.
+export function DemoAuthProvider({ accounts, children }: { accounts: User[]; children: ReactNode }) {
+  const noop = async () => {};
+  return (
+    <AuthContext.Provider
+      value={{ loading: false, user: null, accounts, workspaceNotFound: false, login: noop, logout: noop }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
+}
+
 export function useAuth() {
   const ctx = useContext(AuthContext);
   if (!ctx) throw new Error("useAuth must be used within AuthProvider");
