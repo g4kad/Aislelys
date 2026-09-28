@@ -35,10 +35,10 @@ const BUDGET_POINTS = [
 ];
 
 const INSPO = [
-  { cat: "Tables", caption: "Candlelit long tables", tone: "#E6D6C3", h: 320, loved: true, by: "Saved by Mira" },
-  { cat: "Florals", caption: "Dried flower arch", tone: "#D9CDB8", h: 240, loved: false, by: "Saved by Theo" },
-  { cat: "Palette", caption: "Gold & sage", tone: "#C9CAB0", h: 360, loved: true, by: "Uploaded by Theo" },
-  { cat: "Send-off", caption: "Sparkler exit", tone: "#E9DFCF", h: 280, loved: false, by: "Saved by Mira" },
+  { cat: "Tables", caption: "Candlelit long tables", img: "/inspo-1.jpg", tone: "#E6D6C3", h: 320, loved: true, by: "Saved by Mira" },
+  { cat: "Florals", caption: "Ivory rose bouquet", img: "/inspo-2.jpg", tone: "#D9CDB8", h: 240, loved: false, by: "Saved by Theo" },
+  { cat: "Table setting", caption: "Eucalyptus place settings", img: "/inspo-3.jpg", tone: "#C9CAB0", h: 360, loved: true, by: "Uploaded by Theo" },
+  { cat: "Hair", caption: "Loose floral updo", img: "/inspo-4.jpg", tone: "#E9DFCF", h: 280, loved: false, by: "Saved by Mira" },
 ];
 
 const STEPS = [
@@ -321,7 +321,10 @@ export default function HomePage() {
           <div className="hp-inspo-grid" aria-hidden="true">
             {INSPO.map((i) => (
               <div className="hp-inspo-item" key={i.caption}>
-                <div className="hp-inspo-tile" style={{ background: i.tone, height: i.h }}>
+                <div
+                  className="hp-inspo-tile hp-inspo-photo"
+                  style={{ background: `${i.tone} url(${i.img}) center / cover no-repeat`, height: i.h }}
+                >
                   <span className="hp-inspo-cat">{i.cat}</span>
                   <span className={`hp-inspo-heart ${i.loved ? "loved" : ""}`}>
                     <Heart filled={i.loved} />

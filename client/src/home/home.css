@@ -1703,3 +1703,8 @@ html:has(.hp) {
     height: 384px;
   }
 }
+
+/* inspiration tiles with real photos: no lily wash over the image */
+.hp-inspo-tile.hp-inspo-photo::after {
+  content: none;
+}
