@@ -1348,20 +1348,14 @@ html:has(.hp) {
 @media (max-width: 640px) {
 }
 
-/* hero layout: Venue top-left, Beauty under it on the left, the rings
-   photo on the right, and the Wedding budget card just below the rings */
+/* hero layout: Venue top-left, the rings photo on the right, and the
+   Wedding budget card just below the rings */
 .hp-float-s-venue {
   top: 84px;
   left: -28px;
   width: 72%;
 }
 
-.hp-float-s-beauty {
-  top: 300px;
-  left: -20px;
-  width: 60%;
-  transition-delay: 0.15s;
-}
 
 .hp-float-photo {
   top: 250px;
@@ -1371,14 +1365,14 @@ html:has(.hp) {
   transition-delay: 0.3s;
 }
 
-.hp-float-s-beauty .hp-float-inner {
-  animation-duration: 8.5s;
-  animation-delay: -2s;
-}
 
 @media (max-width: 640px) {
   .hp-hero-visual {
-    height: 660px;
+    height: 500px;
+  }
+
+  .hp-hero-visual .hp-shot-cards-wrap {
+    height: 400px;
   }
 
   .hp-float-s-venue {
@@ -1394,11 +1388,6 @@ html:has(.hp) {
     width: 52%;
   }
 
-  .hp-float-s-beauty {
-    top: 440px;
-    left: 2%;
-    width: 92%;
-  }
 
   /* phones: the budget card sits beside the rings photo, on its left */
   .hp-hero-visual .hp-shot-badge {

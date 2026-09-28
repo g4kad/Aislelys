@@ -302,8 +302,8 @@ const eventHandlers = {
   onDeleteTask: noop,
 };
 
-// the hero floats just these two (Décor stays in the other previews)
-const HERO_SECTIONS = SECTIONS.filter((s) => s.id === "s-venue" || s.id === "s-beauty");
+// the hero floats just Venue (the other sections stay in the other previews)
+const HERO_SECTIONS = SECTIONS.filter((s) => s.id === "s-venue");
 
 // Hero: an (empty) Wedding Cards window as the backdrop, with each section
 // floating on its own in front of it — still the real board component, one
