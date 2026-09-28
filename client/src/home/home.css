@@ -1687,3 +1687,19 @@ html:has(.hp) {
     top: 329px;
   }
 }
+
+/* phones: the window sits higher and a little further left (30% less empty
+   space above and beside it); the sand box moves with it */
+@media (max-width: 640px) {
+  .hp-hero-visual .hp-shot-cards-wrap {
+    top: 34px;
+    left: 7%;
+    height: 357px;
+  }
+
+  .hp-hero-visual .hp-hero-backdrop {
+    top: 46px;
+    left: 9%;
+    height: 384px;
+  }
+}
