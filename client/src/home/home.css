@@ -1358,21 +1358,37 @@ html:has(.hp) {
 
 
 .hp-float-photo {
+  z-index: 3;
+}
+
+.hp-photo-rings {
   top: 250px;
   right: -20px;
   width: 38%;
-  z-index: 3;
   transition-delay: 0.3s;
+}
+
+/* the venue photo fills the lower-left, where Beauty used to be */
+.hp-photo-venue {
+  top: 330px;
+  left: 8%;
+  width: 40%;
+  transition-delay: 0.45s;
+}
+
+.hp-photo-venue .hp-float-inner {
+  animation-duration: 8s;
+  animation-delay: -3s;
 }
 
 
 @media (max-width: 640px) {
   .hp-hero-visual {
-    height: 500px;
+    height: 600px;
   }
 
   .hp-hero-visual .hp-shot-cards-wrap {
-    height: 400px;
+    height: 480px;
   }
 
   .hp-float-s-venue {
@@ -1381,10 +1397,16 @@ html:has(.hp) {
     width: 94%;
   }
 
-  .hp-float-photo {
+  .hp-photo-rings {
     top: 282px;
     right: -6px;
     left: auto;
+    width: 52%;
+  }
+
+  .hp-photo-venue {
+    top: 438px;
+    left: 4px;
     width: 52%;
   }
 

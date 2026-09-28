@@ -336,20 +336,29 @@ function FloatingSection({ section }: { section: Section }) {
 
 // A photo from the Inspiration board, as the app shows it (approve heart,
 // edit and remove buttons, caption on the image), floating in the hero.
-function FloatingPhoto() {
+function FloatingPhoto({
+  id,
+  url,
+  caption,
+  approved,
+  className,
+}: {
+  id: string;
+  url: string;
+  caption: string;
+  approved: boolean;
+  className: string;
+}) {
   const [ref, shown] = useRevealOnScroll<HTMLDivElement>();
   return (
-    <div ref={ref} className={`hp-float-card hp-float-photo hp-reveal ${shown ? "is-shown" : ""}`} aria-hidden="true">
+    <div
+      ref={ref}
+      className={`hp-float-card hp-float-photo ${className} hp-reveal ${shown ? "is-shown" : ""}`}
+      aria-hidden="true"
+    >
       <div className="hp-float-inner" inert>
         <InspirationCard
-          item={{
-            id: "hero-rings",
-            url: "/hero-rings.jpg",
-            caption: "Our rings",
-            categoryId: null,
-            approved: true,
-            createdAt: "",
-          }}
+          item={{ id, url, caption, categoryId: null, approved, createdAt: "" }}
           onToggleApproved={noop}
           onEdit={noop}
           onDelete={noop}
@@ -375,7 +384,14 @@ export function WeddingCardsPreview() {
       {HERO_SECTIONS.map((section) => (
         <FloatingSection key={section.id} section={section} />
       ))}
-      <FloatingPhoto />
+      <FloatingPhoto id="hero-rings" url="/hero-rings.jpg" caption="Our rings" approved className="hp-photo-rings" />
+      <FloatingPhoto
+        id="hero-venue"
+        url="/hero-venue.jpg"
+        caption="Garden hall venue"
+        approved={false}
+        className="hp-photo-venue"
+      />
     </>
   );
 }
