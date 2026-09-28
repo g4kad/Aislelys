@@ -90,6 +90,13 @@ export default function InspirationCard({
         <div className="pin-image-wrap">
           <img src={displayImageUrl ?? undefined} alt={item.caption || ""} onError={handleImageError} loading="lazy" />
 
+          {/* caption sits on the image on desktop; hidden on mobile until the viewer opens */}
+          {item.caption && (
+            <div className="pin-caption-overlay">
+              <p className="pin-caption">{item.caption}</p>
+            </div>
+          )}
+
           <div
             className="pin-overlay"
             onClick={(e) => {
@@ -129,8 +136,6 @@ export default function InspirationCard({
             </div>
           </div>
         </div>
-
-        {item.caption && <p className="pin-caption">{item.caption}</p>}
       </div>
     );
   }
