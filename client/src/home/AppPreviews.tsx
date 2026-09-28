@@ -130,6 +130,12 @@ const BUDGET_ITEMS: BudgetItem[] = [
 const BUDGET_TOTAL = 40000;
 const BUDGET_SAVINGS = 28500;
 
+// Sample names for the family lists (shown once a list is opened).
+const FAMILY_NAMES = [
+  "Auntie Rosa", "Uncle Ben", "Cousin Nadia", "Cousin Leo", "Grandpa Joe", "Auntie May", "Uncle Sam",
+  "Cousin Ivy", "Mrs. Lee", "Mr. & Mrs. Tan", "Pastor Mark", "Mrs. Wong", "Mr. Ramos", "Ms. Chen",
+];
+
 function familyList(id: string, name: string, count: number): GuestOwner {
   const categoryId = `${id}-family`;
   return {
@@ -139,7 +145,7 @@ function familyList(id: string, name: string, count: number): GuestOwner {
     categories: [{ id: categoryId, ownerId: id, title: "Family" }],
     guests: Array.from({ length: count }, (_, i) => ({
       id: `${id}-${i}`,
-      name: `Guest ${i + 1}`,
+      name: FAMILY_NAMES[(i + 5) % FAMILY_NAMES.length],
       plusCount: 0,
       categoryId,
       isVip: false,
@@ -195,7 +201,7 @@ const OWNERS: GuestOwner[] = [
     ],
     guests: Array.from({ length: 14 }, (_, i) => ({
       id: `gm${i}`,
-      name: `Guest ${i + 1}`,
+      name: FAMILY_NAMES[i],
       plusCount: 0,
       categoryId: i < 9 ? "gm-family" : "gm-friends",
       isVip: false,
@@ -413,13 +419,22 @@ export function GuestListPreview() {
   );
 }
 
-// The family's own lists, closed: just each list's name and guest count.
+// The family's own lists: closed to start (name + guest count), and each one
+// opens like the app to show its groups and names.
 export function FamilyListsPreview() {
+  const [openId, setOpenId] = useState<string | null>(null);
   return (
-    <Frame label="Guest List · family lists" className="hp-shot-guests" bloom="none">
+    <Frame label="Guest List · family lists" className="hp-shot-guests hp-shot-guests-family" bloom="none" interactive>
       <div className="card-list">
         {OWNERS.slice(1).map((owner) => (
-          <GuestOwnerCard key={owner.id} owner={owner} expanded={false} onToggleExpand={noop} {...guestHandlers} />
+          <GuestOwnerCard
+            key={owner.id}
+            owner={owner}
+            expanded={openId === owner.id}
+            onToggleExpand={() => setOpenId((prev) => (prev === owner.id ? null : owner.id))}
+            showInviteLink
+            {...guestHandlers}
+          />
         ))}
       </div>
     </Frame>

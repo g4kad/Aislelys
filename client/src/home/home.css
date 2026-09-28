@@ -1205,7 +1205,8 @@ html:has(.hp) {
 /* its lists open and close like the app, but adding a guest or editing
    would save nothing here, so those stay switched off */
 .hp-shot-live .guest-add-form,
-.hp-shot-live .guest-owner-card > .card-body > .card-footer {
+.hp-shot-live .guest-owner-card > .card-body > .card-footer,
+.hp-shot-live .invite-row {
   pointer-events: none;
 }
 
@@ -1220,9 +1221,15 @@ html:has(.hp) {
   contain: size;
 }
 
-.hp-shot-guests-main .hp-shot-body {
+.hp-shot-guests-main .hp-shot-body,
+.hp-shot-guests-family .hp-shot-body {
   min-height: 0;
-  overflow: hidden;
+  /* scrolls inside the fixed window, so opened lists can be read in full;
+     the bottom padding lets the last row clear the fade */
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  padding-bottom: 48px;
   -webkit-mask-image: linear-gradient(to bottom, #000 80%, transparent);
   mask-image: linear-gradient(to bottom, #000 80%, transparent);
 }
@@ -1232,4 +1239,19 @@ html:has(.hp) {
   .hp-guests-grid .hp-shot-guests-main-wrap {
     height: 460px;
   }
+}
+
+/* the family-lists window is exactly as tall as its three closed lists and
+   never grows when one opens (its extra content fades like Mira's) */
+.hp-guests-grid .hp-share > .hp-shot-guests-family-wrap {
+  flex: none;
+  contain: size;
+  height: 236px;
+}
+
+/* inside the family lists, go straight to the groups: the invite card above
+   already shows the link, and adding guests is switched off here anyway */
+.hp-shot-guests-family .invite-row,
+.hp-shot-guests-family .guest-owner-add {
+  display: none;
 }
