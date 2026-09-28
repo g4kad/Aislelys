@@ -2938,3 +2938,8 @@
   color: var(--text-muted);
   font-variant-numeric: tabular-nums;
 }
+
+.calculator-summary-row.calculator-selected {
+  margin-top: 4px;
+  color: var(--text-muted);
+}

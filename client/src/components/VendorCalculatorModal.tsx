@@ -105,16 +105,6 @@ export default function VendorCalculatorModal({ vendors, categories, onClose }: 
       )}
 
       <div className="calculator-summary">
-        <div className="calculator-summary-row">
-          <span>
-            {chosen.length} {chosen.length === 1 ? "vendor" : "vendors"} selected
-          </span>
-          {chosen.length > 0 && (
-            <button type="button" className="link-btn" onClick={() => setSelected(new Set())}>
-              Clear
-            </button>
-          )}
-        </div>
         {myrSum > 0 && sgdSum > 0 && (
           <div className="calculator-summary-row muted">
             <span>In RM / in S$</span>
@@ -130,6 +120,14 @@ export default function VendorCalculatorModal({ vendors, categories, onClose }: 
         <div className="calculator-summary-row calculator-alt">
           <span>In RM</span>
           <span>≈ {formatMoney(totalSgd / myrToSgd, "MYR")}</span>
+        </div>
+        <div className="calculator-summary-row calculator-selected">
+          <span>{chosen.length} selected</span>
+          {chosen.length > 0 && (
+            <button type="button" className="link-btn" onClick={() => setSelected(new Set())}>
+              Clear
+            </button>
+          )}
         </div>
       </div>
     </Modal>
