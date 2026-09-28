@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import type { EventItem, Section, TodoItem } from "../types";
 import * as api from "../api";
 import { todayKey, MONTH_NAMES } from "../dateUtils";
@@ -16,6 +17,8 @@ export default function PlannerPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showAddTask, setShowAddTask] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [focusEvent, setFocusEvent] = useState<EventItem | null>(null);
   const [cursor, setCursor] = useState(() => {
     const now = new Date();
     return new Date(now.getFullYear(), now.getMonth(), 1);
@@ -27,6 +30,32 @@ export default function PlannerPage() {
       return y === cursor.getFullYear() && m - 1 === cursor.getMonth();
     });
   }, [events, cursor]);
+
+  // Arriving from a link to a specific task (e.g. the Overview): show its
+  // month, open its card and scroll to it. The ?event= is then dropped so a
+  // refresh or later navigation doesn't jump again.
+  const linkedEventId = searchParams.get("event");
+  useEffect(() => {
+    if (loading || !linkedEventId) return;
+    const ev = events.find((e) => e.id === linkedEventId);
+    setSearchParams({}, { replace: true });
+    if (!ev) return;
+    const [y, m] = ev.date.split("-").map(Number);
+    setCursor(new Date(y, m - 1, 1));
+    setFocusEvent(ev);
+  }, [loading, linkedEventId, events, setSearchParams]);
+
+  useEffect(() => {
+    if (!focusEvent) return;
+    // wait for the month's cards to render and the card to open
+    const t = setTimeout(() => {
+      const selector = `[data-event-id="${focusEvent.id}"]`;
+      const el =
+        document.querySelector(`.board-region ${selector}`) ?? document.querySelector(`.day-panel ${selector}`);
+      el?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 150);
+    return () => clearTimeout(t);
+  }, [focusEvent]);
 
   function goToCardsMonth(delta: number) {
     setCursor((c) => new Date(c.getFullYear(), c.getMonth() + delta, 1));
@@ -201,6 +230,8 @@ export default function PlannerPage() {
         onAddTodo={handleAddTodo}
         onToggleTodo={handleToggleTodo}
         onDeleteTodo={handleDeleteTodo}
+        focusDate={focusEvent?.date ?? null}
+        focusEventId={focusEvent?.id ?? null}
       />
 
       <section className="board-region">
@@ -233,6 +264,7 @@ export default function PlannerPage() {
           onUpdateTask={handleUpdateTask}
           onDeleteTask={handleDeleteTask}
           onOpenAddTask={() => setShowAddTask(true)}
+          focusEventId={focusEvent?.id ?? null}
         />
       </section>
 

@@ -23,6 +23,8 @@ type Props = {
   onAddTodo: (date: string, text: string) => void;
   onToggleTodo: (id: string, done: boolean) => void;
   onDeleteTodo: (id: string) => void;
+  focusDate?: string | null; // selected when arriving from a link to a specific task
+  focusEventId?: string | null;
 };
 
 export default function CalendarView(props: Props) {
@@ -44,6 +46,11 @@ export default function CalendarView(props: Props) {
       return toDateKey(new Date(cursor.getFullYear(), cursor.getMonth(), day));
     });
   }, [cursor]);
+
+  // runs after the cursor effect above, so the exact day wins
+  useEffect(() => {
+    if (props.focusDate) setSelectedDate(props.focusDate);
+  }, [props.focusDate]);
 
   const eventsByDate = useMemo(() => {
     const map = new Map<string, EventItem[]>();
@@ -143,6 +150,7 @@ export default function CalendarView(props: Props) {
                   section={ev.sectionId ? sectionById.get(ev.sectionId) : undefined}
                   sections={sections}
                   hideDate
+                  defaultExpanded={ev.id === props.focusEventId && !ev.sectionId}
                   onUpdateEvent={(patch) => props.onUpdateEvent(ev.id, patch)}
                   onDeleteEvent={() => props.onDeleteEvent(ev.id)}
                   onAddTask={(name, assigneeUserId) => props.onAddTask(ev.id, name, assigneeUserId)}

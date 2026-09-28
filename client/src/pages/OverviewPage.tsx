@@ -145,7 +145,7 @@ function TaskList({
         const done = ev.tasks.filter((t) => t.done).length;
         return (
           <li key={ev.id}>
-            <Link to={`${base}/planner`} className="overview-task">
+            <Link to={`${base}/planner?event=${ev.id}`} className="overview-task">
               <span
                 className="overview-task-dot"
                 style={{ background: (ev.sectionId && sectionColor.get(ev.sectionId)) || "var(--border)" }}

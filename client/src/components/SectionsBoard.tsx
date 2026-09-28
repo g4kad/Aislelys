@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { EventItem, Section, Task } from "../types";
 import EventCard from "./EventCard";
 import SectionManagerModal from "./SectionManagerModal";
@@ -33,6 +33,7 @@ type Props = {
   onUpdateTask: (eventId: string, taskId: string, patch: Partial<Pick<Task, "name" | "assigneeUserId" | "done">>) => void;
   onDeleteTask: (eventId: string, taskId: string) => void;
   onOpenAddTask: () => void;
+  focusEventId?: string | null; // opened when arriving from a link to a specific task
 };
 
 type SortableSectionProps = {
@@ -74,6 +75,10 @@ export default function SectionsBoard(props: Props) {
   const { events, sections } = props;
   const [showSectionManager, setShowSectionManager] = useState(false);
   const [expandedEventId, setExpandedEventId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (props.focusEventId) setExpandedEventId(props.focusEventId);
+  }, [props.focusEventId]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),

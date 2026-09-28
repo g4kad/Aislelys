@@ -84,7 +84,7 @@ export default function EventCard({
   }
 
   return (
-    <div className="card" style={{ borderLeftColor: section?.color ?? "#ccc" }}>
+    <div className="card" data-event-id={event.id} style={{ borderLeftColor: section?.color ?? "#ccc" }}>
       <button
         className="card-header"
         onClick={toggleExpanded}
