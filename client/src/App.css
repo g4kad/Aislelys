@@ -3198,3 +3198,13 @@
     display: none;
   }
 }
+
+@media (max-width: 480px) {
+  .overview-hero {
+    padding-top: 24px;
+  }
+
+  .overview-quote {
+    margin-top: 24px;
+  }
+}
