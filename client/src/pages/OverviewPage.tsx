@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import type { EventItem, InspirationItem, Section } from "../types";
+import type { Budget, BudgetItem, EventItem, InspirationItem, Section } from "../types";
 import * as api from "../api";
 import { daysUntil, formatDateDMY, formatDateLong, formatTime, todayKey } from "../dateUtils";
 import { getInstagramEmbedUrl, getTikTokEmbedUrl, getVimeoEmbedUrl, getYouTubeEmbedUrl } from "../inspirationUtils";
 import { LOVE_QUOTES } from "../loveQuotes";
+import { budgetLineAmount, formatSgd, toSgd } from "../money";
 
 type Props = {
   weddingDate: string | null;
@@ -23,6 +24,9 @@ export default function OverviewPage({ weddingDate }: Props) {
   const [events, setEvents] = useState<EventItem[]>([]);
   const [sections, setSections] = useState<Section[]>([]);
   const [inspiration, setInspiration] = useState<InspirationItem[]>([]);
+  const [budget, setBudget] = useState<Budget | null>(null);
+  const [budgetItems, setBudgetItems] = useState<BudgetItem[]>([]);
+  const [myrToSgd, setMyrToSgd] = useState(0.31);
   const [loading, setLoading] = useState(true);
   // a new quote each time the page is opened
   const [quote] = useState(() => LOVE_QUOTES[Math.floor(Math.random() * LOVE_QUOTES.length)]);
@@ -32,11 +36,17 @@ export default function OverviewPage({ weddingDate }: Props) {
       api.getEvents().catch(() => []),
       api.getSections().catch(() => []),
       api.getInspirationItems().catch(() => []),
+      api.getBudget().catch(() => null),
+      api.getBudgetItems().catch(() => []),
+      api.getExchangeRate().catch(() => null),
     ])
-      .then(([e, s, i]) => {
+      .then(([e, s, i, b, bi, rate]) => {
         setEvents(e);
         setSections(s);
         setInspiration(i);
+        setBudget(b);
+        setBudgetItems(bi);
+        if (rate) setMyrToSgd(rate.myrToSgd);
       })
       .finally(() => setLoading(false));
   }, []);
@@ -115,6 +125,16 @@ export default function OverviewPage({ weddingDate }: Props) {
             </section>
           </div>
 
+          {budget && (
+            <section className="overview-panel">
+              <div className="overview-panel-header">
+                <h2>Budget</h2>
+                <Link to={`${base}/budget`} className="overview-view-all">Budget →</Link>
+              </div>
+              <BudgetCells budget={budget} items={budgetItems} myrToSgd={myrToSgd} />
+            </section>
+          )}
+
           <section className="overview-panel">
             <div className="overview-panel-header">
               <h2>Latest inspiration</h2>
@@ -124,6 +144,36 @@ export default function OverviewPage({ weddingDate }: Props) {
           </section>
         </>
       )}
+    </div>
+  );
+}
+
+// Read-only version of the summary cells at the top of the Budget page.
+function BudgetCells({ budget, items, myrToSgd }: { budget: Budget; items: BudgetItem[]; myrToSgd: number }) {
+  const spent = items.reduce((sum, i) => sum + toSgd(budgetLineAmount(i), i.currency, myrToSgd), 0);
+  const remaining = budget.total - spent;
+  const savingsPercent = budget.total > 0 ? Math.round((budget.savings / budget.total) * 100) : 0;
+  return (
+    <div className="budget-summary overview-budget">
+      <div className="budget-summary-stat">
+        <span className="budget-stat-label">Total budget</span>
+        <span className="budget-stat-value">{formatSgd(budget.total)}</span>
+      </div>
+      <div className="budget-summary-stat">
+        <span className="budget-stat-label">Total savings</span>
+        <span className="budget-stat-value">
+          {formatSgd(budget.savings)}
+          {budget.total > 0 && <span className="budget-savings-percent"> ({savingsPercent}%)</span>}
+        </span>
+      </div>
+      <div className="budget-summary-stat">
+        <span className="budget-stat-label">Remaining (SGD)</span>
+        <span className={`budget-stat-value ${remaining < 0 ? "over" : "positive"}`}>{formatSgd(remaining)}</span>
+      </div>
+      <div className="budget-summary-stat budget-stat-highlight">
+        <span className="budget-stat-label">Total (SGD)</span>
+        <span className="budget-stat-value">{formatSgd(spent)}</span>
+      </div>
     </div>
   );
 }
