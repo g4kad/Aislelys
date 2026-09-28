@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import type { BudgetCategory, BudgetItem, EventItem, GuestOwner, Section, User } from "../types";
 import { DemoAuthProvider } from "../auth";
 import SectionsBoard from "../components/SectionsBoard";
@@ -212,33 +212,6 @@ const OWNERS: GuestOwner[] = [
   familyList("g-theo", "Theo's parents", 0),
 ];
 
-// Fades a lily in behind a screen once the screen reaches the middle of the
-// viewport (a 1px band across the middle; see rootMargin). It stays shown.
-function useReachedMiddle<T extends Element>() {
-  const ref = useRef<T>(null);
-  const [reached, setReached] = useState(false);
-  useEffect(() => {
-    const el = ref.current;
-    if (!el || reached) return;
-    if (typeof IntersectionObserver === "undefined") {
-      setReached(true);
-      return;
-    }
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries.some((e) => e.isIntersecting)) {
-          setReached(true);
-          observer.disconnect();
-        }
-      },
-      { rootMargin: "-50% 0px -50% 0px" }
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [reached]);
-  return [ref, reached] as const;
-}
-
 function Frame({
   label,
   children,
@@ -256,12 +229,8 @@ function Frame({
   cornerBloom?: boolean; // a second flower at the bottom-right
   interactive?: boolean; // clickable (e.g. open a guest list); still saves nothing
 }) {
-  const [ref, reached] = useReachedMiddle<HTMLDivElement>();
   return (
-    <div
-      ref={ref}
-      className={`hp-shot-wrap ${className}-wrap bloom-${bloom} ${bloomSmall ? "bloom-small" : ""} ${reached ? "bloomed" : ""}`}
-    >
+    <div className={`hp-shot-wrap ${className}-wrap bloom-${bloom} ${bloomSmall ? "bloom-small" : ""}`}>
       {bloom !== "none" && <span className="hp-bloom" aria-hidden="true" />}
       {cornerBloom && <span className="hp-bloom hp-bloom-corner" aria-hidden="true" />}
       <FrameWindow label={label} className={className} interactive={interactive}>
