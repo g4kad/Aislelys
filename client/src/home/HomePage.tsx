@@ -283,7 +283,9 @@ export default function HomePage() {
 
         {/* BUDGET */}
         <section id="budget" className="hp-wrap hp-split hp-split-reverse">
-          <BudgetPreview />
+          <div className="hp-plan-stage hp-stage-motif">
+            <BudgetPreview />
+          </div>
           <div className="hp-split-copy">
             <p className="hp-eyebrow">Budget &amp; vendors</p>
             <h2 className="hp-h2">Know what's left before you say yes.</h2>

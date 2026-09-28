@@ -1187,3 +1187,23 @@ html:has(.hp) {
     transition: none;
   }
 }
+
+/* budget: on the same sand stage as the planner, with the inspiration
+   tiles' lily motif faintly behind the window */
+.hp-stage-motif {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+
+.hp-stage-motif::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: url("/overview-lily.png") center / cover no-repeat;
+  opacity: 0.25;
+  filter: brightness(0.7) sepia(0.5);
+  mix-blend-mode: multiply;
+  pointer-events: none;
+}
