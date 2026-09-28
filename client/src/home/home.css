@@ -341,7 +341,7 @@
 
 .hp-points svg {
   flex-shrink: 0;
-  color: var(--hp-sage-deep);
+  color: #aaab8a; /* the brand green, from the logo */
 }
 
 /* ---------- guests (sage band) ---------- */
