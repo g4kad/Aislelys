@@ -10,7 +10,7 @@ type Props = {
   weddingDate: string | null;
 };
 
-const LIST_LIMIT = 5;
+const LIST_LIMIT = 3;
 const IMAGE_LIMIT = 3;
 
 function isEmbed(url: string) {
