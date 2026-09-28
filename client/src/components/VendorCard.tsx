@@ -121,6 +121,11 @@ export default function VendorCard({
             <input type="text" value={vendor.name} onChange={(e) => onUpdate({ name: e.target.value })} />
           </label>
 
+          <label className="title-field">
+            Contact
+            <input type="text" value={vendor.contact} onChange={(e) => onUpdate({ contact: e.target.value })} />
+          </label>
+
           <div className="field-row">
             <label>
               Category
@@ -142,44 +147,36 @@ export default function VendorCard({
             </label>
           </div>
 
-          <div className="field-row">
-            <label>
-              Contact
-              <input type="text" value={vendor.contact} onChange={(e) => onUpdate({ contact: e.target.value })} />
-            </label>
-            <label>
-              Cost
-              <input
-                type="number"
-                min={0}
-                placeholder="0"
-                value={vendor.cost || ""}
-                onChange={(e) => onUpdate({ cost: Math.max(0, Number(e.target.value) || 0) })}
-              />
-            </label>
-          </div>
+          <label className="title-field">
+            Cost
+            <input
+              type="number"
+              min={0}
+              placeholder="0"
+              value={vendor.cost || ""}
+              onChange={(e) => onUpdate({ cost: Math.max(0, Number(e.target.value) || 0) })}
+            />
+          </label>
 
-          <div className="field-row">
-            <label>
-              Currency
-              <Dropdown
-                value={vendor.currency}
-                onChange={(v) => onUpdate({ currency: v as Currency })}
-                options={CURRENCIES}
-              />
-            </label>
-            <label>
-              Downpayment
-              <input
-                type="number"
-                min={0}
-                placeholder="0"
-                value={vendor.downpayment || ""}
-                onChange={(e) => onUpdate({ downpayment: Math.max(0, Number(e.target.value) || 0) })}
-              />
-            </label>
-          </div>
+          <label className="title-field">
+            Downpayment
+            <input
+              type="number"
+              min={0}
+              placeholder="0"
+              value={vendor.downpayment || ""}
+              onChange={(e) => onUpdate({ downpayment: Math.max(0, Number(e.target.value) || 0) })}
+            />
+          </label>
 
+          <label className="title-field">
+            Currency
+            <Dropdown
+              value={vendor.currency}
+              onChange={(v) => onUpdate({ currency: v as Currency })}
+              options={CURRENCIES}
+            />
+          </label>
 
           <ExtraCostsEditor extras={vendor.extras ?? []} onChange={(extras) => onUpdate({ extras })} />
 

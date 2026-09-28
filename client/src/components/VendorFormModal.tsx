@@ -95,6 +95,16 @@ export default function VendorFormModal({ categories, budgetCategories, onClose,
           />
         </label>
 
+        <label>
+          Contact
+          <input
+            type="text"
+            placeholder="e.g. 012-345 6789"
+            value={contact}
+            onChange={(e) => setContact(e.target.value)}
+          />
+        </label>
+
         <div className="field-row">
           <label>
             Category
@@ -140,44 +150,32 @@ export default function VendorFormModal({ categories, budgetCategories, onClose,
           </div>
         )}
 
-        <div className="field-row">
-          <label>
-            Contact
-            <input
-              type="text"
-              placeholder="e.g. 012-345 6789"
-              value={contact}
-              onChange={(e) => setContact(e.target.value)}
-            />
-          </label>
-          <label>
-            Cost
-            <input
-              type="number"
-              min={0}
-              placeholder="0"
-              value={cost}
-              onChange={(e) => setCost(e.target.value)}
-            />
-          </label>
-        </div>
+        <label>
+          Cost
+          <input
+            type="number"
+            min={0}
+            placeholder="0"
+            value={cost}
+            onChange={(e) => setCost(e.target.value)}
+          />
+        </label>
 
-        <div className="field-row">
-          <label>
-            Currency
-            <Dropdown value={currency} onChange={(v) => setCurrency(v as Currency)} options={CURRENCIES} />
-          </label>
-          <label>
-            Downpayment
-            <input
-              type="number"
-              min={0}
-              placeholder="0"
-              value={downpayment}
-              onChange={(e) => setDownpayment(e.target.value)}
-            />
-          </label>
-        </div>
+        <label>
+          Downpayment
+          <input
+            type="number"
+            min={0}
+            placeholder="0"
+            value={downpayment}
+            onChange={(e) => setDownpayment(e.target.value)}
+          />
+        </label>
+
+        <label>
+          Currency
+          <Dropdown value={currency} onChange={(v) => setCurrency(v as Currency)} options={CURRENCIES} />
+        </label>
 
         <p className="form-hint">Vendors are added to your budget automatically from Downpayment onwards.</p>
 
