@@ -1708,3 +1708,17 @@ html:has(.hp) {
 .hp-inspo-tile.hp-inspo-photo::after {
   content: none;
 }
+
+/* each photo tile has a desktop crop and a phone crop (328 × 400) */
+.hp-inspo-tile.hp-inspo-photo {
+  background-image: var(--hp-inspo-img);
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+}
+
+@media (max-width: 640px) {
+  .hp-inspo-tile.hp-inspo-photo {
+    background-image: var(--hp-inspo-img-m);
+  }
+}

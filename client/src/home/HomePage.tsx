@@ -35,10 +35,10 @@ const BUDGET_POINTS = [
 ];
 
 const INSPO = [
-  { cat: "Tables", caption: "Candlelit long tables", img: "/inspo-1.jpg", tone: "#E6D6C3", h: 320, loved: true, by: "Saved by Mira" },
-  { cat: "Florals", caption: "Ivory rose bouquet", img: "/inspo-2.jpg", tone: "#D9CDB8", h: 240, loved: false, by: "Saved by Theo" },
-  { cat: "Table setting", caption: "Eucalyptus place settings", img: "/inspo-3.jpg", tone: "#C9CAB0", h: 360, loved: true, by: "Uploaded by Theo" },
-  { cat: "Hair", caption: "Loose floral updo", img: "/inspo-4.jpg", tone: "#E9DFCF", h: 280, loved: false, by: "Saved by Mira" },
+  { cat: "Tables", caption: "Candlelit long tables", img: "/inspo-1.jpg", imgMobile: "/inspo-1-m.jpg", tone: "#E6D6C3", h: 320, loved: true, by: "Saved by Mira" },
+  { cat: "Florals", caption: "Ivory rose bouquet", img: "/inspo-2.jpg", imgMobile: "/inspo-2-m.jpg", tone: "#D9CDB8", h: 240, loved: false, by: "Saved by Theo" },
+  { cat: "Table setting", caption: "Eucalyptus place settings", img: "/inspo-3.jpg", imgMobile: "/inspo-3-m.jpg", tone: "#C9CAB0", h: 360, loved: true, by: "Uploaded by Theo" },
+  { cat: "Hair", caption: "Loose floral updo", img: "/inspo-4.jpg", imgMobile: "/inspo-4-m.jpg", tone: "#E9DFCF", h: 280, loved: false, by: "Saved by Mira" },
 ];
 
 const STEPS = [
@@ -323,7 +323,14 @@ export default function HomePage() {
               <div className="hp-inspo-item" key={i.caption}>
                 <div
                   className="hp-inspo-tile hp-inspo-photo"
-                  style={{ background: `${i.tone} url(${i.img}) center / cover no-repeat`, height: i.h }}
+                  style={
+                    {
+                      height: i.h,
+                      backgroundColor: i.tone,
+                      "--hp-inspo-img": `url(${i.img})`,
+                      "--hp-inspo-img-m": `url(${i.imgMobile})`,
+                    } as React.CSSProperties
+                  }
                 >
                   <span className="hp-inspo-cat">{i.cat}</span>
                   <span className={`hp-inspo-heart ${i.loved ? "loved" : ""}`}>
