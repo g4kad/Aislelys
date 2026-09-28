@@ -540,8 +540,13 @@ export default function GuestOwnerCard({
                 />
               ))}
               <div className="card-footer">
-                <button className="btn small ghost card-footer-right" onClick={() => setEditing(true)}>
-                  Edit
+                <button
+                  className="icon-btn card-footer-right"
+                  title={`Edit ${owner.name}'s lists`}
+                  aria-label="Edit"
+                  onClick={() => setEditing(true)}
+                >
+                  <IconEdit size={15} />
                 </button>
               </div>
             </>
