@@ -3,6 +3,7 @@ import type { InspirationCategory, InspirationItem } from "../types";
 import * as api from "../api";
 import InspirationCard from "../components/InspirationCard";
 import InspirationFormModal from "../components/InspirationFormModal";
+import InspirationEditModal from "../components/InspirationEditModal";
 import ImageLightbox, { type LightboxSlide } from "../components/ImageLightbox";
 import Dropdown from "../components/Dropdown";
 import { IconCheck, IconClose, IconTrash } from "../components/Icons";
@@ -28,6 +29,8 @@ export default function InspirationPage() {
   // the images the viewer was opened with — kept fixed while it's open, so
   // un-approving one in "approved only" doesn't yank it out from under you
   const [lightboxIds, setLightboxIds] = useState<string[]>([]);
+  const [editingItemId, setEditingItemId] = useState<string | null>(null);
+  const editingItem = items.find((i) => i.id === editingItemId) ?? null;
 
   const handleImageReady = useCallback((id: string, src: string | null) => {
     setImageSrcs((prev) => {
@@ -167,10 +170,10 @@ export default function InspirationPage() {
     }
   }
 
-  async function handleChangeItemCategory(id: string, categoryId: string | null) {
-    setItems((prev) => prev.map((i) => (i.id === id ? { ...i, categoryId } : i)));
+  async function handleEditItem(id: string, patch: { caption: string; categoryId: string | null }) {
+    setItems((prev) => prev.map((i) => (i.id === id ? { ...i, ...patch } : i)));
     try {
-      await api.updateInspirationItem(id, { categoryId });
+      await api.updateInspirationItem(id, patch);
     } catch (err) {
       setError((err as Error).message);
     }
@@ -331,15 +334,24 @@ export default function InspirationPage() {
             <InspirationCard
               key={item.id}
               item={item}
-              categories={categories}
               onToggleApproved={() => handleToggleApproved(item.id)}
-              onChangeCategory={(categoryId) => handleChangeItemCategory(item.id, categoryId)}
+              onEdit={() => setEditingItemId(item.id)}
               onDelete={() => handleDelete(item.id)}
               onImageReady={(src) => handleImageReady(item.id, src)}
               onOpenImage={() => openLightbox(item.id)}
             />
           ))}
         </div>
+      )}
+
+      {editingItem && (
+        <InspirationEditModal
+          item={editingItem}
+          categories={categories}
+          onClose={() => setEditingItemId(null)}
+          onSave={(patch) => handleEditItem(editingItem.id, patch)}
+          onCreateCategory={handleCreateCategory}
+        />
       )}
 
       {lightboxIndex >= 0 && (

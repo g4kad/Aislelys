@@ -1,15 +1,13 @@
 import { useEffect, useState } from "react";
-import type { InspirationCategory, InspirationItem } from "../types";
+import type { InspirationItem } from "../types";
 import { getYouTubeEmbedUrl, getVimeoEmbedUrl, getInstagramEmbedUrl, getTikTokEmbedUrl, getHostname } from "../inspirationUtils";
 import { IconClose, IconEdit, IconExternalLink, IconHeart, IconTrash } from "./Icons";
-import Dropdown from "./Dropdown";
 import * as api from "../api";
 
 type Props = {
   item: InspirationItem;
-  categories: InspirationCategory[];
   onToggleApproved: () => void;
-  onChangeCategory: (categoryId: string | null) => void;
+  onEdit: () => void; // opens the caption/category pop-up
   onDelete: () => void;
   // tells the page which image (if any) this card is showing, so the viewer
   // can page through them
@@ -19,9 +17,8 @@ type Props = {
 
 export default function InspirationCard({
   item,
-  categories,
   onToggleApproved,
-  onChangeCategory,
+  onEdit,
   onDelete,
   onImageReady,
   onOpenImage,
@@ -32,7 +29,6 @@ export default function InspirationCard({
   const [resolving, setResolving] = useState(false);
   const [resolveFailed, setResolveFailed] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const [editingCategory, setEditingCategory] = useState(false);
 
   const youtubeEmbed = getYouTubeEmbedUrl(item.url);
   const vimeoEmbed = getVimeoEmbedUrl(item.url);
@@ -88,16 +84,6 @@ export default function InspirationCard({
     onImageReady(reportedImage);
   }, [reportedImage, onImageReady]);
 
-  const categoryOptions = [
-    { value: "", label: "No category" },
-    ...categories.map((c) => ({ value: c.id, label: c.title })),
-  ];
-
-  function applyCategory(value: string) {
-    onChangeCategory(value || null);
-    setEditingCategory(false);
-  }
-
   if (isPlainImage) {
     return (
       <div className="pin-card">
@@ -105,10 +91,10 @@ export default function InspirationCard({
           <img src={displayImageUrl ?? undefined} alt={item.caption || ""} onError={handleImageError} loading="lazy" />
 
           <div
-            className={`pin-overlay ${editingCategory ? "force-visible" : ""}`}
+            className="pin-overlay"
             onClick={(e) => {
-              // clicks on the card's own buttons/dropdown shouldn't open the viewer
-              if (editingCategory || (e.target as HTMLElement).closest("button, a, .dropdown")) return;
+              // clicks on the card's own buttons shouldn't open the viewer
+              if ((e.target as HTMLElement).closest("button, a")) return;
               onOpenImage();
             }}
           >
@@ -121,20 +107,7 @@ export default function InspirationCard({
             </button>
 
             <div className="pin-overlay-bottom">
-              {editingCategory ? (
-                <div className="pin-category-edit">
-                  <Dropdown
-                    className="pin-category-select"
-                    value={item.categoryId ?? ""}
-                    onChange={applyCategory}
-                    placeholder="No category"
-                    options={categoryOptions}
-                  />
-                  <button className="pin-round-btn" title="Close" onClick={() => setEditingCategory(false)}>
-                    <IconClose size={11} />
-                  </button>
-                </div>
-              ) : confirmDelete ? (
+              {confirmDelete ? (
                 <>
                   <button className="pin-round-btn" title="Confirm delete" onClick={onDelete}>
                     <IconTrash size={13} />
@@ -145,7 +118,7 @@ export default function InspirationCard({
                 </>
               ) : (
                 <>
-                  <button className="pin-round-btn" title="Change category" onClick={() => setEditingCategory(true)}>
+                  <button className="pin-round-btn" title="Edit" onClick={onEdit}>
                     <IconEdit size={13} />
                   </button>
                   <button className="pin-round-btn" title="Remove" onClick={() => setConfirmDelete(true)}>
@@ -204,45 +177,29 @@ export default function InspirationCard({
       </div>
 
       <div className="inspiration-footer">
-        {editingCategory ? (
-          <div className="inspiration-category-edit">
-            <Dropdown
-              value={item.categoryId ?? ""}
-              onChange={applyCategory}
-              placeholder="No category"
-              options={categoryOptions}
-            />
-            <button className="icon-btn" title="Close" onClick={() => setEditingCategory(false)}>
-              <IconClose />
+        {item.caption ? <p className="inspiration-caption">{item.caption}</p> : <span />}
+        <div className="inspiration-actions">
+          <button className="icon-btn" title="Edit" onClick={onEdit}>
+            <IconEdit />
+          </button>
+          <button
+            className={`icon-btn ${item.approved ? "approved" : ""}`}
+            title={item.approved ? "Approved" : "Mark as approved"}
+            onClick={onToggleApproved}
+          >
+            <IconHeart filled={item.approved} />
+          </button>
+          {confirmDelete ? (
+            <span className="confirm-row">
+              <button className="btn small danger" onClick={onDelete}>Yes</button>
+              <button className="btn small ghost" onClick={() => setConfirmDelete(false)}>Cancel</button>
+            </span>
+          ) : (
+            <button className="icon-btn danger" title="Remove" onClick={() => setConfirmDelete(true)}>
+              <IconTrash />
             </button>
-          </div>
-        ) : (
-          <>
-            {item.caption ? <p className="inspiration-caption">{item.caption}</p> : <span />}
-            <div className="inspiration-actions">
-              <button className="icon-btn" title="Change category" onClick={() => setEditingCategory(true)}>
-                <IconEdit />
-              </button>
-              <button
-                className={`icon-btn ${item.approved ? "approved" : ""}`}
-                title={item.approved ? "Approved" : "Mark as approved"}
-                onClick={onToggleApproved}
-              >
-                <IconHeart filled={item.approved} />
-              </button>
-              {confirmDelete ? (
-                <span className="confirm-row">
-                  <button className="btn small danger" onClick={onDelete}>Yes</button>
-                  <button className="btn small ghost" onClick={() => setConfirmDelete(false)}>Cancel</button>
-                </span>
-              ) : (
-                <button className="icon-btn danger" title="Remove" onClick={() => setConfirmDelete(true)}>
-                  <IconTrash />
-                </button>
-              )}
-            </div>
-          </>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );
