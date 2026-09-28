@@ -137,6 +137,7 @@
 }
 
 .hp-link-btn {
+  white-space: nowrap;
   min-height: 44px;
   padding: 0 14px;
   font-size: 0.9375rem;
@@ -1607,5 +1608,27 @@ html:has(.hp) {
     left: 12%;
     width: 90%;
     height: 450px;
+  }
+}
+
+/* phones: the two pill buttons move below the hero picture. The copy block
+   lets its children join the hero grid so they can be re-ordered; the
+   eyebrow, heading and intro stay above the picture. */
+@media (max-width: 640px) {
+  .hp-hero {
+    gap: 28px;
+  }
+
+  .hp-hero-copy {
+    display: contents;
+  }
+
+  .hp-hero-visual {
+    order: 1;
+    margin: 12px 0 4px;
+  }
+
+  .hp-hero-copy > .hp-cta-row {
+    order: 2;
   }
 }
