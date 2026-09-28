@@ -1420,3 +1420,170 @@ html:has(.hp) {
     transform-origin: top left;
   }
 }
+
+/* ================================================================
+   Hero composition, laid out from the reference mock (1108 × 940):
+   every position is a share of the visual's width/height, so the
+   whole arrangement scales together. Later rules win over the
+   earlier hero placements above.
+   ================================================================ */
+
+.hp-hero-visual {
+  height: auto;
+  aspect-ratio: 1108 / 940;
+  padding: 0;
+}
+
+/* the window behind: centred, soft cream rows, no sand box */
+.hp-hero-visual .hp-shot-cards-wrap {
+  top: 9.6%;
+  left: 19.9%;
+  right: auto;
+  width: 71.8%;
+  height: 79.3%;
+}
+
+.hp-hero-visual .hp-shot-cards {
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 30px 60px -36px rgba(43, 28, 1, 0.3);
+}
+
+.hp-hero-visual .hp-shot-cards .hp-shot-body {
+  flex: 1;
+  display: flex;
+  padding: 7% 3% 3% 5.6%;
+}
+
+.hp-hero-visual .hp-ghost-board {
+  flex: 1;
+  gap: 4.5%;
+}
+
+.hp-hero-visual .hp-ghost-board span {
+  flex: 1;
+  height: auto;
+  border: none;
+  border-radius: 18px;
+  background: #fdf6ea;
+}
+
+.hp-hero-visual .hp-ghost-board span:nth-child(n + 4) {
+  display: none;
+}
+
+/* Venue: wide across the middle, breaking out to the left */
+.hp-hero-visual .hp-float-s-venue {
+  top: 33%;
+  left: 7.2%;
+  right: auto;
+  width: 74.7%;
+}
+
+/* rings: over the window's top-right corner */
+.hp-hero-visual .hp-photo-rings {
+  top: 0.5%;
+  left: 55.5%;
+  right: auto;
+  width: 33.1%;
+}
+
+/* venue photo: bottom-left, hanging below the window */
+.hp-hero-visual .hp-photo-venue {
+  top: 68.6%;
+  left: 11.9%;
+  right: auto;
+  width: 41.3%;
+}
+
+.hp-hero-visual .hp-photo-venue .pin-image-wrap img {
+  aspect-ratio: 16 / 10;
+}
+
+/* Wedding budget: bottom-right, a larger amount */
+.hp-hero-visual .hp-shot-badge {
+  top: 68.8%;
+  left: 56.9%;
+  right: auto;
+  bottom: auto;
+  width: 30.2%;
+  scale: 1;
+  box-shadow: 0 20px 40px -28px rgba(43, 28, 1, 0.35);
+}
+
+.hp-hero-visual .hp-shot-badge .budget-summary-stat {
+  padding: 14px 18px;
+}
+
+.hp-hero-visual .hp-shot-badge .budget-stat-value {
+  font-size: clamp(1.25rem, 2.2vw, 2rem);
+}
+
+/* show the dates on the Venue card again (they fit at this width) */
+.hp-hero-visual .hp-float-card .event-card-date {
+  display: inline;
+}
+
+/* the budget amount scales with the composition, like the mock */
+.hp-hero-visual {
+  container-type: inline-size;
+}
+
+.hp-hero-visual .hp-shot-badge .budget-stat-label {
+  font-size: max(11px, 2cqw);
+}
+
+.hp-hero-visual .hp-shot-badge .budget-stat-value {
+  font-size: max(15px, 4.1cqw);
+  white-space: nowrap;
+}
+
+/* phones: the same arrangement, sized for a narrow screen */
+@media (max-width: 640px) {
+  .hp-hero-visual {
+    aspect-ratio: auto;
+    height: 510px;
+  }
+
+  .hp-hero-visual .hp-shot-cards-wrap {
+    top: 48px;
+    left: 10%;
+    width: 86%;
+    height: 420px;
+  }
+
+  .hp-hero-visual .hp-photo-rings {
+    top: 0;
+    left: auto;
+    right: 0;
+    width: 50%;
+  }
+
+  .hp-hero-visual .hp-float-s-venue {
+    top: 164px;
+    left: -6px;
+    width: calc(100% + 6px);
+  }
+
+  .hp-hero-visual .hp-photo-venue {
+    top: 372px;
+    left: 0;
+    width: 54%;
+  }
+
+  .hp-hero-visual .hp-shot-badge {
+    top: 386px;
+    left: auto;
+    right: 0;
+    width: 42%;
+  }
+
+  .hp-hero-visual .hp-shot-badge .budget-stat-value {
+    font-size: 1.15rem;
+  }
+
+  /* room for the task names on a narrow screen */
+  .hp-hero-visual .hp-float-card .event-card-date {
+    display: none;
+  }
+}
