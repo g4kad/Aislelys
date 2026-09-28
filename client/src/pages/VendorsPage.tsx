@@ -3,6 +3,7 @@ import type { BudgetCategory, Currency, ExtraCost, Vendor, VendorCategory } from
 import * as api from "../api";
 import VendorsBoard from "../components/VendorsBoard";
 import VendorFormModal from "../components/VendorFormModal";
+import VendorCalculatorModal from "../components/VendorCalculatorModal";
 import { SECTION_COLORS } from "../palette";
 
 export default function VendorsPage() {
@@ -12,6 +13,7 @@ export default function VendorsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showCalculator, setShowCalculator] = useState(false);
 
   useEffect(() => {
     Promise.all([api.getVendors(), api.getVendorCategories(), api.getBudgetCategories()])
@@ -110,6 +112,9 @@ export default function VendorsPage() {
         <button type="button" className="btn primary btn-add-primary" onClick={() => setShowAddModal(true)}>
           + Add vendor
         </button>
+        <button type="button" className="btn ghost" onClick={() => setShowCalculator(true)}>
+          Calculator
+        </button>
       </div>
 
       <VendorsBoard
@@ -122,6 +127,10 @@ export default function VendorsPage() {
         onUpdateCategory={handleUpdateCategory}
         onDeleteCategory={handleDeleteCategory}
       />
+
+      {showCalculator && (
+        <VendorCalculatorModal vendors={vendors} categories={categories} onClose={() => setShowCalculator(false)} />
+      )}
 
       {showAddModal && (
         <VendorFormModal
