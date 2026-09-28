@@ -1161,3 +1161,29 @@ html:has(.hp) {
 .hp-shot-guests-family .guest-owner-add {
   display: none;
 }
+
+/* ---------- app windows fade in and slide up as they scroll into view ---------- */
+
+.hp-reveal {
+  opacity: 0;
+  translate: 0 36px;
+  transition: opacity 0.8s ease-out, translate 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.hp-reveal.is-shown {
+  opacity: 1;
+  translate: 0 0;
+}
+
+/* the hero's floating Remaining card follows its window a beat later */
+.hp-reveal-late {
+  transition-delay: 0.25s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hp-reveal {
+    opacity: 1;
+    translate: none;
+    transition: none;
+  }
+}

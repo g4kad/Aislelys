@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { BudgetCategory, BudgetItem, EventItem, GuestOwner, Section, User } from "../types";
 import { DemoAuthProvider } from "../auth";
 import SectionsBoard from "../components/SectionsBoard";
@@ -212,6 +212,33 @@ const OWNERS: GuestOwner[] = [
   familyList("g-theo", "Theo's parents", 0),
 ];
 
+// Fade-in + slide-up the first time an element scrolls into view (a little
+// way in, so the motion is seen). Shown straight away where unsupported.
+function useRevealOnScroll<T extends Element>() {
+  const ref = useRef<T>(null);
+  const [shown, setShown] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || shown) return;
+    if (typeof IntersectionObserver === "undefined") {
+      setShown(true);
+      return;
+    }
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) {
+          setShown(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.15, rootMargin: "0px 0px -8% 0px" }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [shown]);
+  return [ref, shown] as const;
+}
+
 function Frame({
   label,
   children,
@@ -223,8 +250,9 @@ function Frame({
   className?: string;
   interactive?: boolean; // clickable (e.g. open a guest list); still saves nothing
 }) {
+  const [ref, shown] = useRevealOnScroll<HTMLDivElement>();
   return (
-    <div className={`hp-shot-wrap ${className}-wrap`}>
+    <div ref={ref} className={`hp-shot-wrap ${className}-wrap hp-reveal ${shown ? "is-shown" : ""}`}>
       <FrameWindow label={label} className={className} interactive={interactive}>
         {children}
       </FrameWindow>
@@ -333,8 +361,9 @@ export function BudgetCellsPreview({ only }: { only?: "remaining" }) {
 }
 
 export function RemainingBadge() {
+  const [ref, shown] = useRevealOnScroll<HTMLDivElement>();
   return (
-    <div className="hp-shot-badge" aria-hidden="true">
+    <div ref={ref} className={`hp-shot-badge hp-reveal hp-reveal-late ${shown ? "is-shown" : ""}`} aria-hidden="true">
       <BudgetCellsPreview only="remaining" />
     </div>
   );
