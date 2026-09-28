@@ -2815,3 +2815,13 @@
   font-size: 0.8rem;
   color: var(--text-muted);
 }
+
+.guest-owner-add {
+  padding-bottom: 12px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid var(--border);
+}
+
+.guest-owner-add .guest-add-form {
+  margin-top: 6px;
+}

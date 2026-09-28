@@ -26,6 +26,80 @@ function attendeeTotal(list: Guest[]) {
   return list.reduce((sum, g) => (g.included === false ? sum : sum + 1 + g.plusCount), 0);
 }
 
+type AddFormProps = {
+  lists: GuestCategory[];
+  defaultListId: string;
+  onAddGuest: (name: string, plusCount: number, categoryId: string, isVip: boolean) => void;
+  onAdded?: (listId: string) => void;
+};
+
+// Name, +count, VIP and which list to put them in.
+function GuestAddForm({ lists, defaultListId, onAddGuest, onAdded }: AddFormProps) {
+  const [name, setName] = useState("");
+  const [count, setCount] = useState("");
+  const [vip, setVip] = useState(false);
+  const [targetListId, setTargetListId] = useState(defaultListId);
+  const [addedTo, setAddedTo] = useState<string | null>(null);
+  const target = lists.find((l) => l.id === targetListId) ?? lists[0];
+
+  function submit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!name.trim() || !target) return;
+    const plusCount = count === "" ? 0 : Math.max(0, Math.floor(Number(count)) || 0);
+    onAddGuest(name.trim(), plusCount, target.id, vip);
+    setName("");
+    setCount("");
+    setVip(false);
+    setAddedTo(target.title);
+    setTimeout(() => setAddedTo(null), 2500);
+    onAdded?.(target.id);
+  }
+
+  if (!target) return null;
+
+  return (
+    <form className="guest-add-form" onSubmit={submit}>
+      <button
+        type="button"
+        className={`icon-btn vip-toggle ${vip ? "active" : ""}`}
+        title={vip ? "Will be marked VIP" : "Mark as VIP"}
+        onClick={() => setVip((v) => !v)}
+      >
+        <IconHeart filled={vip} size={13} />
+      </button>
+      <input
+        type="text"
+        placeholder={guestNamePlaceholder(target.title)}
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+      />
+      <label className="plus-input-label">
+        +
+        <input
+          className="plus-input"
+          type="number"
+          min={0}
+          placeholder="0"
+          value={count}
+          onChange={(e) => setCount(e.target.value)}
+        />
+      </label>
+      {lists.length > 1 && (
+        <label className="guest-add-list-picker">
+          <span>List</span>
+          <Dropdown
+            value={target.id}
+            onChange={setTargetListId}
+            options={lists.map((l) => ({ value: l.id, label: l.title }))}
+          />
+        </label>
+      )}
+      <button className="btn small" type="submit">Add guest</button>
+      {addedTo && <span className="guest-added-hint">Added to {addedTo}</span>}
+    </form>
+  );
+}
+
 type SectionProps = {
   category: GuestCategory;
   lists: GuestCategory[]; // all of this person's lists, for the "add to" picker
@@ -53,12 +127,6 @@ function CategorySection({
   onUpdateCategory,
   onDeleteCategory,
 }: SectionProps) {
-  const [name, setName] = useState("");
-  const [count, setCount] = useState("");
-  const [vip, setVip] = useState(false);
-  // which list the new guest goes into — starts on the list you're in
-  const [targetListId, setTargetListId] = useState(category.id);
-  const [addedTo, setAddedTo] = useState<string | null>(null);
   const [confirmDeleteCategory, setConfirmDeleteCategory] = useState(false);
   const [renaming, setRenaming] = useState(false);
   const [draftTitle, setDraftTitle] = useState(category.title);
@@ -84,63 +152,6 @@ function CategorySection({
     onUpdateGuest(guestId, { ...contactDraft });
     setOpenContactId(null);
   }
-
-  function submit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!name.trim()) return;
-    const plusCount = count === "" ? 0 : Math.max(0, Math.floor(Number(count)) || 0);
-    const target = lists.find((l) => l.id === targetListId) ?? category;
-    onAddGuest(name.trim(), plusCount, target.id, vip);
-    setName("");
-    setCount("");
-    setVip(false);
-    if (target.id !== category.id) {
-      setAddedTo(target.title);
-      setTimeout(() => setAddedTo(null), 2500);
-    }
-  }
-
-  const addForm = (
-    <form className="guest-add-form" onSubmit={submit}>
-      <button
-        type="button"
-        className={`icon-btn vip-toggle ${vip ? "active" : ""}`}
-        title={vip ? "Will be marked VIP" : "Mark as VIP"}
-        onClick={() => setVip((v) => !v)}
-      >
-        <IconHeart filled={vip} size={13} />
-      </button>
-      <input
-        type="text"
-        placeholder={guestNamePlaceholder(category.title)}
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-      />
-      <label className="plus-input-label">
-        +
-        <input
-          className="plus-input"
-          type="number"
-          min={0}
-          placeholder="0"
-          value={count}
-          onChange={(e) => setCount(e.target.value)}
-        />
-      </label>
-      {lists.length > 1 && (
-        <label className="guest-add-list-picker">
-          <span>List</span>
-          <Dropdown
-            value={targetListId}
-            onChange={setTargetListId}
-            options={lists.map((l) => ({ value: l.id, label: l.title }))}
-          />
-        </label>
-      )}
-      <button className="btn small" type="submit">Add guest</button>
-      {addedTo && <span className="guest-added-hint">Added to {addedTo}</span>}
-    </form>
-  );
 
   function startRenaming() {
     setDraftTitle(category.title);
@@ -269,7 +280,6 @@ function CategorySection({
                 </ul>
               </div>
               )}
-              {addForm}
             </>
           ) : (
             <>
@@ -380,7 +390,7 @@ function CategorySection({
                   );
                 })}
               </ul>
-              {addForm}
+              <GuestAddForm lists={lists} defaultListId={category.id} onAddGuest={onAddGuest} />
             </>
           )}
         </div>
@@ -502,6 +512,17 @@ export default function GuestOwnerCard({
 
           {!editing ? (
             <>
+              {owner.categories.length > 0 && (
+                <div className="guest-owner-add">
+                  <span className="view-label">Add a guest</span>
+                  <GuestAddForm
+                    lists={owner.categories}
+                    defaultListId={owner.categories[0].id}
+                    onAddGuest={onAddGuest}
+                    onAdded={(listId) => setOpenCategoryId(listId)}
+                  />
+                </div>
+              )}
               {owner.categories.map((cat) => (
                 <CategorySection
                   key={cat.id}
