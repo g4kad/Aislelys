@@ -27,7 +27,6 @@ export default function BudgetFormModal({ categories, onClose, onCreate, onCreat
   const [item, setItem] = useState("");
   const [category, setCategory] = useState(PURCHASES_CATEGORY);
   const [currency, setCurrency] = useState<Currency>("SGD");
-  const [estimated, setEstimated] = useState("");
   const [actual, setActual] = useState("");
   const [paid, setPaid] = useState(false);
   const [notes, setNotes] = useState("");
@@ -69,7 +68,7 @@ export default function BudgetFormModal({ categories, onClose, onCreate, onCreat
       item: item.trim(),
       category: category || PURCHASES_CATEGORY,
       currency,
-      estimated: Math.max(0, Number(estimated) || 0),
+      estimated: Math.max(0, Number(actual) || 0),
       actual: Math.max(0, Number(actual) || 0),
       paid,
       notes: notes.trim(),
@@ -140,17 +139,7 @@ export default function BudgetFormModal({ categories, onClose, onCreate, onCreat
 
         <div className="field-row">
           <label>
-            Estimated
-            <input
-              type="number"
-              min={0}
-              placeholder="0"
-              value={estimated}
-              onChange={(e) => setEstimated(e.target.value)}
-            />
-          </label>
-          <label>
-            Actual
+            Cost
             <input
               type="number"
               min={0}

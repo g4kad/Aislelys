@@ -8,7 +8,6 @@ type Props = {
   items: BudgetItem[];
   categories: BudgetCategory[];
   myrToSgd: number;
-  mode: "estimated" | "actual";
   onUpdate: (id: string, patch: Partial<Pick<BudgetItem, "item" | "category" | "currency" | "estimated" | "actual" | "paid" | "downpayment" | "notes" | "extras">>) => void;
   onDelete: (id: string) => void;
   onCreateCategory: (title: string, color: string) => void;
@@ -20,7 +19,6 @@ export default function BudgetBoard({
   items,
   categories,
   myrToSgd,
-  mode,
   onUpdate,
   onDelete,
   onCreateCategory,
@@ -44,10 +42,10 @@ export default function BudgetBoard({
   }, [items, categories]);
 
   function categorySgd(list: BudgetItem[]) {
-    return list.reduce((sum, i) => sum + toSgd(budgetLineAmount(i, mode), i.currency, myrToSgd), 0);
+    return list.reduce((sum, i) => sum + toSgd(budgetLineAmount(i), i.currency, myrToSgd), 0);
   }
 
-  const subtotalLabel = mode === "estimated" ? "est." : "spent";
+  const subtotalLabel = "spent";
 
   return (
     <div className="board-sections">
@@ -69,7 +67,6 @@ export default function BudgetBoard({
                     key={item.id}
                     budgetItem={item}
                     categories={categories}
-                    mode={mode}
                     color={category.color}
                     onUpdate={(patch) => onUpdate(item.id, patch)}
                     onDelete={() => onDelete(item.id)}
@@ -94,7 +91,6 @@ export default function BudgetBoard({
                 key={item.id}
                 budgetItem={item}
                 categories={categories}
-                mode={mode}
                 color="#ede2cc"
                 onUpdate={(patch) => onUpdate(item.id, patch)}
                 onDelete={() => onDelete(item.id)}

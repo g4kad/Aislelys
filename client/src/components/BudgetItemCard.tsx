@@ -9,14 +9,13 @@ import { CostBreakdown, ExtraCostsEditor } from "./ExtraCosts";
 type Props = {
   budgetItem: BudgetItem;
   categories: BudgetCategory[];
-  mode: "estimated" | "actual";
   color?: string;
   defaultExpanded?: boolean;
   onUpdate: (patch: Partial<Pick<BudgetItem, "item" | "category" | "currency" | "estimated" | "actual" | "paid" | "downpayment" | "notes" | "extras">>) => void;
   onDelete: () => void;
 };
 
-export default function BudgetItemCard({ budgetItem, categories, mode, color, defaultExpanded = false, onUpdate, onDelete }: Props) {
+export default function BudgetItemCard({ budgetItem, categories, color, defaultExpanded = false, onUpdate, onDelete }: Props) {
   const [expanded, setExpanded] = useState(defaultExpanded);
   const [editing, setEditing] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -44,10 +43,10 @@ export default function BudgetItemCard({ budgetItem, categories, mode, color, de
       {expanded && !editing && (
         <div className="card-body card-view">
           <div className="view-block">
-            <span className="view-label">{mode === "estimated" ? "Estimated" : "Actual"}</span>
+            <span className="view-label">Cost</span>
             <CostBreakdown
               baseLabel="Base cost"
-              base={mode === "estimated" ? budgetItem.estimated : budgetItem.actual}
+              base={budgetItem.actual}
               extras={budgetItem.extras ?? []}
               currency={budgetItem.currency}
             />
@@ -113,23 +112,17 @@ export default function BudgetItemCard({ budgetItem, categories, mode, color, de
               />
             </label>
             <label>
-              Estimated
-              <input
-                type="number"
-                min={0}
-                placeholder="0"
-                value={budgetItem.estimated || ""}
-                onChange={(e) => onUpdate({ estimated: Math.max(0, Number(e.target.value) || 0) })}
-              />
-            </label>
-            <label>
-              Actual
+              Cost
               <input
                 type="number"
                 min={0}
                 placeholder="0"
                 value={budgetItem.actual || ""}
-                onChange={(e) => onUpdate({ actual: Math.max(0, Number(e.target.value) || 0) })}
+                onChange={(e) => {
+                  // no separate estimate any more — keep it equal to the cost
+                  const cost = Math.max(0, Number(e.target.value) || 0);
+                  onUpdate({ actual: cost, estimated: cost });
+                }}
               />
             </label>
           </div>
@@ -168,7 +161,7 @@ export default function BudgetItemCard({ budgetItem, categories, mode, color, de
 
           {budgetItem.sourceVendorId && (
             <p className="form-hint">
-              Linked to a vendor — changes to the name, category, currency, actual cost, downpayment, extra expenses,
+              Linked to a vendor — changes to the name, category, currency, cost, downpayment, extra expenses,
               notes and paid status also update it on the Vendors page.
             </p>
           )}

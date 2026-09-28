@@ -7,7 +7,6 @@ import { budgetLineAmount, formatSgd, toSgd } from "../money";
 import { SECTION_COLORS } from "../palette";
 
 export default function BudgetPage() {
-  const [mode, setMode] = useState<"estimated" | "actual">("actual");
   const [total, setTotal] = useState(0);
   const [totalInput, setTotalInput] = useState("0");
   const [savingsInput, setSavingsInput] = useState("0");
@@ -62,15 +61,11 @@ export default function BudgetPage() {
     }
   }
 
-  const { estimatedSum, actualSum } = useMemo(
-    () => ({
-      estimatedSum: items.reduce((sum, i) => sum + toSgd(budgetLineAmount(i, "estimated"), i.currency, myrToSgd), 0),
-      actualSum: items.reduce((sum, i) => sum + toSgd(budgetLineAmount(i, "actual"), i.currency, myrToSgd), 0),
-    }),
+  const spentSum = useMemo(
+    () => items.reduce((sum, i) => sum + toSgd(budgetLineAmount(i), i.currency, myrToSgd), 0),
     [items, myrToSgd]
   );
-  const modeSum = mode === "estimated" ? estimatedSum : actualSum;
-  const remaining = total - modeSum;
+  const remaining = total - spentSum;
   const savingsPercent = total > 0 ? Math.round(((Number(savingsInput) || 0) / total) * 100) : 0;
 
   async function commitTotal() {
@@ -149,22 +144,6 @@ export default function BudgetPage() {
 
       <div className="board-region-header">
         <h2 className="board-region-title">Budget</h2>
-        <div className="btn-row budget-mode-toggle">
-          <button
-            type="button"
-            className={`btn small ${mode === "actual" ? "primary" : "ghost"}`}
-            onClick={() => setMode("actual")}
-          >
-            Actual
-          </button>
-          <button
-            type="button"
-            className={`btn small ${mode === "estimated" ? "primary" : "ghost"}`}
-            onClick={() => setMode("estimated")}
-          >
-            Estimated
-          </button>
-        </div>
       </div>
 
       <p className="page-subtitle">
@@ -205,7 +184,7 @@ export default function BudgetPage() {
         </div>
         <div className="budget-summary-stat budget-stat-highlight">
           <span className="budget-stat-label">Total (SGD)</span>
-          <span className="budget-stat-value">{formatSgd(modeSum)}</span>
+          <span className="budget-stat-value">{formatSgd(spentSum)}</span>
         </div>
       </div>
 
@@ -219,7 +198,6 @@ export default function BudgetPage() {
         items={items}
         categories={categories}
         myrToSgd={myrToSgd}
-        mode={mode}
         onUpdate={handleUpdate}
         onDelete={handleDelete}
         onCreateCategory={handleCreateCategory}
