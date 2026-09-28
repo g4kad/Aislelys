@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import type { EventItem, Section, Task } from "../types";
-import { formatDateLong } from "../dateUtils";
+import { formatDateLong, todayKey } from "../dateUtils";
 import Modal from "./Modal";
 import EventCard from "./EventCard";
 
@@ -29,8 +29,11 @@ export default function FullTimelineModal({
   const sectionById = useMemo(() => new Map(sections.map((s) => [s.id, s])), [sections]);
 
   const groups = useMemo(() => {
+    // past events are done — only today and later are shown
+    const today = todayKey();
     const byDate = new Map<string, EventItem[]>();
     for (const ev of events) {
+      if (ev.date < today) continue;
       const list = byDate.get(ev.date) ?? [];
       list.push(ev);
       byDate.set(ev.date, list);
@@ -50,7 +53,7 @@ export default function FullTimelineModal({
   return (
     <Modal title="Full Timeline" onClose={onClose} className="timeline-modal">
       {groups.length === 0 ? (
-        <p className="empty-hint">No events yet.</p>
+        <p className="empty-hint">No upcoming events.</p>
       ) : (
         <div className="timeline-groups">
           {groups.map((group) => (

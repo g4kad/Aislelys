@@ -97,7 +97,7 @@ export default function EventCard({
             {doneCount}/{event.tasks.length} tasks
           </span>
         )}
-        {event.date && <span className="card-date event-card-date">{formatDateDMY(event.date)}</span>}
+        {!hideDate && event.date && <span className="card-date event-card-date">{formatDateDMY(event.date)}</span>}
       </button>
 
       {expanded && !editing && (
