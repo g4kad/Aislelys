@@ -1658,3 +1658,32 @@ html:has(.hp) {
   min-height: 0;
   padding: 30px;
 }
+
+/* phones: the same tight spacing as desktop — Venue ~14px under the rings,
+   the photo and budget ~10px under Venue, the photo hanging below the
+   window (rings ≈127px tall, Venue ≈173px, photo ≈115px) */
+@media (max-width: 640px) {
+  .hp-hero-visual {
+    height: 450px;
+  }
+
+  .hp-hero-visual .hp-shot-cards-wrap {
+    height: 343px;
+  }
+
+  .hp-hero-visual .hp-hero-backdrop {
+    height: 370px;
+  }
+
+  .hp-hero-visual .hp-float-s-venue {
+    top: 141px;
+  }
+
+  .hp-hero-visual .hp-photo-venue {
+    top: 324px;
+  }
+
+  .hp-hero-visual .hp-shot-badge {
+    top: 329px;
+  }
+}
