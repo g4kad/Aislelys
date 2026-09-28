@@ -219,16 +219,24 @@ function Frame({
   children,
   className = "",
   bloom = "right",
+  bloomSmall = false,
+  cornerBloom = false,
 }: {
   label: string;
   children: ReactNode;
   className?: string;
   bloom?: "left" | "right" | "none";
+  bloomSmall?: boolean; // 10% smaller and sitting higher
+  cornerBloom?: boolean; // a second flower at the bottom-right
 }) {
   const [ref, reached] = useReachedMiddle<HTMLDivElement>();
   return (
-    <div ref={ref} className={`hp-shot-wrap bloom-${bloom} ${reached ? "bloomed" : ""}`}>
+    <div
+      ref={ref}
+      className={`hp-shot-wrap bloom-${bloom} ${bloomSmall ? "bloom-small" : ""} ${reached ? "bloomed" : ""}`}
+    >
       {bloom !== "none" && <span className="hp-bloom" aria-hidden="true" />}
+      {cornerBloom && <span className="hp-bloom hp-bloom-corner" aria-hidden="true" />}
       <FrameWindow label={label} className={className}>
         {children}
       </FrameWindow>
@@ -331,7 +339,7 @@ export function RemainingBadge() {
 
 export function BudgetPreview() {
   return (
-    <Frame label="Budget" className="hp-shot-budget" bloom="left">
+    <Frame label="Budget" className="hp-shot-budget" bloom="left" bloomSmall cornerBloom>
       <BudgetCellsPreview />
       <BudgetBoard
         items={BUDGET_ITEMS}
@@ -360,7 +368,7 @@ const guestHandlers = {
 
 export function GuestListPreview() {
   return (
-    <Frame label="Guest List" className="hp-shot-guests" bloom="left">
+    <Frame label="Guest List" className="hp-shot-guests" bloom="left" bloomSmall>
       <div className="card-list">
         <GuestOwnerCard owner={OWNERS[0]} expanded onToggleExpand={noop} deletable={false} nameEditable={false} {...guestHandlers} />
       </div>

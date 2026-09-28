@@ -1127,6 +1127,24 @@ html:has(.hp) {
   opacity: 0.3;
 }
 
+/* Mira's guest list and the budget: 10% smaller, and higher up */
+.bloom-small .hp-bloom {
+  width: min(55.8%, 378px);
+  top: -26%;
+}
+
+/* the budget's second flower, tucked under the bottom-right corner */
+.hp-bloom.hp-bloom-corner,
+.bloom-left .hp-bloom.hp-bloom-corner {
+  top: auto;
+  left: auto;
+  right: -14%;
+  bottom: -18%;
+  width: min(50%, 340px);
+  transform: none;
+  background-image: url("/lily-bloom-2.png?v=1");
+}
+
 /* on the sage band the sage flower would vanish — use a light version */
 .hp-guests .hp-bloom {
   filter: brightness(2.2) saturate(0.6);
