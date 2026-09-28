@@ -1,3 +1,4 @@
+import { HomeLink } from "../components/AuthGate";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import * as api from "../api";
@@ -121,6 +122,7 @@ export default function SignupPage() {
             {submitting ? "Creating…" : "Create your planner"}
           </button>
         </form>
+        <HomeLink />
       </div>
     </div>
   );

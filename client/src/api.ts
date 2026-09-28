@@ -46,7 +46,6 @@ export const signup = (
     method: "POST",
     body: JSON.stringify({ partner1, partner2, weddingDate }),
   });
-export const getDefaultCouple = () => request<{ coupleId: string }>("/default-couple");
 export const getCoupleAuthStatus = (coupleId: string) => request<{ users: User[] }>(`/couples/${coupleId}/auth-status`);
 export const loginToCouple = (coupleId: string, userId: string, password: string) =>
   request<User>(`/couples/${coupleId}/login`, { method: "POST", body: JSON.stringify({ userId, password }) });

@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { Navigate, useLocation, useParams } from "react-router-dom";
+import { Link, Navigate, useLocation, useParams } from "react-router-dom";
 import { useAuth } from "../auth";
 import { coupleTitle } from "../textUtils";
 
@@ -65,8 +65,18 @@ function LoginScreen() {
             </button>
           </form>
         )}
+        <HomeLink />
       </div>
     </div>
+  );
+}
+
+// the way back from the app to the public Home page
+export function HomeLink() {
+  return (
+    <p className="auth-home-link">
+      New to Aislelys? <Link to="/">See how it works →</Link>
+    </p>
   );
 }
 
@@ -77,6 +87,7 @@ function WorkspaceNotFound() {
         <h1 className="invite-title">Our Wedding Planner</h1>
         <p className="page-subtitle">This planner link isn't valid — double-check the link, or create your own.</p>
         <a className="btn primary" href="/signup">Create your wedding planner</a>
+        <HomeLink />
       </div>
     </div>
   );

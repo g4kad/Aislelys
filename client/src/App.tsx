@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Routes, Route, NavLink, Navigate, useParams } from "react-router-dom";
+import { Routes, Route, NavLink, useParams } from "react-router-dom";
 import PlannerPage from "./pages/PlannerPage";
 import GuestListPage from "./pages/GuestListPage";
 import GuestInviteView from "./pages/GuestInviteView";
@@ -9,6 +9,7 @@ import VendorsPage from "./pages/VendorsPage";
 import SignupPage from "./pages/SignupPage";
 import SettingsPage from "./pages/SettingsPage";
 import OverviewPage from "./pages/OverviewPage";
+import HomePage from "./home/HomePage";
 import AuthGate, { LoginPage } from "./components/AuthGate";
 import UserMenu from "./components/UserMenu";
 import { IconCalendar, IconUsers, IconWallet, IconStore, IconImage, IconHome } from "./components/Icons";
@@ -120,28 +121,12 @@ function Workspace() {
   );
 }
 
-function RootRedirect() {
-  const [target, setTarget] = useState<string | null>(null);
-  const [notFound, setNotFound] = useState(false);
-
-  useEffect(() => {
-    api
-      .getDefaultCouple()
-      .then((r) => setTarget(`/${r.coupleId}`))
-      .catch(() => setNotFound(true));
-  }, []);
-
-  if (notFound) return <Navigate to="/signup" replace />;
-  if (!target) return <p className="empty-hint">Loading…</p>;
-  return <Navigate to={target} replace />;
-}
-
 function App() {
   return (
     <Routes>
       <Route path="/guests/:ownerId" element={<GuestInviteView />} />
       <Route path="/signup" element={<SignupPage />} />
-      <Route path="/" element={<RootRedirect />} />
+      <Route path="/" element={<HomePage />} />
       <Route path="/:coupleId/*" element={<Workspace />} />
     </Routes>
   );
