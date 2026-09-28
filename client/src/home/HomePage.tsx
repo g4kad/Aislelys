@@ -209,6 +209,7 @@ export default function HomePage() {
           </div>
 
           <div className="hp-hero-visual">
+            <div className="hp-hero-backdrop" />
             <WeddingCardsPreview />
             <WeddingBudgetBadge />
           </div>
