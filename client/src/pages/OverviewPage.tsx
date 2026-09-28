@@ -157,7 +157,6 @@ function formatDollars(amount: number) {
 function BudgetCells({ budget, items, myrToSgd }: { budget: Budget; items: BudgetItem[]; myrToSgd: number }) {
   const spent = items.reduce((sum, i) => sum + toSgd(budgetLineAmount(i), i.currency, myrToSgd), 0);
   const remaining = budget.total - spent;
-  const savingsPercent = budget.total > 0 ? Math.round((budget.savings / budget.total) * 100) : 0;
   return (
     <div className="budget-summary overview-budget">
       <div className="budget-summary-stat">
@@ -166,10 +165,7 @@ function BudgetCells({ budget, items, myrToSgd }: { budget: Budget; items: Budge
       </div>
       <div className="budget-summary-stat">
         <span className="budget-stat-label">Total savings</span>
-        <span className="budget-stat-value">
-          {formatDollars(budget.savings)}
-          {budget.total > 0 && <span className="budget-savings-percent"> ({savingsPercent}%)</span>}
-        </span>
+        <span className="budget-stat-value">{formatDollars(budget.savings)}</span>
       </div>
       <div className="budget-summary-stat">
         <span className="budget-stat-label">Remaining (SGD)</span>

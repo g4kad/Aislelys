@@ -3247,10 +3247,3 @@
 .overview-budget {
   margin-bottom: 0;
 }
-
-.overview-budget .budget-savings-percent {
-  font-family: var(--sans);
-  font-size: 0.75rem;
-  font-weight: 500;
-  color: var(--text-muted);
-}
