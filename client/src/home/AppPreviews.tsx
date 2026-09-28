@@ -302,15 +302,18 @@ const eventHandlers = {
   onDeleteTask: noop,
 };
 
+// the hero floats just these two (Décor stays in the other previews)
+const HERO_SECTIONS = SECTIONS.filter((s) => s.id === "s-venue" || s.id === "s-beauty");
+
 // Hero: an (empty) Wedding Cards window as the backdrop, with each section
 // floating on its own in front of it — still the real board component, one
 // section at a time.
-function FloatingSection({ section, index }: { section: Section; index: number }) {
+function FloatingSection({ section }: { section: Section }) {
   const [ref, shown] = useRevealOnScroll<HTMLDivElement>();
   return (
     <div
       ref={ref}
-      className={`hp-float-card hp-float-${index + 1} hp-reveal ${shown ? "is-shown" : ""}`}
+      className={`hp-float-card hp-float-${section.id} hp-reveal ${shown ? "is-shown" : ""}`}
       aria-hidden="true"
     >
       <div className="hp-float-inner" inert>
@@ -369,8 +372,8 @@ export function WeddingCardsPreview() {
           <span />
         </div>
       </Frame>
-      {SECTIONS.map((section, i) => (
-        <FloatingSection key={section.id} section={section} index={i} />
+      {HERO_SECTIONS.map((section) => (
+        <FloatingSection key={section.id} section={section} />
       ))}
       <FloatingPhoto />
     </>

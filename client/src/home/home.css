@@ -1261,25 +1261,8 @@ html:has(.hp) {
   box-shadow: 0 26px 50px -24px rgba(43, 28, 1, 0.4);
 }
 
-.hp-float-1 {
-  top: 84px;
-  left: -28px;
-  width: 72%;
-}
 
-.hp-float-2 {
-  top: 262px;
-  right: 0;
-  width: 62%;
-  transition-delay: 0.15s;
-}
 
-.hp-float-3 {
-  top: 398px;
-  left: 6%;
-  width: 60%;
-  transition-delay: 0.3s;
-}
 
 /* a slow drift, each card on its own rhythm */
 @keyframes hp-float {
@@ -1296,21 +1279,13 @@ html:has(.hp) {
   animation: hp-float 7s ease-in-out infinite;
 }
 
-.hp-float-2 .hp-float-inner {
-  animation-duration: 8.5s;
-  animation-delay: -2s;
-}
 
-.hp-float-3 .hp-float-inner {
-  animation-duration: 6.5s;
-  animation-delay: -4s;
-}
 
-/* the Wedding budget card tucks into the top-right corner, clear of the cards */
+/* the Wedding budget card sits at the bottom-right corner */
 .hp-hero-visual .hp-shot-badge {
-  top: 0;
+  top: auto;
   right: 0;
-  bottom: auto;
+  bottom: 0;
   z-index: 3;
   width: 230px;
 }
@@ -1326,22 +1301,8 @@ html:has(.hp) {
     height: 440px;
   }
 
-  .hp-float-1 {
-    left: -8px;
-    width: 94%;
-    top: 96px;
-  }
 
-  .hp-float-2 {
-    width: 92%;
-    top: 272px;
-  }
 
-  .hp-float-3 {
-    left: 2%;
-    width: 92%;
-    top: 404px;
-  }
 
   /* room for the task names on a narrow screen */
   .hp-float-card .event-card-date {
@@ -1352,7 +1313,7 @@ html:has(.hp) {
   .hp-hero-visual .hp-shot-badge {
     width: 180px;
     scale: 0.8;
-    transform-origin: top right;
+    transform-origin: bottom right;
   }
 }
 
@@ -1363,13 +1324,6 @@ html:has(.hp) {
 }
 
 /* the rings photo: an Inspiration pin card, its buttons always showing */
-.hp-float-photo {
-  top: 392px;
-  right: -20px;
-  width: 36%;
-  z-index: 3;
-  transition-delay: 0.45s;
-}
 
 .hp-float-photo .pin-card {
   margin: 0;
@@ -1392,14 +1346,56 @@ html:has(.hp) {
 }
 
 @media (max-width: 640px) {
-  /* below the Beauty card on phones, with room made for it */
+}
+
+/* hero layout: Venue top-left, the rings photo under it on the left,
+   Beauty on the right, the Wedding budget card bottom-right */
+.hp-float-s-venue {
+  top: 84px;
+  left: -28px;
+  width: 72%;
+}
+
+.hp-float-photo {
+  top: 286px;
+  left: -20px;
+  width: 40%;
+  z-index: 3;
+  transition-delay: 0.3s;
+}
+
+.hp-float-s-beauty {
+  top: 318px;
+  right: 0;
+  width: 60%;
+  transition-delay: 0.15s;
+}
+
+.hp-float-s-beauty .hp-float-inner {
+  animation-duration: 8.5s;
+  animation-delay: -2s;
+}
+
+@media (max-width: 640px) {
   .hp-hero-visual {
-    height: 640px;
+    height: 660px;
+  }
+
+  .hp-float-s-venue {
+    top: 96px;
+    left: -8px;
+    width: 94%;
+  }
+
+  .hp-float-s-beauty {
+    top: 290px;
+    right: 0;
+    width: 92%;
   }
 
   .hp-float-photo {
-    top: 500px;
-    right: -6px;
-    width: 46%;
+    top: 420px;
+    left: -6px;
+    width: 52%;
   }
 }
