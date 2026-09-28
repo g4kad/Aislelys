@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import type { EventItem, Section, Task } from "../types";
-import { formatDateShort, formatTime } from "../dateUtils";
+import { formatDateDMY, formatDateShort, formatTime } from "../dateUtils";
 import { IconCheck, IconChevronRight, IconCircle, IconClose, IconTrash } from "./Icons";
 import Dropdown from "./Dropdown";
 import { useAuth } from "../auth";
@@ -97,6 +97,7 @@ export default function EventCard({
             {doneCount}/{event.tasks.length} tasks
           </span>
         )}
+        {event.date && <span className="card-date">{formatDateDMY(event.date)}</span>}
       </button>
 
       {expanded && !editing && (

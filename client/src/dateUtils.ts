@@ -44,6 +44,13 @@ export function daysUntil(dateKey: string): number {
   return Math.round((target.getTime() - todayMidnight.getTime()) / msPerDay);
 }
 
+// e.g. "2026-07-17" -> "17/07/26"
+export function formatDateDMY(dateKey: string): string {
+  const [y, m, d] = dateKey.split("-");
+  if (!y || !m || !d) return dateKey;
+  return `${d}/${m}/${y.slice(-2)}`;
+}
+
 export function formatDateShort(dateKey: string): string {
   const [y, m, d] = dateKey.split("-").map(Number);
   const date = new Date(y, m - 1, d);
