@@ -5,7 +5,7 @@ import SectionsBoard from "../components/SectionsBoard";
 import EventCard from "../components/EventCard";
 import BudgetBoard from "../components/BudgetBoard";
 import GuestOwnerCard from "../components/GuestOwnerCard";
-import { budgetLineAmount, formatSgd } from "../money";
+import { budgetLineAmount, formatDollars } from "../money";
 import { toDateKey } from "../dateUtils";
 
 // The Home page's pictures of the app are the app's own components, rendered
@@ -306,7 +306,7 @@ export function BudgetCellsPreview({ only }: { only?: "remaining" }) {
   const remainingCell = (
     <div className="budget-summary-stat">
       <span className="budget-stat-label">Remaining (SGD)</span>
-      <span className="budget-stat-value positive">{formatSgd(remaining)}</span>
+      <span className="budget-stat-value positive">{formatDollars(remaining)}</span>
     </div>
   );
   if (only === "remaining") return remainingCell;
@@ -314,16 +314,16 @@ export function BudgetCellsPreview({ only }: { only?: "remaining" }) {
     <div className="budget-summary">
       <div className="budget-summary-stat">
         <span className="budget-stat-label">Total budget (SGD)</span>
-        <span className="budget-stat-value">{formatSgd(BUDGET_TOTAL)}</span>
+        <span className="budget-stat-value">{formatDollars(BUDGET_TOTAL)}</span>
       </div>
       <div className="budget-summary-stat">
         <span className="budget-stat-label">Total savings</span>
-        <span className="budget-stat-value">{formatSgd(BUDGET_SAVINGS)}</span>
+        <span className="budget-stat-value">{formatDollars(BUDGET_SAVINGS)}</span>
       </div>
       {remainingCell}
       <div className="budget-summary-stat budget-stat-highlight">
         <span className="budget-stat-label">Total (SGD)</span>
-        <span className="budget-stat-value">{formatSgd(spent)}</span>
+        <span className="budget-stat-value">{formatDollars(spent)}</span>
       </div>
     </div>
   );
@@ -350,6 +350,7 @@ export function BudgetPreview() {
         onCreateCategory={noop}
         onUpdateCategory={noop}
         onDeleteCategory={noop}
+        formatTotal={formatDollars}
       />
     </Frame>
   );

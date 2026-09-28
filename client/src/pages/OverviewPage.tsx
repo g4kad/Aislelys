@@ -5,7 +5,7 @@ import * as api from "../api";
 import { daysUntil, formatDateDMY, formatDateLong, formatTime, todayKey } from "../dateUtils";
 import { getInstagramEmbedUrl, getTikTokEmbedUrl, getVimeoEmbedUrl, getYouTubeEmbedUrl } from "../inspirationUtils";
 import { LOVE_QUOTES } from "../loveQuotes";
-import { budgetLineAmount, formatSgd, toSgd } from "../money";
+import { budgetLineAmount, formatDollars, toSgd } from "../money";
 
 type Props = {
   weddingDate: string | null;
@@ -146,11 +146,6 @@ export default function OverviewPage({ weddingDate }: Props) {
       )}
     </div>
   );
-}
-
-// The Overview shows amounts as plain "$" rather than "S$".
-function formatDollars(amount: number) {
-  return formatSgd(amount).replace(/^S\$/, "$");
 }
 
 // Read-only version of the summary cells at the top of the Budget page.

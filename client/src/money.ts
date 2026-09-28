@@ -22,6 +22,11 @@ export function budgetLineAmount(item: BudgetItem): number {
   return item.actual + extrasTotal(item.extras);
 }
 
+// Plain "$" instead of "S$" (the Overview and the Home page's pictures).
+export function formatDollars(amount: number): string {
+  return formatSgd(amount).replace(/^S\$/, "$");
+}
+
 export function formatSgd(amount: number): string {
   return formatMoney(amount, "SGD");
 }

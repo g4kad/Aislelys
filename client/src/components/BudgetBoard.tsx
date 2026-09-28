@@ -13,6 +13,7 @@ type Props = {
   onCreateCategory: (title: string, color: string) => void;
   onUpdateCategory: (id: string, patch: Partial<Pick<BudgetCategory, "title" | "color">>) => void;
   onDeleteCategory: (id: string) => void;
+  formatTotal?: (amount: number) => string; // category subtotals; S$ by default
 };
 
 export default function BudgetBoard({
@@ -24,6 +25,7 @@ export default function BudgetBoard({
   onCreateCategory,
   onUpdateCategory,
   onDeleteCategory,
+  formatTotal = formatSgd,
 }: Props) {
   const [showManageCategories, setShowManageCategories] = useState(false);
   const groups = useMemo(() => {
@@ -58,7 +60,7 @@ export default function BudgetBoard({
             <div className="board-section-header">
               <span className="section-dot" style={{ background: category.color }} />
               <h3>{category.title}</h3>
-              <span className="section-subtotal">{formatSgd(categorySgd(categoryItems))} {subtotalLabel}</span>
+              <span className="section-subtotal">{formatTotal(categorySgd(categoryItems))} {subtotalLabel}</span>
               <span className="section-count">{categoryItems.length}</span>
             </div>
             <div className="card-list">
@@ -82,7 +84,7 @@ export default function BudgetBoard({
           <div className="board-section-header">
             <span className="section-dot" style={{ background: "#ede2cc" }} />
             <h3>Uncategorized</h3>
-            <span className="section-subtotal">{formatSgd(categorySgd(groups.uncategorized))} {subtotalLabel}</span>
+            <span className="section-subtotal">{formatTotal(categorySgd(groups.uncategorized))} {subtotalLabel}</span>
             <span className="section-count">{groups.uncategorized.length}</span>
           </div>
           <div className="card-list">
