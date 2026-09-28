@@ -148,6 +148,11 @@ export default function OverviewPage({ weddingDate }: Props) {
   );
 }
 
+// The Overview shows amounts as plain "$" rather than "S$".
+function formatDollars(amount: number) {
+  return formatSgd(amount).replace(/^S\$/, "$");
+}
+
 // Read-only version of the summary cells at the top of the Budget page.
 function BudgetCells({ budget, items, myrToSgd }: { budget: Budget; items: BudgetItem[]; myrToSgd: number }) {
   const spent = items.reduce((sum, i) => sum + toSgd(budgetLineAmount(i), i.currency, myrToSgd), 0);
@@ -157,22 +162,22 @@ function BudgetCells({ budget, items, myrToSgd }: { budget: Budget; items: Budge
     <div className="budget-summary overview-budget">
       <div className="budget-summary-stat">
         <span className="budget-stat-label">Total budget</span>
-        <span className="budget-stat-value">{formatSgd(budget.total)}</span>
+        <span className="budget-stat-value">{formatDollars(budget.total)}</span>
       </div>
       <div className="budget-summary-stat">
         <span className="budget-stat-label">Total savings</span>
         <span className="budget-stat-value">
-          {formatSgd(budget.savings)}
+          {formatDollars(budget.savings)}
           {budget.total > 0 && <span className="budget-savings-percent"> ({savingsPercent}%)</span>}
         </span>
       </div>
       <div className="budget-summary-stat">
         <span className="budget-stat-label">Remaining (SGD)</span>
-        <span className={`budget-stat-value ${remaining < 0 ? "over" : "positive"}`}>{formatSgd(remaining)}</span>
+        <span className={`budget-stat-value ${remaining < 0 ? "over" : "positive"}`}>{formatDollars(remaining)}</span>
       </div>
       <div className="budget-summary-stat budget-stat-highlight">
         <span className="budget-stat-label">Total (SGD)</span>
-        <span className="budget-stat-value">{formatSgd(spent)}</span>
+        <span className="budget-stat-value">{formatDollars(spent)}</span>
       </div>
     </div>
   );
