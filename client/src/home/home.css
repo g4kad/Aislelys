@@ -1603,9 +1603,9 @@ html:has(.hp) {
 @media (max-width: 640px) {
   /* phones (window: top 48px, left 10%, 86% × 420px) */
   .hp-hero-visual .hp-hero-backdrop {
-    top: 66px;
-    left: 15%;
-    width: 87%;
-    height: 426px;
+    top: 60px;
+    left: 12%;
+    width: 90%;
+    height: 450px;
   }
 }
