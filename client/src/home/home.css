@@ -994,8 +994,34 @@ html:has(.hp) {
   border-color: transparent;
 }
 
+/* both columns share one height, so the boxes' tops and bottoms line up;
+   whichever side is shorter stretches (Mira's card, or the family lists) */
 .hp-guests-grid {
-  align-items: start;
+  align-items: stretch;
+}
+
+.hp-guests-grid .hp-share {
+  min-height: 100%;
+}
+
+.hp-guests-grid .hp-shot {
+  display: flex;
+  flex-direction: column;
+}
+
+.hp-guests-grid .hp-share .hp-shot {
+  flex: 1;
+}
+
+.hp-guests-grid .hp-shot-body,
+.hp-guests-grid .hp-shot-body > .card-list {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.hp-guests-grid .hp-shot-body > .card-list > .guest-owner-card:only-child {
+  flex: 1;
 }
 
 @media (max-width: 640px) {
