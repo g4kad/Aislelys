@@ -432,7 +432,7 @@ const ATTIRE: EventItem = {
 const LOOP_START_MS = 1200; // a card has just opened, all tasks open
 const LOOP_STEP_MS = 800; // between one tick and the next
 const LOOP_HOLD_MS = 1800; // all done, before switching cards
-const SWITCH_MS = 420; // the closing card's fold (0.4s in CSS), then the other opens
+const SWITCH_MS = 320; // the closing card's fold (0.3s in CSS), then the other opens
 
 type PlannerStep = { open: "visit" | "attire"; ticked: number; closing: string | null };
 
