@@ -1,0 +1,93 @@
+/* Terms and Privacy pages (see LegalPage.tsx). Built on home.css's tokens
+   and nav/footer; everything here is prefixed hp-legal. */
+
+.hp-legal {
+  max-width: calc(760px + 2 * var(--hp-pad));
+  margin: 0 auto;
+  padding-top: 72px;
+  padding-bottom: 104px;
+}
+
+.hp-legal .hp-h2 {
+  margin: 20px 0 14px;
+}
+
+.hp-legal-updated {
+  font-size: 0.875rem;
+  color: var(--hp-gold-deep);
+}
+
+.hp-legal-intro {
+  margin-top: 32px;
+  padding-bottom: 36px;
+  border-bottom: 1px solid var(--hp-line);
+  font-size: calc(1.1875rem - 2px);
+  line-height: 1.6;
+  color: var(--hp-body);
+}
+
+.hp-legal-body {
+  color: var(--hp-body);
+  font-size: calc(1.0625rem - 1px);
+  line-height: 1.7;
+}
+
+.hp-legal-body section {
+  padding-top: 40px;
+}
+
+.hp-legal-body h2 {
+  font-family: var(--heading);
+  font-weight: 400;
+  font-size: 1.625rem;
+  line-height: 1.2;
+  color: var(--hp-ink);
+  margin-bottom: 12px;
+}
+
+.hp-legal-body h3 {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--hp-ink);
+  margin: 22px 0 6px;
+}
+
+.hp-legal-body p + p,
+.hp-legal-body ul + p,
+.hp-legal-body p + ul {
+  margin-top: 12px;
+}
+
+.hp-legal-body ul {
+  padding-left: 1.25em;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.hp-legal-body li::marker {
+  color: var(--hp-gold);
+}
+
+.hp-legal-body strong {
+  color: var(--hp-ink);
+  font-weight: 600;
+}
+
+.hp-legal a {
+  color: var(--hp-gold-deep);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 640px) {
+  .hp-legal {
+    padding-top: 44px;
+    padding-bottom: 72px;
+  }
+
+  .hp-legal-body h2 {
+    font-size: 1.4rem;
+  }
+}

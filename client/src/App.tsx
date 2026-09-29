@@ -10,6 +10,7 @@ import SignupPage from "./pages/SignupPage";
 import SettingsPage from "./pages/SettingsPage";
 import OverviewPage from "./pages/OverviewPage";
 import HomePage from "./home/HomePage";
+import { TermsPage, PrivacyPage } from "./home/LegalPage";
 import AuthGate, { LoginPage } from "./components/AuthGate";
 import UserMenu from "./components/UserMenu";
 import { IconCalendar, IconUsers, IconWallet, IconStore, IconImage, IconHome } from "./components/Icons";
@@ -127,6 +128,8 @@ function App() {
       <Route path="/guests/:ownerId" element={<GuestInviteView />} />
       <Route path="/signup" element={<SignupPage />} />
       <Route path="/" element={<HomePage />} />
+      <Route path="/terms" element={<TermsPage />} />
+      <Route path="/privacy" element={<PrivacyPage />} />
       <Route path="/:coupleId/*" element={<Workspace />} />
     </Routes>
   );

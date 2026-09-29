@@ -65,7 +65,7 @@ function Heart({ filled }: { filled: boolean }) {
 
 // The icon plus the official "aislelys" logotype (sage on light backgrounds,
 // a cream copy of the same artwork on the sage footer).
-function Wordmark({ light = false }: { light?: boolean }) {
+export function Wordmark({ light = false }: { light?: boolean }) {
   return (
     <span className={`hp-wordmark ${light ? "light" : ""}`}>
       <img className="hp-wordmark-icon" src="/favicon.png" alt="" width={34} height={34} />
@@ -444,6 +444,8 @@ export default function HomePage() {
           <a href="#guests">Guest list</a>
           <a href="#budget">Budget</a>
           <a href="#inspiration">Inspiration</a>
+          <Link to="/terms">Terms</Link>
+          <Link to="/privacy">Privacy</Link>
         </nav>
       </footer>
 

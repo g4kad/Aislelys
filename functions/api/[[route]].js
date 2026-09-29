@@ -160,7 +160,7 @@ async function cancelPendingNotifications(db, entityId, kind) {
 
 // ---------- Signup & couple-scoped auth routes ----------
 
-const RESERVED_SLUGS = new Set(["signup", "guests", "login", "api", "w", "assets"]);
+const RESERVED_SLUGS = new Set(["signup", "guests", "login", "api", "w", "assets", "terms", "privacy"]);
 
 function slugify(text) {
   return text
