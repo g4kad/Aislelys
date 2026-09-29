@@ -1764,12 +1764,12 @@ html:has(.hp) {
 /* one card folds shut, then the other drops open (the list keeps its
    visit-open height, set from the script, so the window never changes) */
 .hp-shot-tasks .card-body {
-  animation: hp-card-drop 0.3s ease-out;
+  animation: hp-card-drop 0.2s ease-out;
 }
 
 .hp-shot-tasks [data-closing="e-venue-visit"] > [data-event-id="e-venue-visit"] .card-body,
 .hp-shot-tasks [data-closing="e-attire"] > [data-event-id="e-attire"] .card-body {
-  animation: hp-card-fold 0.3s ease-in forwards;
+  animation: hp-card-fold 0.2s ease-in forwards;
 }
 
 .hp-shot-tasks .chevron {
