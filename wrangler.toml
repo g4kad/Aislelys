@@ -10,3 +10,7 @@ database_id = "e37665b1-681f-474b-b0c8-93b198869646"
 [[r2_buckets]]
 binding = "IMAGES"
 bucket_name = "bigday-planner-images"
+
+[vars]
+# Clerk publishable key (public). CLERK_SECRET_KEY is a dashboard secret.
+CLERK_PUBLISHABLE_KEY = "pk_test_bWlnaHR5LWZhd24tMzc3Ny5jbGVyay5hY2NvdW50cy5kZXYk"

@@ -3,3 +3,6 @@ dist/
 *.log
 server/data.json
 .wrangler/
+
+# local Cloudflare secrets for `wrangler pages dev` (never commit)
+.dev.vars
