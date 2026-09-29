@@ -2056,3 +2056,22 @@ html:has(.hp) {
     animation: none;
   }
 }
+
+/* hovering an inspiration photo grows it 1%, lifted over its neighbours */
+@media (hover: hover) {
+  .hp-inspo-tile.hp-inspo-photo {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+
+  .hp-inspo-tile.hp-inspo-photo:hover {
+    transform: scale(1.01);
+    z-index: 2;
+    box-shadow: 0 18px 40px rgba(60, 40, 20, 0.22);
+  }
+}
+
+@media (hover: hover) and (prefers-reduced-motion: reduce) {
+  .hp-inspo-tile.hp-inspo-photo {
+    transition: none;
+  }
+}
