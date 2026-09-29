@@ -1761,7 +1761,8 @@ html:has(.hp) {
   }
 }
 
-/* one card drops open as the other folds shut */
+/* one card folds shut, then the other drops open (the list keeps its
+   visit-open height, set from the script, so the window never changes) */
 .hp-shot-tasks .card-body {
   animation: hp-card-drop 0.4s ease-out;
 }

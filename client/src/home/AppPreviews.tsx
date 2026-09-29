@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import type { BudgetCategory, BudgetItem, EventItem, GuestOwner, Section, User } from "../types";
 import { DemoAuthProvider } from "../auth";
 import SectionsBoard from "../components/SectionsBoard";
@@ -425,19 +425,36 @@ const ATTIRE: EventItem = {
 };
 
 // The planner picture crosses off the venue visit's tasks one by one, then
-// that card folds shut as Wedding Attire drops open and its tasks are
-// crossed off in turn; then back again, on a loop (still, with the visit
-// all ticked, for reduced motion).
+// that card folds shut and, the moment it has, Wedding Attire drops open and
+// its tasks are crossed off in turn; then back again, on a loop (still, with
+// the visit all ticked, for reduced motion). The window keeps the height it
+// has with the visit open, so the switch never stretches it.
 const LOOP_START_MS = 1200; // a card has just opened, all tasks open
 const LOOP_STEP_MS = 800; // between one tick and the next
 const LOOP_HOLD_MS = 1800; // all done, before switching cards
-const SWITCH_MS = 400; // the closing card's fold
+const SWITCH_MS = 420; // the closing card's fold (0.4s in CSS), then the other opens
 
 type PlannerStep = { open: "visit" | "attire"; ticked: number; closing: string | null };
 
 export function TaskPreview() {
   const [visit] = EVENTS;
   const [step, setStep] = useState<PlannerStep>({ open: "visit", ticked: 0, closing: null });
+  const listRef = useRef<HTMLDivElement>(null);
+  const visitShown = step.open === "visit" && !step.closing;
+
+  // Hold the list at its height with the visit open (the tallest view),
+  // re-measured on resize while the visit is showing.
+  useLayoutEffect(() => {
+    const el = listRef.current;
+    if (!el || !visitShown) return;
+    const measure = () => {
+      el.style.height = "";
+      el.style.height = `${el.offsetHeight}px`;
+    };
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, [visitShown]);
 
   useEffect(() => {
     if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) {
@@ -453,7 +470,7 @@ export function TaskPreview() {
         next = { ...current, closing: null };
         wait = SWITCH_MS;
       } else if (current.ticked === total) {
-        // fold this card shut while the other drops open, tasks reset
+        // fold this card shut; the other drops open once it has, tasks reset
         const other = current.open === "visit" ? "attire" : "visit";
         next = { open: other, ticked: 0, closing: current.open === "visit" ? visit.id : ATTIRE.id };
         wait = LOOP_HOLD_MS;
@@ -478,12 +495,12 @@ export function TaskPreview() {
 
   return (
     <Frame label="Planner · task breakdown" className="hp-shot-tasks">
-      <div className="card-list" data-closing={step.closing ?? undefined}>
+      <div className="card-list" ref={listRef} data-closing={step.closing ?? undefined}>
         <EventCard
           event={withTicks(visit, visitOpen)}
           section={SECTIONS[0]}
           sections={SECTIONS}
-          expanded={visitOpen || step.closing === visit.id}
+          expanded={step.closing ? step.closing === visit.id : visitOpen}
           onToggleExpand={noop}
           {...eventHandlers}
         />
@@ -491,7 +508,7 @@ export function TaskPreview() {
           event={withTicks(ATTIRE, !visitOpen)}
           section={SECTIONS[2]}
           sections={SECTIONS}
-          expanded={!visitOpen || step.closing === ATTIRE.id}
+          expanded={step.closing ? step.closing === ATTIRE.id : !visitOpen}
           onToggleExpand={noop}
           {...eventHandlers}
         />
