@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
-import { Routes, Route, NavLink, useParams } from "react-router-dom";
+import { Routes, Route, NavLink, Navigate, useParams } from "react-router-dom";
 import PlannerPage from "./pages/PlannerPage";
 import GuestListPage from "./pages/GuestListPage";
 import GuestInviteView from "./pages/GuestInviteView";
 import InspirationPage from "./pages/InspirationPage";
 import BudgetPage from "./pages/BudgetPage";
 import VendorsPage from "./pages/VendorsPage";
-import SignupPage from "./pages/SignupPage";
+import { JoinPage, SignInPage, SignUpPage, StartPage } from "./account/AccountPages";
 import SettingsPage from "./pages/SettingsPage";
 import OverviewPage from "./pages/OverviewPage";
 import HomePage from "./home/HomePage";
@@ -125,7 +125,12 @@ function App() {
   return (
     <Routes>
       <Route path="/guests/:ownerId" element={<GuestInviteView />} />
-      <Route path="/signup" element={<SignupPage />} />
+      <Route path="/sign-in/*" element={<SignInPage />} />
+      <Route path="/sign-up/*" element={<SignUpPage />} />
+      <Route path="/start" element={<StartPage />} />
+      <Route path="/join/:token" element={<JoinPage />} />
+      {/* the old sign-up page now goes to Clerk's */}
+      <Route path="/signup" element={<Navigate to="/sign-up" replace />} />
       <Route path="/" element={<HomePage />} />
       <Route path="/:coupleId/*" element={<Workspace />} />
     </Routes>

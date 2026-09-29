@@ -28,7 +28,10 @@ function LoginScreen() {
     <div className="auth-page">
       <div className="auth-card">
         <h1 className="invite-title">{coupleTitle(accounts.map((a) => a.name))}</h1>
-        <p className="page-subtitle">Who's logging in?</p>
+        <Link className="btn primary auth-clerk-btn" to="/sign-in">
+          Sign in with your Aislelys account
+        </Link>
+        <p className="page-subtitle auth-legacy-label">Or use your planner password — who's logging in?</p>
         {error && (
           <div className="error-banner" onClick={() => setError(null)}>
             {error} (click to dismiss)

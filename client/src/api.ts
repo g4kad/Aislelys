@@ -23,10 +23,22 @@ import type {
 
 const BASE = "/api";
 
+// When someone is signed in with Clerk, every API call carries their Clerk
+// session token (set up once by <ClerkTokenBridge> in main.tsx).
+let getAuthToken: (() => Promise<string | null>) | null = null;
+export function setAuthTokenGetter(getter: (() => Promise<string | null>) | null) {
+  getAuthToken = getter;
+}
+
+async function authHeaders(): Promise<Record<string, string>> {
+  const token = getAuthToken ? await getAuthToken().catch(() => null) : null;
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const res = await fetch(`${BASE}${path}`, {
-    headers: { "Content-Type": "application/json" },
     ...options,
+    headers: { "Content-Type": "application/json", ...(await authHeaders()), ...(options?.headers ?? {}) },
   });
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
@@ -51,6 +63,25 @@ export const loginToCouple = (coupleId: string, userId: string, password: string
   request<User>(`/couples/${coupleId}/login`, { method: "POST", body: JSON.stringify({ userId, password }) });
 export const logout = () => request<void>("/auth/logout", { method: "POST" });
 export const getMe = () => request<User>("/auth/me");
+
+// Clerk accounts: linking a Clerk sign-in to a partner in a planner
+export type AccountStatus = { linked: false } | { linked: true; coupleId: string; user: User };
+export const getAccount = () => request<AccountStatus>("/account/me");
+export const createWedding = (yourName: string, partnerName: string, weddingDate?: string) =>
+  request<{ coupleId: string; inviteToken: string }>("/account/onboard", {
+    method: "POST",
+    body: JSON.stringify({ yourName, partnerName, weddingDate }),
+  });
+export const claimAccount = (coupleId: string, userId: string, password: string) =>
+  request<{ coupleId: string; user: User }>("/account/claim", {
+    method: "POST",
+    body: JSON.stringify({ coupleId, userId, password }),
+  });
+export const getPartnerInvite = () => request<{ token: string | null; partnerName?: string }>("/account/partner-invite");
+export const getInvite = (token: string) =>
+  request<{ coupleId: string; partnerName: string; names: string[]; used: boolean }>(`/account/invites/${token}`);
+export const acceptInvite = (token: string) =>
+  request<{ coupleId: string }>(`/account/invites/${token}/accept`, { method: "POST" });
 
 // Notifications
 export const getNotifications = () => request<Notification[]>("/notifications");
@@ -321,7 +352,7 @@ export const resolvePreviewImage = (url: string) =>
 export async function uploadImage(file: File): Promise<string> {
   const formData = new FormData();
   formData.append("file", file);
-  const res = await fetch(`${BASE}/upload`, { method: "POST", body: formData });
+  const res = await fetch(`${BASE}/upload`, { method: "POST", body: formData, headers: await authHeaders() });
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
     throw new Error(body.error || `Upload failed: ${res.status}`);

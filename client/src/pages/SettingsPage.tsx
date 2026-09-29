@@ -39,6 +39,8 @@ export default function SettingsPage({ weddingDate, onWeddingDateChange }: Props
     <div className="settings-page">
       <h2 className="board-region-title">Settings</h2>
 
+      <PartnerInviteCard />
+
       <section className="settings-card">
         <h3>Wedding date</h3>
         <p className="page-subtitle">Used for the countdown at the top of every page.</p>
@@ -61,5 +63,46 @@ export default function SettingsPage({ weddingDate, onWeddingDateChange }: Props
         {status && <p className={`settings-status ${status.kind === "error" ? "error" : ""}`}>{status.message}</p>}
       </section>
     </div>
+  );
+}
+
+// Shown to a partner signed in with their Aislelys (Clerk) account while the
+// other partner hasn't joined yet: the private link to send them.
+function PartnerInviteCard() {
+  const [invite, setInvite] = useState<{ token: string; partnerName?: string } | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    api
+      .getPartnerInvite()
+      .then((r) => (r.token ? setInvite({ token: r.token, partnerName: r.partnerName }) : setInvite(null)))
+      .catch(() => setInvite(null)); // not signed in with Clerk, or partner already joined
+  }, []);
+
+  if (!invite) return null;
+  const link = `${window.location.origin}/join/${invite.token}`;
+
+  return (
+    <section className="settings-card settings-invite">
+      <h3>Invite {invite.partnerName ?? "your partner"}</h3>
+      <p className="page-subtitle">Send this private link so they can join the planner with their own account.</p>
+      <div className="settings-invite-row">
+        <input readOnly value={link} aria-label="Partner invite link" onFocus={(e) => e.target.select()} />
+        <button
+          type="button"
+          className="btn"
+          onClick={async () => {
+            try {
+              await navigator.clipboard.writeText(link);
+              setCopied(true);
+            } catch {
+              // clipboard unavailable; the link can be copied by hand
+            }
+          }}
+        >
+          {copied ? "Copied!" : "Copy link"}
+        </button>
+      </div>
+    </section>
   );
 }

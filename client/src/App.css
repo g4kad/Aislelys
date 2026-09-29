@@ -3259,3 +3259,32 @@
   color: var(--accent-dark);
   font-weight: 600;
 }
+
+.auth-clerk-btn {
+  display: flex;
+  justify-content: center;
+  text-decoration: none;
+  margin: 8px 0 18px;
+}
+
+.auth-legacy-label {
+  margin-bottom: 10px;
+}
+
+.settings-invite {
+  margin-bottom: 16px;
+}
+
+.settings-invite-row {
+  display: flex;
+  gap: 8px;
+}
+
+.settings-invite-row input {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  font-size: 0.9rem;
+}

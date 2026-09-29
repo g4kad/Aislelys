@@ -2,9 +2,28 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { getCookie, setCookie, deleteCookie } from "hono/cookie";
 import { handle } from "hono/cloudflare-pages";
+import { env } from "hono/adapter";
+import { clerkMiddleware, getAuth } from "@clerk/hono";
 
 const app = new Hono().basePath("/api");
 app.use("*", cors());
+
+// Clerk sign-in runs alongside the original password sessions while couples
+// move over. It only switches on where the Clerk keys are configured.
+const clerk = clerkMiddleware();
+app.use("*", async (c, next) => {
+  const keys = env(c);
+  if (!keys.CLERK_SECRET_KEY || !keys.CLERK_PUBLISHABLE_KEY) return next();
+  return clerk(c, next);
+});
+
+function clerkUserIdOf(c) {
+  try {
+    return getAuth(c)?.userId ?? null;
+  } catch {
+    return null; // Clerk not configured here
+  }
+}
 
 // ---------- Auth helpers ----------
 
@@ -109,7 +128,26 @@ app.use("*", async (c, next) => {
       }
     }
   }
+  // Signed in with Clerk: find the partner linked to that Clerk account.
+  const clerkUserId = clerkUserIdOf(c);
+  if (clerkUserId) c.set("clerkUserId", clerkUserId);
+  if (!c.get("user") && clerkUserId) {
+    const user = await c.env.DB.prepare("SELECT id, name, coupleId FROM users WHERE clerkUserId = ?")
+      .bind(clerkUserId)
+      .first();
+    if (user) {
+      c.set("user", { id: user.id, name: user.name });
+      c.set("coupleId", user.coupleId);
+    }
+  }
   if (PUBLIC_AUTH_PATHS.has(path) || isPublicGuestInvitePath(path, c.req.method) || isPublicCouplePath(path, c.req.method)) {
+    return next();
+  }
+  // /account/* only needs a Clerk sign-in (the account may not be linked to a
+  // planner yet); reading an invite is public so the invite page can show it.
+  if (path.startsWith("/account/")) {
+    if (/^\/account\/invites\/[^/]+$/.test(path) && c.req.method === "GET") return next();
+    if (!clerkUserId) return c.json({ error: "Not signed in" }, 401);
     return next();
   }
   if (!c.get("user")) return c.json({ error: "Not authenticated" }, 401);
@@ -160,7 +198,7 @@ async function cancelPendingNotifications(db, entityId, kind) {
 
 // ---------- Signup & couple-scoped auth routes ----------
 
-const RESERVED_SLUGS = new Set(["signup", "guests", "login", "api", "w", "assets"]);
+const RESERVED_SLUGS = new Set(["signup", "sign-in", "sign-up", "start", "join", "guests", "login", "api", "w", "assets"]);
 
 function slugify(text) {
   return text
@@ -246,6 +284,113 @@ app.get("/auth/me", async (c) => {
   const user = c.get("user");
   if (!user) return c.json({ error: "Not authenticated" }, 401);
   return c.json(user);
+});
+
+// ---------- Clerk accounts ----------
+// Linking a Clerk sign-in to a partner in a planner: new couples create their
+// wedding here, existing partners claim their account once with their old
+// planner password, and the second partner joins through an invite link.
+
+// A password nobody knows, for partners who only ever sign in with Clerk.
+async function unusablePassword() {
+  return hashPassword(randomToken());
+}
+
+async function partnerInviteFor(db, coupleId, userId) {
+  const existing = await db.prepare("SELECT token FROM partner_invites WHERE coupleId = ? AND userId = ?")
+    .bind(coupleId, userId)
+    .first();
+  if (existing) return existing.token;
+  const token = randomToken().slice(0, 24);
+  await db.prepare("INSERT INTO partner_invites (token, coupleId, userId, createdAt) VALUES (?,?,?,?)")
+    .bind(token, coupleId, userId, new Date().toISOString())
+    .run();
+  return token;
+}
+
+app.get("/account/me", async (c) => {
+  const user = c.get("user");
+  if (!user) return c.json({ linked: false });
+  return c.json({ linked: true, coupleId: c.get("coupleId"), user });
+});
+
+app.post("/account/onboard", async (c) => {
+  const clerkUserId = c.get("clerkUserId");
+  if (c.get("user")) return c.json({ error: "This account already has a planner" }, 409);
+  const { yourName, partnerName, weddingDate } = await c.req.json();
+  if (!yourName?.trim() || !partnerName?.trim()) return c.json({ error: "Both names are required" }, 400);
+  const db = c.env.DB;
+  const coupleId = await generateCoupleSlug(db, yourName.trim(), partnerName.trim());
+  const meId = crypto.randomUUID();
+  const partnerId = crypto.randomUUID();
+  const mePw = await unusablePassword();
+  const partnerPw = await unusablePassword();
+  await db.batch([
+    db.prepare(
+      "INSERT INTO couples (id, partner1Name, partner2Name, weddingDate, budgetTotal, notificationsHoldUntil, createdAt) VALUES (?,?,?,?,0,NULL,?)"
+    ).bind(coupleId, yourName.trim(), partnerName.trim(), weddingDate || null, new Date().toISOString()),
+    db.prepare("INSERT INTO users (id, coupleId, name, passwordHash, passwordSalt, clerkUserId) VALUES (?,?,?,?,?,?)")
+      .bind(meId, coupleId, yourName.trim(), mePw.hash, mePw.salt, clerkUserId),
+    db.prepare("INSERT INTO users (id, coupleId, name, passwordHash, passwordSalt, clerkUserId) VALUES (?,?,?,?,?,NULL)")
+      .bind(partnerId, coupleId, partnerName.trim(), partnerPw.hash, partnerPw.salt),
+  ]);
+  const inviteToken = await partnerInviteFor(db, coupleId, partnerId);
+  return c.json({ coupleId, inviteToken }, 201);
+});
+
+app.post("/account/claim", async (c) => {
+  const clerkUserId = c.get("clerkUserId");
+  if (c.get("user")) return c.json({ error: "This account already has a planner" }, 409);
+  const { coupleId, userId, password } = await c.req.json();
+  const user = await c.env.DB.prepare("SELECT * FROM users WHERE id = ? AND coupleId = ?").bind(userId, coupleId).first();
+  if (!user) return c.json({ error: "Incorrect name or password" }, 401);
+  const { hash } = await hashPassword(password || "", user.passwordSalt);
+  if (hash !== user.passwordHash) return c.json({ error: "Incorrect name or password" }, 401);
+  if (user.clerkUserId) return c.json({ error: "That partner is already linked to another account" }, 409);
+  await c.env.DB.prepare("UPDATE users SET clerkUserId = ? WHERE id = ?").bind(clerkUserId, user.id).run();
+  return c.json({ coupleId, user: { id: user.id, name: user.name } });
+});
+
+// the signed-in partner's link for the other partner (null once they've joined)
+app.get("/account/partner-invite", async (c) => {
+  const user = c.get("user");
+  if (!user) return c.json({ error: "No planner yet" }, 404);
+  const coupleId = c.get("coupleId");
+  const partner = await c.env.DB.prepare("SELECT id, name FROM users WHERE coupleId = ? AND id != ? AND clerkUserId IS NULL")
+    .bind(coupleId, user.id)
+    .first();
+  if (!partner) return c.json({ token: null });
+  return c.json({ token: await partnerInviteFor(c.env.DB, coupleId, partner.id), partnerName: partner.name });
+});
+
+app.get("/account/invites/:token", async (c) => {
+  const invite = await c.env.DB.prepare(
+    "SELECT i.coupleId, u.name AS partnerName, u.clerkUserId FROM partner_invites i JOIN users u ON u.id = i.userId WHERE i.token = ?"
+  )
+    .bind(c.req.param("token"))
+    .first();
+  if (!invite) return c.json({ error: "This invite link isn't valid" }, 404);
+  const couple = await c.env.DB.prepare("SELECT partner1Name, partner2Name FROM couples WHERE id = ?").bind(invite.coupleId).first();
+  return c.json({
+    coupleId: invite.coupleId,
+    partnerName: invite.partnerName,
+    names: couple ? [couple.partner1Name, couple.partner2Name] : [],
+    used: !!invite.clerkUserId,
+  });
+});
+
+app.post("/account/invites/:token/accept", async (c) => {
+  const clerkUserId = c.get("clerkUserId");
+  if (c.get("user")) return c.json({ error: "This account already has a planner" }, 409);
+  const invite = await c.env.DB.prepare(
+    "SELECT i.coupleId, i.userId, u.clerkUserId FROM partner_invites i JOIN users u ON u.id = i.userId WHERE i.token = ?"
+  )
+    .bind(c.req.param("token"))
+    .first();
+  if (!invite) return c.json({ error: "This invite link isn't valid" }, 404);
+  if (invite.clerkUserId) return c.json({ error: "This invite has already been used" }, 409);
+  await c.env.DB.prepare("UPDATE users SET clerkUserId = ? WHERE id = ?").bind(clerkUserId, invite.userId).run();
+  return c.json({ coupleId: invite.coupleId });
 });
 
 // ---------- Notifications ----------

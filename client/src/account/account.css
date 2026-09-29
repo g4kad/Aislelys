@@ -1,0 +1,237 @@
+/* Sign-in, sign-up, start and join pages — the Aislelys look around Clerk's
+   forms. Scoped to .acct so nothing leaks into the app or the Home page. */
+
+.acct {
+  min-height: 100svh;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 28px 16px 56px;
+}
+
+.acct-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 36px;
+}
+
+.acct-brand img {
+  display: block;
+}
+
+.acct-brand img:first-child {
+  border-radius: 8px;
+}
+
+.acct-wordmark {
+  height: 26px;
+  width: auto;
+}
+
+.acct-main {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.acct-card {
+  width: 100%;
+  max-width: 440px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  box-shadow: 0 30px 60px -36px rgba(43, 28, 1, 0.35);
+  padding: 32px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.acct h1 {
+  font-family: var(--heading);
+  font-weight: 400;
+  font-size: 1.9rem;
+  line-height: 1.15;
+}
+
+.acct-muted {
+  color: #5e4f3c;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.acct-error {
+  color: var(--danger);
+  font-size: 0.9rem;
+  background: #fbf1ef;
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+.acct-choices {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.acct-choice {
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 16px 18px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface-alt);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.acct-choice:hover {
+  border-color: var(--accent);
+  background: #fff;
+}
+
+.acct-choice strong {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.acct-choice span {
+  font-size: 0.875rem;
+  color: #5e4f3c;
+}
+
+.acct-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.acct-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #5e4f3c;
+}
+
+.acct-form input,
+.acct-invite input {
+  height: 46px;
+  padding: 0 14px;
+  border: 1px solid #d8c9ad;
+  border-radius: 12px;
+  background: #fff;
+  font-size: 0.95rem;
+  color: var(--text);
+  font-weight: 400;
+}
+
+.acct-optional {
+  font-weight: 400;
+  color: var(--text-muted);
+}
+
+.acct-prefix {
+  display: flex;
+  align-items: center;
+  border: 1px solid #d8c9ad;
+  border-radius: 12px;
+  background: #fff;
+  overflow: hidden;
+}
+
+.acct-prefix > span {
+  padding-left: 14px;
+  color: #5e4f3c;
+  font-weight: 400;
+  white-space: nowrap;
+}
+
+.acct-prefix input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  padding-left: 2px;
+}
+
+.acct-people {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.acct-person {
+  flex: 1;
+  min-width: 120px;
+  min-height: 48px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface-alt);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.acct-person.selected {
+  border-color: var(--text);
+  background: var(--text);
+  color: var(--surface-alt);
+}
+
+.acct-invite {
+  display: flex;
+  gap: 8px;
+}
+
+.acct-invite input {
+  flex: 1;
+  min-width: 0;
+}
+
+.acct-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.acct-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0 24px;
+  border-radius: 999px;
+  background: var(--text);
+  color: var(--surface-alt);
+  font-weight: 600;
+  font-size: 0.95rem;
+  text-decoration: none;
+  cursor: pointer;
+  border: 1px solid var(--text);
+}
+
+.acct-btn:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.acct-btn-ghost {
+  background: transparent;
+  color: var(--text);
+}
+
+.acct-link {
+  align-self: center;
+  margin-top: 4px;
+  font-size: 0.875rem;
+  color: #7d6240;
+  text-decoration: underline;
+  cursor: pointer;
+}

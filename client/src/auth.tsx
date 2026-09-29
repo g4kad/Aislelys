@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import type { User } from "./types";
 import * as api from "./api";
+import { useClerk } from "@clerk/react";
 
 type AuthState = {
   loading: boolean;
@@ -18,6 +19,7 @@ export function AuthProvider({ coupleId, children }: { coupleId: string; childre
   const [user, setUser] = useState<User | null>(null);
   const [accounts, setAccounts] = useState<User[]>([]);
   const [workspaceNotFound, setWorkspaceNotFound] = useState(false);
+  const clerk = useClerk();
 
   async function refreshStatus() {
     try {
@@ -53,6 +55,8 @@ export function AuthProvider({ coupleId, children }: { coupleId: string; childre
   async function logout() {
     await api.logout();
     setUser(null);
+    // signed in with Clerk too? end that session and go to the Home page
+    if (clerk.isSignedIn) await clerk.signOut({ redirectUrl: "/" });
   }
 
   return (

@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import * as api from "../api";
+import { Link } from "react-router-dom";
 import {
   BudgetPreview,
   FamilyListsPreview,
@@ -144,81 +143,7 @@ function Pillar({ num, name, line, href }: { num: string; name: string; line: st
   );
 }
 
-// "Sign in": the app has no single login page — each couple's planner lives at
-// its own address — so ask for that address and take them there.
-function SignInDialog({ onClose }: { onClose: () => void }) {
-  const navigate = useNavigate();
-  const [value, setValue] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [checking, setChecking] = useState(false);
-
-  useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") onClose();
-    }
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [onClose]);
-
-  async function submit(e: React.FormEvent) {
-    e.preventDefault();
-    // accept "sara-kris", "/sara-kris" or a pasted full link
-    const slug = value.trim().replace(/^https?:\/\/[^/]+/i, "").replace(/^\/+/, "").split(/[/?#]/)[0].toLowerCase();
-    if (!slug) return;
-    setChecking(true);
-    setError(null);
-    try {
-      await api.getCoupleAuthStatus(slug);
-      navigate(`/${slug}`);
-    } catch {
-      setError("We couldn't find that planner — check the address and try again.");
-    } finally {
-      setChecking(false);
-    }
-  }
-
-  return (
-    <div className="hp-dialog-backdrop" onClick={onClose}>
-      <div className="hp-dialog" role="dialog" aria-modal="true" aria-labelledby="hp-signin-title" onClick={(e) => e.stopPropagation()}>
-        <h2 id="hp-signin-title">Sign in to your planner</h2>
-        <p>Enter your planner's address — it's the part after the domain, like the names you signed up with.</p>
-        <form onSubmit={submit}>
-          <label htmlFor="hp-signin-slug" className="hp-dialog-label">
-            Planner address
-          </label>
-          <div className="hp-dialog-field">
-            <span>{window.location.host}/</span>
-            <input
-              id="hp-signin-slug"
-              autoFocus
-              placeholder="alex-sam"
-              value={value}
-              onChange={(e) => {
-                setValue(e.target.value);
-                setError(null);
-              }}
-            />
-          </div>
-          {error && <p className="hp-dialog-error">{error}</p>}
-          <div className="hp-dialog-actions">
-            <button type="submit" className="hp-btn hp-btn-primary" disabled={checking || !value.trim()}>
-              {checking ? "Checking…" : "Continue"}
-            </button>
-            <button type="button" className="hp-btn hp-btn-ghost" onClick={onClose}>
-              Cancel
-            </button>
-          </div>
-        </form>
-        <p className="hp-dialog-foot">
-          New here? <Link to="/signup">Start planning together</Link>
-        </p>
-      </div>
-    </div>
-  );
-}
-
 export default function HomePage() {
-  const [signInOpen, setSignInOpen] = useState(false);
   // the inspiration hearts can be toggled, like in the app (nothing is saved)
   const [loved, setLoved] = useState(() => new Set(INSPO.filter((i) => i.loved).map((i) => i.caption)));
 
@@ -252,10 +177,10 @@ export default function HomePage() {
           <a href="#inspiration">Inspiration</a>
         </nav>
         <div className="hp-nav-actions">
-          <button type="button" className="hp-link-btn" onClick={() => setSignInOpen(true)}>
+          <Link to="/sign-in" className="hp-link-btn">
             Sign in
-          </button>
-          <Link to="/signup" className="hp-btn hp-btn-primary hp-btn-small">
+          </Link>
+          <Link to="/sign-up" className="hp-btn hp-btn-primary hp-btn-small">
             Start planning
           </Link>
         </div>
@@ -274,7 +199,7 @@ export default function HomePage() {
               the same page, all the way down the aisle.
             </p>
             <div className="hp-cta-row">
-              <Link to="/signup" className="hp-btn hp-btn-primary">
+              <Link to="/sign-up" className="hp-btn hp-btn-primary">
                 Start planning together
               </Link>
               <a href="#how" className="hp-btn hp-btn-ghost">
@@ -460,12 +385,12 @@ export default function HomePage() {
             ))}
           </div>
           <div className="hp-cta-row hp-cta-center">
-            <Link to="/signup" className="hp-btn hp-btn-primary">
+            <Link to="/sign-up" className="hp-btn hp-btn-primary">
               Start planning together
             </Link>
-            <button type="button" className="hp-btn hp-btn-ghost" onClick={() => setSignInOpen(true)}>
+            <Link to="/sign-in" className="hp-btn hp-btn-ghost">
               Sign in to your planner
-            </button>
+            </Link>
           </div>
         </section>
       </main>
@@ -483,7 +408,6 @@ export default function HomePage() {
         </nav>
       </footer>
 
-      {signInOpen && <SignInDialog onClose={() => setSignInOpen(false)} />}
     </div>
   );
 }

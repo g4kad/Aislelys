@@ -29,7 +29,17 @@ CREATE TABLE IF NOT EXISTS users (
   coupleId TEXT NOT NULL,
   name TEXT NOT NULL,
   passwordHash TEXT NOT NULL,
-  passwordSalt TEXT NOT NULL
+  passwordSalt TEXT NOT NULL,
+  clerkUserId TEXT
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_users_clerk_user ON users(clerkUserId);
+
+CREATE TABLE IF NOT EXISTS partner_invites (
+  token TEXT PRIMARY KEY,
+  coupleId TEXT NOT NULL,
+  userId TEXT NOT NULL,
+  createdAt TEXT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS sessions (
