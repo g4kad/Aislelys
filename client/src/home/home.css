@@ -605,6 +605,97 @@
   justify-content: center;
 }
 
+/* the final section's FAQ: one question per row, opening to its answer */
+.hp-faq {
+  width: 100%;
+  max-width: 44rem;
+  text-align: left;
+  border-top: 1px solid var(--hp-line);
+}
+
+.hp-faq-title {
+  text-align: center;
+  margin: 0;
+  padding: 22px 0;
+  border-bottom: 1px solid var(--hp-line);
+}
+
+.hp-faq-item {
+  border-bottom: 1px solid var(--hp-line);
+}
+
+.hp-faq-item summary {
+  list-style: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 20px 4px;
+  font-size: calc(1.125rem - 1px);
+  font-weight: 600;
+  color: var(--hp-ink);
+}
+
+.hp-faq-item summary::-webkit-details-marker {
+  display: none;
+}
+
+.hp-faq-item summary:focus-visible {
+  outline: 2px solid var(--hp-gold-deep);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* a plus that turns into a minus as the answer opens */
+.hp-faq-icon {
+  position: relative;
+  flex: none;
+  width: 14px;
+  height: 14px;
+  color: var(--hp-gold-deep);
+}
+
+.hp-faq-icon::before,
+.hp-faq-icon::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 14px;
+  height: 1.5px;
+  margin-top: -0.75px;
+  background: currentColor;
+  transition: transform 0.2s ease;
+}
+
+.hp-faq-icon::after {
+  transform: rotate(90deg);
+}
+
+.hp-faq-item[open] .hp-faq-icon::after {
+  transform: rotate(0deg);
+}
+
+.hp-faq-item p {
+  margin: 0;
+  padding: 0 36px 22px 4px;
+  font-size: calc(1.125rem - 2px);
+  line-height: 1.6;
+  color: var(--hp-body);
+  animation: hp-row-in 0.2s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hp-faq-icon::after {
+    transition: none;
+  }
+
+  .hp-faq-item p {
+    animation: none;
+  }
+}
+
 /* ---------- footer ---------- */
 
 .hp-footer {
