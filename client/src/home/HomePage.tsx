@@ -47,6 +47,33 @@ const STEPS = [
   { n: "3", title: "Bring in the family", body: "Send a guest-list link to your parents so they can add their people." },
 ];
 
+const FAQS = [
+  {
+    q: "Is Aislelys free?",
+    a: "Yes, Aislelys is free right now. If we ever add paid features, we'll tell you first, and nothing is charged without your agreement.",
+  },
+  {
+    q: "Do we each need our own sign-in?",
+    a: "You share one planner, and each of you signs in with your own name and password. You can both see and change everything in it.",
+  },
+  {
+    q: "Do our parents need an account?",
+    a: "No. Send each side its own guest-list link and they can add their people straight away, without signing up. Share it only with people you trust.",
+  },
+  {
+    q: "Which currencies does the budget use?",
+    a: "Singapore dollars (S$) and Malaysian ringgit (RM). Add each cost in either one; conversions are estimates to help you plan.",
+  },
+  {
+    q: "Is our planner private?",
+    a: "Yes. Each couple's planner is kept separate from everyone else's. We don't run ads or tracking, never sell your data, and don't use your content to train AI.",
+  },
+  {
+    q: "Can we delete our planner?",
+    a: "Yes. Anything you delete in the app is removed straight away, and if you ask us to delete your whole planner, we'll do it within 30 days.",
+  },
+];
+
 function Check() {
   return (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -420,9 +447,18 @@ export default function HomePage() {
           <h2 className="hp-display hp-final-title">
             One wedding. <em>One shared plan.</em>
           </h2>
-          <p className="hp-lede">
-            Bring your partner, your parents and every idea into one place — and enjoy the planning as much as the day.
-          </p>
+          <div className="hp-faq">
+            <h3 className="hp-eyebrow hp-faq-title">Questions, answered</h3>
+            {FAQS.map((f) => (
+              <details className="hp-faq-item" key={f.q}>
+                <summary>
+                  {f.q}
+                  <span className="hp-faq-icon" aria-hidden="true" />
+                </summary>
+                <p>{f.a}</p>
+              </details>
+            ))}
+          </div>
           <div className="hp-cta-row hp-cta-center">
             <Link to="/signup" className="hp-btn hp-btn-primary">
               Start planning together
