@@ -272,9 +272,12 @@ function FrameWindow({
   className: string;
   interactive: boolean;
 }) {
+  // clickable windows show a pulsing "tap here" hint until first pressed
+  const [touched, setTouched] = useState(false);
   return (
     <div
-      className={`hp-shot ${className} ${interactive ? "hp-shot-live" : ""}`}
+      className={`hp-shot ${className} ${interactive ? "hp-shot-live" : ""} ${interactive && !touched ? "hp-hint" : ""}`}
+      onPointerDown={interactive && !touched ? () => setTouched(true) : undefined}
       aria-hidden={interactive ? undefined : "true"}
       aria-label={interactive ? `Example: ${label}` : undefined}
       role={interactive ? "group" : undefined}
