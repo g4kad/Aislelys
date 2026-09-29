@@ -210,8 +210,12 @@ export default function HomePage() {
 
           <div className="hp-hero-visual">
             <div className="hp-hero-backdrop" />
+            <span className="hp-pearl hp-pearl-window" aria-hidden="true" />
+            <span className="hp-pearl hp-pearl-right" aria-hidden="true" />
             <WeddingCardsPreview />
             <WeddingBudgetBadge />
+            <span className="hp-pearl hp-pearl-rings" aria-hidden="true" />
+            <span className="hp-pearl hp-pearl-photo" aria-hidden="true" />
           </div>
         </section>
 

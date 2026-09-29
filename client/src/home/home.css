@@ -1770,3 +1770,81 @@ html:has(.hp) {
     animation: none;
   }
 }
+
+/* ---------- pearls around the hero (see the reference mock) ----------
+   Desktop/tablet positions are shares of the hero visual, like the cards;
+   two sit behind the window, two in front of the photos. */
+.hp-pearl {
+  position: absolute;
+  z-index: 4;
+  width: 8%;
+  aspect-ratio: 1;
+  background: url("/pearl.png") center / contain no-repeat;
+  filter: drop-shadow(0 6px 10px rgba(43, 28, 1, 0.22));
+  pointer-events: none;
+  animation: hp-float 9s ease-in-out infinite;
+}
+
+/* behind: peeking out from the window's left edge, near the top */
+.hp-pearl-window {
+  z-index: 0;
+  left: 15.9%;
+  top: 22%;
+  animation-delay: -3s;
+}
+
+/* behind: out on the right, between the Venue card and the budget */
+.hp-pearl-right {
+  z-index: 0;
+  left: 88.5%;
+  top: 61%;
+  animation-duration: 10s;
+  animation-delay: -6s;
+}
+
+/* in front: on the rings photo's right edge, below the heart */
+.hp-pearl-rings {
+  left: 84.6%;
+  top: 9%;
+  animation-duration: 8s;
+}
+
+/* in front: on the venue photo's left edge, halfway down */
+.hp-pearl-photo {
+  left: 7.9%;
+  top: 79%;
+  animation-duration: 11s;
+  animation-delay: -2s;
+}
+
+@media (max-width: 640px) {
+  .hp-pearl {
+    width: 30px;
+  }
+
+  .hp-pearl-window {
+    left: calc(7% - 15px);
+    top: 80px;
+  }
+
+  .hp-pearl-right {
+    left: calc(100% - 20px);
+    top: 296px;
+  }
+
+  .hp-pearl-rings {
+    left: calc(100% - 15px);
+    top: 42px;
+  }
+
+  .hp-pearl-photo {
+    left: -15px;
+    top: 366px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hp-pearl {
+    animation: none;
+  }
+}
