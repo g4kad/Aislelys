@@ -1848,3 +1848,73 @@ html:has(.hp) {
     animation: none;
   }
 }
+
+/* ---------- phones: the four feature tiles open like drop-downs ----------
+   Each starts closed (number + name + arrow) and opens to show its line as
+   it scrolls into the upper two-thirds of the screen. */
+@media (max-width: 640px) {
+  .hp-pillar {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    grid-template-rows: auto 0fr;
+    align-items: center;
+    column-gap: 14px;
+    row-gap: 0;
+    padding: 22px 0;
+    transition: grid-template-rows 0.5s ease, row-gap 0.5s ease;
+  }
+
+  .hp-pillar-num {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .hp-pillar-name {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  /* the drop-down arrow */
+  .hp-pillar::after {
+    content: "";
+    grid-column: 3;
+    grid-row: 1;
+    width: 9px;
+    height: 9px;
+    margin-right: 4px;
+    border-right: 1.5px solid var(--hp-gold-deep);
+    border-bottom: 1.5px solid var(--hp-gold-deep);
+    transform: translateY(-3px) rotate(45deg);
+    transition: transform 0.4s ease;
+  }
+
+  .hp-pillar-line {
+    grid-column: 2 / 4;
+    grid-row: 2;
+    min-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    transition: opacity 0.45s ease 0.1s;
+  }
+
+  .hp-pillar.is-open {
+    grid-template-rows: auto 1fr;
+    row-gap: 8px;
+  }
+
+  .hp-pillar.is-open::after {
+    transform: translateY(2px) rotate(-135deg);
+  }
+
+  .hp-pillar.is-open .hp-pillar-line {
+    opacity: 1;
+  }
+}
+
+@media (max-width: 640px) and (prefers-reduced-motion: reduce) {
+  .hp-pillar,
+  .hp-pillar::after,
+  .hp-pillar-line {
+    transition: none;
+  }
+}

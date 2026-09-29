@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import * as api from "../api";
 import {
@@ -77,6 +77,43 @@ function Wordmark({ light = false }: { light?: boolean }) {
         height={211}
       />
     </span>
+  );
+}
+
+// One of the four feature tiles. On phones it starts closed like a drop-down
+// and opens (showing its line) once scrolled a third of the way up the
+// screen, so they open one by one; the styling for that lives in home.css
+// (desktop ignores the open/closed state).
+function Pillar({ num, name, line, href }: { num: string; name: string; line: string; href: string }) {
+  const ref = useRef<HTMLAnchorElement>(null);
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || open) return;
+    if (typeof IntersectionObserver === "undefined") {
+      setOpen(true);
+      return;
+    }
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) {
+          setOpen(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: "0px 0px -33% 0px" }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [open]);
+
+  return (
+    <a ref={ref} href={href} className={`hp-pillar ${open ? "is-open" : ""}`}>
+      <span className="hp-pillar-num">{num}</span>
+      <span className="hp-pillar-name">{name}</span>
+      <span className="hp-pillar-line">{line}</span>
+    </a>
   );
 }
 
@@ -223,11 +260,7 @@ export default function HomePage() {
         <section className="hp-wrap">
           <div className="hp-pillars">
             {PILLARS.map((p) => (
-              <a href={p.href} className="hp-pillar" key={p.num}>
-                <span className="hp-pillar-num">{p.num}</span>
-                <span className="hp-pillar-name">{p.name}</span>
-                <span className="hp-pillar-line">{p.line}</span>
-              </a>
+              <Pillar key={p.num} {...p} />
             ))}
           </div>
         </section>
