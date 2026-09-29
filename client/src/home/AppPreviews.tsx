@@ -408,46 +408,93 @@ export function WeddingCardsPreview() {
   );
 }
 
-// The planner picture crosses its three tasks off one by one, holds, then
-// resets and starts again (still, all ticked, for reduced motion).
-const LOOP_START_MS = 1200; // all open
+// The planner picture's second card (the hero keeps Cake tasting).
+const ATTIRE: EventItem = {
+  id: "e-attire",
+  title: "Wedding Attire",
+  date: inDays(15),
+  time: "",
+  sectionId: "s-beauty",
+  notes: "",
+  tasks: [
+    task("t8", "Wedding Dress", MIRA),
+    task("t9", "Theo's Jacket", THEO),
+    task("t10", "Bridesmaid's dress", MIRA),
+  ],
+  createdAt: new Date().toISOString(),
+};
+
+// The planner picture crosses off the venue visit's tasks one by one, then
+// that card folds shut as Wedding Attire drops open and its tasks are
+// crossed off in turn; then back again, on a loop (still, with the visit
+// all ticked, for reduced motion).
+const LOOP_START_MS = 1200; // a card has just opened, all tasks open
 const LOOP_STEP_MS = 800; // between one tick and the next
-const LOOP_HOLD_MS = 2400; // all done
+const LOOP_HOLD_MS = 1800; // all done, before switching cards
+const SWITCH_MS = 400; // the closing card's fold
+
+type PlannerStep = { open: "visit" | "attire"; ticked: number; closing: string | null };
 
 export function TaskPreview() {
-  const venue = SECTIONS[0];
-  const [visit, , , tasting] = EVENTS;
-  const [tickedCount, setTickedCount] = useState(0);
+  const [visit] = EVENTS;
+  const [step, setStep] = useState<PlannerStep>({ open: "visit", ticked: 0, closing: null });
 
   useEffect(() => {
     if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) {
-      setTickedCount(visit.tasks.length);
+      setStep({ open: "visit", ticked: visit.tasks.length, closing: null });
       return;
     }
-    const total = visit.tasks.length;
     let timer: number;
-    const step = (count: number) => {
-      const wait = count === 0 ? LOOP_START_MS : count === total ? LOOP_HOLD_MS : LOOP_STEP_MS;
+    const go = (current: PlannerStep) => {
+      const total = (current.open === "visit" ? visit : ATTIRE).tasks.length;
+      let next: PlannerStep;
+      let wait: number;
+      if (current.closing) {
+        next = { ...current, closing: null };
+        wait = SWITCH_MS;
+      } else if (current.ticked === total) {
+        // fold this card shut while the other drops open, tasks reset
+        const other = current.open === "visit" ? "attire" : "visit";
+        next = { open: other, ticked: 0, closing: current.open === "visit" ? visit.id : ATTIRE.id };
+        wait = LOOP_HOLD_MS;
+      } else {
+        next = { ...current, ticked: current.ticked + 1 };
+        wait = current.ticked === 0 ? LOOP_START_MS : LOOP_STEP_MS;
+      }
       timer = window.setTimeout(() => {
-        const next = count === total ? 0 : count + 1;
-        setTickedCount(next);
-        step(next);
+        setStep(next);
+        go(next);
       }, wait);
     };
-    step(0);
+    go({ open: "visit", ticked: 0, closing: null });
     return () => window.clearTimeout(timer);
-  }, [visit.tasks.length]);
+  }, [visit]);
 
-  const animated = {
-    ...visit,
-    tasks: visit.tasks.map((t, i) => ({ ...t, done: i < tickedCount })),
-  };
+  const withTicks = (event: EventItem, open: boolean) => ({
+    ...event,
+    tasks: event.tasks.map((t, i) => ({ ...t, done: open && i < step.ticked })),
+  });
+  const visitOpen = step.open === "visit";
 
   return (
     <Frame label="Planner · task breakdown" className="hp-shot-tasks">
-      <div className="card-list">
-        <EventCard event={animated} section={venue} sections={SECTIONS} expanded onToggleExpand={noop} {...eventHandlers} />
-        <EventCard event={tasting} section={venue} sections={SECTIONS} expanded={false} onToggleExpand={noop} {...eventHandlers} />
+      <div className="card-list" data-closing={step.closing ?? undefined}>
+        <EventCard
+          event={withTicks(visit, visitOpen)}
+          section={SECTIONS[0]}
+          sections={SECTIONS}
+          expanded={visitOpen || step.closing === visit.id}
+          onToggleExpand={noop}
+          {...eventHandlers}
+        />
+        <EventCard
+          event={withTicks(ATTIRE, !visitOpen)}
+          section={SECTIONS[2]}
+          sections={SECTIONS}
+          expanded={!visitOpen || step.closing === ATTIRE.id}
+          onToggleExpand={noop}
+          {...eventHandlers}
+        />
       </div>
     </Frame>
   );
