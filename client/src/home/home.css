@@ -2001,3 +2001,58 @@ html:has(.hp) {
     animation: none;
   }
 }
+
+/* the Garden venue drops open (no clicks, just the demo) to show its add-ons */
+.hp-shot-budget .card-body {
+  animation: hp-card-drop 0.45s ease-out;
+  transform-origin: top;
+}
+
+.hp-shot-budget .card-body .cost-breakdown-row {
+  animation: hp-row-in 0.35s ease-out both;
+}
+
+.hp-shot-budget .card-body .cost-breakdown-row:nth-child(2) { animation-delay: 0.15s; }
+.hp-shot-budget .card-body .cost-breakdown-row:nth-child(3) { animation-delay: 0.3s; }
+.hp-shot-budget .card-body .cost-breakdown-row:nth-child(4) { animation-delay: 0.45s; }
+.hp-shot-budget .card-body .cost-breakdown-row:nth-child(5) { animation-delay: 0.6s; }
+
+/* the card's Edit button isn't part of the picture */
+.hp-shot-budget .card-footer {
+  display: none;
+}
+
+.hp-shot-budget .chevron {
+  transition-duration: 0.3s;
+}
+
+@keyframes hp-card-drop {
+  from {
+    opacity: 0;
+    max-height: 0;
+    overflow: hidden;
+  }
+  to {
+    opacity: 1;
+    max-height: 320px;
+    overflow: hidden;
+  }
+}
+
+@keyframes hp-row-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hp-shot-budget .card-body,
+  .hp-shot-budget .card-body .cost-breakdown-row {
+    animation: none;
+  }
+}

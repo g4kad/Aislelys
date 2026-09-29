@@ -15,6 +15,7 @@ type Props = {
   onDeleteCategory: (id: string) => void;
   formatTotal?: (amount: number) => string; // category subtotals; S$ by default
   amountFor?: (item: BudgetItem) => number; // what each line adds to its subtotal; its cost by default
+  expandedIds?: string[]; // when set, exactly these lines are held open
 };
 
 export default function BudgetBoard({
@@ -28,6 +29,7 @@ export default function BudgetBoard({
   onDeleteCategory,
   formatTotal = formatSgd,
   amountFor = budgetLineAmount,
+  expandedIds,
 }: Props) {
   const [showManageCategories, setShowManageCategories] = useState(false);
   const groups = useMemo(() => {
@@ -72,6 +74,7 @@ export default function BudgetBoard({
                     budgetItem={item}
                     categories={categories}
                     color={category.color}
+                    expanded={expandedIds?.includes(item.id)}
                     onUpdate={(patch) => onUpdate(item.id, patch)}
                     onDelete={() => onDelete(item.id)}
                   />
@@ -96,6 +99,7 @@ export default function BudgetBoard({
                 budgetItem={item}
                 categories={categories}
                 color="#ede2cc"
+                expanded={expandedIds?.includes(item.id)}
                 onUpdate={(patch) => onUpdate(item.id, patch)}
                 onDelete={() => onDelete(item.id)}
               />

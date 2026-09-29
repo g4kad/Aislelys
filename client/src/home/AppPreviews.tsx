@@ -121,7 +121,16 @@ const line = (
 });
 
 const BUDGET_ITEMS: BudgetItem[] = [
-  line("bi1", "Garden venue", "Venue", 14000, false, true), // turns Paid in the demo
+  {
+    // turns Paid, then opens to show its add-ons, in the demo
+    ...line("bi1", "Garden venue", "Venue", 14000, false, true),
+    notes: "Ceremony lawn and reception pavilion, 5pm to 11pm.",
+    extras: [
+      { id: "x1", label: "Floral arch", amount: 1200 },
+      { id: "x2", label: "Extra chairs", amount: 360 },
+      { id: "x3", label: "Floral chair arrangements", amount: 640 },
+    ],
+  },
   line("bi2", "Long-table rentals", "Venue", 1800, false, true, 500),
   line("bi3", "Photographer", "Photography", 4200, false, true, 1200),
   line("bi4", "Ribbon & place cards", "Purchases", 160, true),
@@ -513,42 +522,50 @@ export function WeddingBudgetBadge() {
 // Unpaid and, 0.8s after the window comes into view, turns Paid. Here the
 // figures count paid lines (in the app they count every line), so marking it
 // paid visibly moves Remaining down and the totals up, counting as they go.
+// Once the count settles, the Garden venue drops open to show its add-ons.
 const GARDEN_ID = "bi1";
 const PAY_DELAY_MS = 800;
+const COUNT_MS = 1200;
+const OPEN_DELAY_MS = PAY_DELAY_MS + COUNT_MS + 300;
 
 export function BudgetPreview() {
   const watchRef = useRef<HTMLDivElement>(null);
+  const [inView, setInView] = useState(false);
   const [gardenPaid, setGardenPaid] = useState(false);
+  const [gardenOpen, setGardenOpen] = useState(false);
 
   useEffect(() => {
     const el = watchRef.current;
-    if (!el || gardenPaid) return;
-    let timer = 0;
-    const pay = () => {
-      timer = window.setTimeout(() => setGardenPaid(true), PAY_DELAY_MS);
-    };
+    if (!el) return;
     if (typeof IntersectionObserver === "undefined") {
-      pay();
-      return () => window.clearTimeout(timer);
+      setInView(true);
+      return;
     }
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries.some((e) => e.isIntersecting)) {
           observer.disconnect();
-          pay();
+          setInView(true);
         }
       },
       { threshold: 0.35 }
     );
     observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!inView) return;
+    const pay = window.setTimeout(() => setGardenPaid(true), PAY_DELAY_MS);
+    const open = window.setTimeout(() => setGardenOpen(true), OPEN_DELAY_MS);
     return () => {
-      observer.disconnect();
-      window.clearTimeout(timer);
+      window.clearTimeout(pay);
+      window.clearTimeout(open);
     };
-  }, [gardenPaid]);
+  }, [inView]);
 
   const garden = BUDGET_ITEMS.find((i) => i.id === GARDEN_ID)!;
-  const gardenAmount = useCountingNumber(gardenPaid ? budgetLineAmount(garden) : 0);
+  const gardenAmount = useCountingNumber(gardenPaid ? budgetLineAmount(garden) : 0, COUNT_MS);
   const items = BUDGET_ITEMS.map((i) => (i.id === GARDEN_ID ? { ...i, paid: gardenPaid } : i));
   const amountFor = (item: BudgetItem) =>
     item.id === GARDEN_ID ? gardenAmount : item.paid ? budgetLineAmount(item) : 0;
@@ -569,6 +586,7 @@ export function BudgetPreview() {
           onDeleteCategory={noop}
           formatTotal={(n) => formatDollars(Math.round(n))}
           amountFor={amountFor}
+          expandedIds={gardenOpen ? [GARDEN_ID] : []}
         />
       </Frame>
     </div>

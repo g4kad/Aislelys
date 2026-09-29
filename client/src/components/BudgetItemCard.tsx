@@ -11,12 +11,14 @@ type Props = {
   categories: BudgetCategory[];
   color?: string;
   defaultExpanded?: boolean;
+  expanded?: boolean; // when set, the card is held open or shut from outside
   onUpdate: (patch: Partial<Pick<BudgetItem, "item" | "category" | "currency" | "estimated" | "actual" | "paid" | "downpayment" | "notes" | "extras">>) => void;
   onDelete: () => void;
 };
 
-export default function BudgetItemCard({ budgetItem, categories, color, defaultExpanded = false, onUpdate, onDelete }: Props) {
-  const [expanded, setExpanded] = useState(defaultExpanded);
+export default function BudgetItemCard({ budgetItem, categories, color, defaultExpanded = false, expanded: expandedProp, onUpdate, onDelete }: Props) {
+  const [expandedState, setExpanded] = useState(defaultExpanded);
+  const expanded = expandedProp ?? expandedState;
   const [editing, setEditing] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
