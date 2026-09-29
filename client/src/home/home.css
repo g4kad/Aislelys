@@ -1850,12 +1850,12 @@ html:has(.hp) {
 }
 
 /* ---------- phones: the four feature tiles open like drop-downs ----------
-   Each starts closed (number + name + arrow) and opens to show its line as
+   Each starts closed (number + name) and opens to show its line as
    it scrolls into the upper two-thirds of the screen. */
 @media (max-width: 640px) {
   .hp-pillar {
     display: grid;
-    grid-template-columns: auto 1fr auto;
+    grid-template-columns: auto 1fr;
     grid-template-rows: auto 0fr;
     align-items: center;
     column-gap: 14px;
@@ -1874,22 +1874,8 @@ html:has(.hp) {
     grid-row: 1;
   }
 
-  /* the drop-down arrow */
-  .hp-pillar::after {
-    content: "";
-    grid-column: 3;
-    grid-row: 1;
-    width: 9px;
-    height: 9px;
-    margin-right: 4px;
-    border-right: 1.5px solid var(--hp-gold-deep);
-    border-bottom: 1.5px solid var(--hp-gold-deep);
-    transform: translateY(-3px) rotate(45deg);
-    transition: transform 0.4s ease;
-  }
-
   .hp-pillar-line {
-    grid-column: 2 / 4;
+    grid-column: 2;
     grid-row: 2;
     min-height: 0;
     overflow: hidden;
@@ -1902,10 +1888,6 @@ html:has(.hp) {
     row-gap: 8px;
   }
 
-  .hp-pillar.is-open::after {
-    transform: translateY(2px) rotate(-135deg);
-  }
-
   .hp-pillar.is-open .hp-pillar-line {
     opacity: 1;
   }
@@ -1913,7 +1895,6 @@ html:has(.hp) {
 
 @media (max-width: 640px) and (prefers-reduced-motion: reduce) {
   .hp-pillar,
-  .hp-pillar::after,
   .hp-pillar-line {
     transition: none;
   }
