@@ -14,6 +14,7 @@ type Props = {
   onUpdateCategory: (id: string, patch: Partial<Pick<BudgetCategory, "title" | "color">>) => void;
   onDeleteCategory: (id: string) => void;
   formatTotal?: (amount: number) => string; // category subtotals; S$ by default
+  amountFor?: (item: BudgetItem) => number; // what each line adds to its subtotal; its cost by default
 };
 
 export default function BudgetBoard({
@@ -26,6 +27,7 @@ export default function BudgetBoard({
   onUpdateCategory,
   onDeleteCategory,
   formatTotal = formatSgd,
+  amountFor = budgetLineAmount,
 }: Props) {
   const [showManageCategories, setShowManageCategories] = useState(false);
   const groups = useMemo(() => {
@@ -44,7 +46,7 @@ export default function BudgetBoard({
   }, [items, categories]);
 
   function categorySgd(list: BudgetItem[]) {
-    return list.reduce((sum, i) => sum + toSgd(budgetLineAmount(i), i.currency, myrToSgd), 0);
+    return list.reduce((sum, i) => sum + toSgd(amountFor(i), i.currency, myrToSgd), 0);
   }
 
   const subtotalLabel = "spent";

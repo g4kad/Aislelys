@@ -121,7 +121,7 @@ const line = (
 });
 
 const BUDGET_ITEMS: BudgetItem[] = [
-  line("bi1", "Garden venue", "Venue", 14000, true, true),
+  line("bi1", "Garden venue", "Venue", 14000, false, true), // turns Paid in the demo
   line("bi2", "Long-table rentals", "Venue", 1800, false, true, 500),
   line("bi3", "Photographer", "Photography", 4200, false, true, 1200),
   line("bi4", "Ribbon & place cards", "Purchases", 160, true),
@@ -444,15 +444,8 @@ export function TaskPreview() {
   );
 }
 
-export function BudgetCellsPreview() {
-  const spent = BUDGET_ITEMS.reduce((sum, i) => sum + budgetLineAmount(i), 0);
+export function BudgetCellsPreview({ spent }: { spent: number }) {
   const remaining = BUDGET_TOTAL - spent;
-  const remainingCell = (
-    <div className="budget-summary-stat">
-      <span className="budget-stat-label">Remaining (SGD)</span>
-      <span className="budget-stat-value positive">{formatDollars(remaining)}</span>
-    </div>
-  );
   return (
     <div className="budget-summary">
       <div className="budget-summary-stat">
@@ -463,13 +456,44 @@ export function BudgetCellsPreview() {
         <span className="budget-stat-label">Total savings</span>
         <span className="budget-stat-value">{formatDollars(BUDGET_SAVINGS)}</span>
       </div>
-      {remainingCell}
+      <div className="budget-summary-stat">
+        <span className="budget-stat-label">Remaining (SGD)</span>
+        <span className="budget-stat-value positive">{formatDollars(Math.round(remaining))}</span>
+      </div>
       <div className="budget-summary-stat budget-stat-highlight">
         <span className="budget-stat-label">Total (SGD)</span>
-        <span className="budget-stat-value">{formatDollars(spent)}</span>
+        <span className="budget-stat-value">{formatDollars(Math.round(spent))}</span>
       </div>
     </div>
   );
+}
+
+// Eases a number from its last value to a new target, frame by frame, so
+// the budget figures visibly count up or down.
+function useCountingNumber(target: number, duration = 1200) {
+  const [value, setValue] = useState(target);
+  const current = useRef(target);
+  useEffect(() => {
+    const from = current.current;
+    if (from === target) return;
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) {
+      current.current = target;
+      setValue(target);
+      return;
+    }
+    const start = performance.now();
+    let frame = 0;
+    const tick = (now: number) => {
+      const p = Math.min(1, (now - start) / duration);
+      const eased = 1 - Math.pow(1 - p, 3);
+      current.current = from + (target - from) * eased;
+      setValue(current.current);
+      if (p < 1) frame = requestAnimationFrame(tick);
+    };
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, [target, duration]);
+  return value;
 }
 
 // The hero's corner card: the couple's total wedding budget.
@@ -485,22 +509,69 @@ export function WeddingBudgetBadge() {
   );
 }
 
+// The budget picture demonstrates a live update: the Garden venue starts
+// Unpaid and, 0.8s after the window comes into view, turns Paid. Here the
+// figures count paid lines (in the app they count every line), so marking it
+// paid visibly moves Remaining down and the totals up, counting as they go.
+const GARDEN_ID = "bi1";
+const PAY_DELAY_MS = 800;
+
 export function BudgetPreview() {
+  const watchRef = useRef<HTMLDivElement>(null);
+  const [gardenPaid, setGardenPaid] = useState(false);
+
+  useEffect(() => {
+    const el = watchRef.current;
+    if (!el || gardenPaid) return;
+    let timer = 0;
+    const pay = () => {
+      timer = window.setTimeout(() => setGardenPaid(true), PAY_DELAY_MS);
+    };
+    if (typeof IntersectionObserver === "undefined") {
+      pay();
+      return () => window.clearTimeout(timer);
+    }
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) {
+          observer.disconnect();
+          pay();
+        }
+      },
+      { threshold: 0.35 }
+    );
+    observer.observe(el);
+    return () => {
+      observer.disconnect();
+      window.clearTimeout(timer);
+    };
+  }, [gardenPaid]);
+
+  const garden = BUDGET_ITEMS.find((i) => i.id === GARDEN_ID)!;
+  const gardenAmount = useCountingNumber(gardenPaid ? budgetLineAmount(garden) : 0);
+  const items = BUDGET_ITEMS.map((i) => (i.id === GARDEN_ID ? { ...i, paid: gardenPaid } : i));
+  const amountFor = (item: BudgetItem) =>
+    item.id === GARDEN_ID ? gardenAmount : item.paid ? budgetLineAmount(item) : 0;
+  const spent = items.reduce((sum, i) => sum + amountFor(i), 0);
+
   return (
-    <Frame label="Budget" className="hp-shot-budget">
-      <BudgetCellsPreview />
-      <BudgetBoard
-        items={BUDGET_ITEMS}
-        categories={BUDGET_CATEGORIES}
-        myrToSgd={0.31}
-        onUpdate={noop}
-        onDelete={noop}
-        onCreateCategory={noop}
-        onUpdateCategory={noop}
-        onDeleteCategory={noop}
-        formatTotal={formatDollars}
-      />
-    </Frame>
+    <div ref={watchRef}>
+      <Frame label="Budget" className="hp-shot-budget">
+        <BudgetCellsPreview spent={spent} />
+        <BudgetBoard
+          items={items}
+          categories={BUDGET_CATEGORIES}
+          myrToSgd={0.31}
+          onUpdate={noop}
+          onDelete={noop}
+          onCreateCategory={noop}
+          onUpdateCategory={noop}
+          onDeleteCategory={noop}
+          formatTotal={(n) => formatDollars(Math.round(n))}
+          amountFor={amountFor}
+        />
+      </Frame>
+    </div>
   );
 }
 

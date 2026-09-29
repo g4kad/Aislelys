@@ -1954,3 +1954,14 @@ html:has(.hp) {
     opacity: 0.25;
   }
 }
+
+/* the Garden venue's tag pops as it turns Paid */
+.hp-shot-budget .paid-pill.paid {
+  animation: hp-tick-pop 0.4s ease-out;
+}
+
+/* counting figures keep a steady width as the digits change */
+.hp-shot-budget .budget-stat-value,
+.hp-shot-budget .section-subtotal {
+  font-variant-numeric: tabular-nums;
+}
