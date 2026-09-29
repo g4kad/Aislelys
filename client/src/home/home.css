@@ -1736,7 +1736,7 @@ html:has(.hp) {
   background-repeat: no-repeat;
   background-position: 0 55%;
   background-size: 0% 1.5px;
-  transition: background-size 0.55s ease-out, color 0.3s ease;
+  transition: background-size 0.45s ease-out, color 0.3s ease;
 }
 
 .hp-shot-tasks .card-list > .card .task-view-item .task-name.done {
@@ -1744,7 +1744,7 @@ html:has(.hp) {
 }
 
 .hp-shot-tasks .card-list > .card .task-view-item .task-status.done {
-  animation: hp-tick-pop 0.35s ease-out;
+  animation: hp-tick-pop 0.25s ease-out;
 }
 
 @keyframes hp-tick-pop {
