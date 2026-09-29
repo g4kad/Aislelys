@@ -1817,7 +1817,7 @@ html:has(.hp) {
 /* planner picture: the looping task. The strike is drawn left-to-right
    (a background line that grows) instead of appearing all at once, and the
    tick pops in. All three tasks in the open card are animated in turn. */
-.hp-shot-tasks .card-list > .card:first-child .task-view-item .task-name {
+.hp-shot-tasks .card-list > .card .task-view-item .task-name {
   /* only as wide as the words, so the line ends with them; the avatar
      stays pushed to the right */
   flex: 0 1 auto;
@@ -1827,15 +1827,15 @@ html:has(.hp) {
   background-repeat: no-repeat;
   background-position: 0 55%;
   background-size: 0% 1.5px;
-  transition: background-size 0.55s ease-out, color 0.3s ease;
+  transition: background-size 0.45s ease-out, color 0.3s ease;
 }
 
-.hp-shot-tasks .card-list > .card:first-child .task-view-item .task-name.done {
+.hp-shot-tasks .card-list > .card .task-view-item .task-name.done {
   background-size: 100% 1.5px;
 }
 
-.hp-shot-tasks .card-list > .card:first-child .task-view-item .task-status.done {
-  animation: hp-tick-pop 0.35s ease-out;
+.hp-shot-tasks .card-list > .card .task-view-item .task-status.done {
+  animation: hp-tick-pop 0.25s ease-out;
 }
 
 @keyframes hp-tick-pop {
@@ -1852,7 +1852,46 @@ html:has(.hp) {
   }
 }
 
+/* one card folds shut, then the other drops open (the list keeps its
+   visit-open height, set from the script, so the window never changes) */
+.hp-shot-tasks .card-body {
+  animation: hp-card-drop 0.2s ease-out;
+}
+
+.hp-shot-tasks [data-closing="e-venue-visit"] > [data-event-id="e-venue-visit"] .card-body,
+.hp-shot-tasks [data-closing="e-attire"] > [data-event-id="e-attire"] .card-body {
+  animation: hp-card-fold 0.2s ease-in forwards;
+}
+
+.hp-shot-tasks .chevron {
+  transition-duration: 0.2s;
+}
+
+.hp-shot-tasks [data-closing="e-venue-visit"] > [data-event-id="e-venue-visit"] .chevron,
+.hp-shot-tasks [data-closing="e-attire"] > [data-event-id="e-attire"] .chevron {
+  transform: none;
+}
+
+@keyframes hp-card-fold {
+  from {
+    opacity: 1;
+    max-height: 320px;
+    overflow: hidden;
+  }
+  to {
+    opacity: 0;
+    max-height: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    overflow: hidden;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .hp-shot-tasks .card-body {
+    animation: none;
+  }
+
   .hp-shot-tasks .task-name {
     transition: none;
   }
@@ -2145,5 +2184,24 @@ html:has(.hp) {
   .hp-shot-budget .card-body,
   .hp-shot-budget .card-body .cost-breakdown-row {
     animation: none;
+  }
+}
+
+/* hovering an inspiration photo grows it 1%, lifted over its neighbours */
+@media (hover: hover) {
+  .hp-inspo-tile.hp-inspo-photo {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+
+  .hp-inspo-tile.hp-inspo-photo:hover {
+    transform: scale(1.01);
+    z-index: 2;
+    box-shadow: 0 18px 40px rgba(60, 40, 20, 0.22);
+  }
+}
+
+@media (hover: hover) and (prefers-reduced-motion: reduce) {
+  .hp-inspo-tile.hp-inspo-photo {
+    transition: none;
   }
 }

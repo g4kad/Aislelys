@@ -1,6 +1,6 @@
 import { HomeLink } from "../components/AuthGate";
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import * as api from "../api";
 
 export default function SignupPage() {
@@ -121,6 +121,10 @@ export default function SignupPage() {
           <button className="btn primary" type="submit" disabled={submitting}>
             {submitting ? "Creating…" : "Create your planner"}
           </button>
+          <p className="signup-legal">
+            By creating a planner, you agree to our <Link to="/terms">Terms</Link> and{" "}
+            <Link to="/privacy">Privacy Policy</Link>.
+          </p>
         </form>
         <HomeLink />
       </div>

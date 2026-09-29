@@ -10,6 +10,7 @@ import { JoinPage, SignInPage, SignUpPage, StartPage } from "./account/AccountPa
 import SettingsPage from "./pages/SettingsPage";
 import OverviewPage from "./pages/OverviewPage";
 import HomePage from "./home/HomePage";
+import { TermsPage, PrivacyPage } from "./home/LegalPage";
 import AuthGate, { LoginPage } from "./components/AuthGate";
 import UserMenu from "./components/UserMenu";
 import { IconCalendar, IconUsers, IconWallet, IconStore, IconImage, IconHome } from "./components/Icons";
@@ -132,6 +133,8 @@ function App() {
       {/* the old sign-up page now goes to Clerk's */}
       <Route path="/signup" element={<Navigate to="/sign-up" replace />} />
       <Route path="/" element={<HomePage />} />
+      <Route path="/terms" element={<TermsPage />} />
+      <Route path="/privacy" element={<PrivacyPage />} />
       <Route path="/:coupleId/*" element={<Workspace />} />
     </Routes>
   );
