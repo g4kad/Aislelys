@@ -6,7 +6,12 @@ import './index.css'
 import App from './App.tsx'
 import { setAuthTokenGetter } from './api'
 
-const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY
+// aislelys.com signs in with Clerk's production instance; previews and local
+// dev use the development instance (a live key only works on its own domain).
+const onLiveDomain = /(^|\.)aislelys\.com$/.test(window.location.hostname)
+const PUBLISHABLE_KEY = onLiveDomain
+  ? import.meta.env.VITE_CLERK_PUBLISHABLE_KEY_LIVE
+  : import.meta.env.VITE_CLERK_PUBLISHABLE_KEY
 
 // Clerk's sign-in/sign-up forms in the Aislelys look: Raleway, the gold
 // accent, warm ink and the cream surfaces used across the site.

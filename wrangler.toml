@@ -14,3 +14,19 @@ bucket_name = "bigday-planner-images"
 [vars]
 # Clerk publishable key (public). CLERK_SECRET_KEY is a dashboard secret.
 CLERK_PUBLISHABLE_KEY = "pk_test_bWlnaHR5LWZhd24tMzc3Ny5jbGVyay5hY2NvdW50cy5kZXYk"
+
+# Production (aislelys.com) uses Clerk's live instance. Bindings and vars are not
+# inherited by an environment, so they are repeated here.
+[env.production]
+
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "bigday-planner-db"
+database_id = "e37665b1-681f-474b-b0c8-93b198869646"
+
+[[env.production.r2_buckets]]
+binding = "IMAGES"
+bucket_name = "bigday-planner-images"
+
+[env.production.vars]
+CLERK_PUBLISHABLE_KEY = "pk_live_Y2xlcmsuYWlzbGVseXMuY29tJA"
