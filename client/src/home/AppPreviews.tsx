@@ -408,46 +408,114 @@ export function WeddingCardsPreview() {
   );
 }
 
-// The planner picture crosses its three tasks off one by one, holds, then
-// resets and starts again (still, all ticked, for reduced motion).
-const LOOP_START_MS = 1200; // all open
+// The planner picture's second card (the hero keeps Cake tasting).
+const ATTIRE: EventItem = {
+  id: "e-attire",
+  title: "Wedding Attire",
+  date: inDays(15),
+  time: "",
+  sectionId: "s-beauty",
+  notes: "",
+  tasks: [
+    task("t8", "Wedding Dress", MIRA),
+    task("t9", "Theo's Jacket", THEO),
+    task("t10", "Bridesmaid's dress", MIRA),
+  ],
+  createdAt: new Date().toISOString(),
+};
+
+// The planner picture crosses off the venue visit's tasks one by one, then
+// that card folds shut and, the moment it has, Wedding Attire drops open and
+// its tasks are crossed off in turn; then back again, on a loop (still, with
+// the visit all ticked, for reduced motion). The window keeps the height it
+// has with the visit open, so the switch never stretches it.
+const LOOP_START_MS = 1200; // a card has just opened, all tasks open
 const LOOP_STEP_MS = 800; // between one tick and the next
-const LOOP_HOLD_MS = 2400; // all done
+const LOOP_HOLD_MS = 1800; // all done, before switching cards
+const SWITCH_MS = 220; // the closing card's fold (0.2s in CSS), then the other opens
+
+type PlannerStep = { open: "visit" | "attire"; ticked: number; closing: string | null };
 
 export function TaskPreview() {
-  const venue = SECTIONS[0];
-  const [visit, , , tasting] = EVENTS;
-  const [tickedCount, setTickedCount] = useState(0);
+  const [visit] = EVENTS;
+  const [step, setStep] = useState<PlannerStep>({ open: "visit", ticked: 0, closing: null });
+  const listRef = useRef<HTMLDivElement>(null);
+  const visitShown = step.open === "visit" && !step.closing;
+
+  // Keep the list at least as tall as it is with the visit open (the tallest
+  // view), measured once that card has finished dropping open, and again on
+  // resize while it's showing. A floor, never a cap, so it can't squash.
+  useEffect(() => {
+    const el = listRef.current;
+    if (!el || !visitShown) return;
+    const measure = () => {
+      el.style.minHeight = "";
+      el.style.minHeight = `${el.offsetHeight}px`;
+    };
+    const timer = window.setTimeout(measure, SWITCH_MS + 100);
+    window.addEventListener("resize", measure);
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener("resize", measure);
+    };
+  }, [visitShown]);
 
   useEffect(() => {
     if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) {
-      setTickedCount(visit.tasks.length);
+      setStep({ open: "visit", ticked: visit.tasks.length, closing: null });
       return;
     }
-    const total = visit.tasks.length;
     let timer: number;
-    const step = (count: number) => {
-      const wait = count === 0 ? LOOP_START_MS : count === total ? LOOP_HOLD_MS : LOOP_STEP_MS;
+    const go = (current: PlannerStep) => {
+      const total = (current.open === "visit" ? visit : ATTIRE).tasks.length;
+      let next: PlannerStep;
+      let wait: number;
+      if (current.closing) {
+        next = { ...current, closing: null };
+        wait = SWITCH_MS;
+      } else if (current.ticked === total) {
+        // fold this card shut; the other drops open once it has, tasks reset
+        const other = current.open === "visit" ? "attire" : "visit";
+        next = { open: other, ticked: 0, closing: current.open === "visit" ? visit.id : ATTIRE.id };
+        wait = LOOP_HOLD_MS;
+      } else {
+        next = { ...current, ticked: current.ticked + 1 };
+        wait = current.ticked === 0 ? LOOP_START_MS : LOOP_STEP_MS;
+      }
       timer = window.setTimeout(() => {
-        const next = count === total ? 0 : count + 1;
-        setTickedCount(next);
-        step(next);
+        setStep(next);
+        go(next);
       }, wait);
     };
-    step(0);
+    go({ open: "visit", ticked: 0, closing: null });
     return () => window.clearTimeout(timer);
-  }, [visit.tasks.length]);
+  }, [visit]);
 
-  const animated = {
-    ...visit,
-    tasks: visit.tasks.map((t, i) => ({ ...t, done: i < tickedCount })),
-  };
+  const withTicks = (event: EventItem, open: boolean) => ({
+    ...event,
+    tasks: event.tasks.map((t, i) => ({ ...t, done: open && i < step.ticked })),
+  });
+  const visitOpen = step.open === "visit";
 
   return (
     <Frame label="Planner · task breakdown" className="hp-shot-tasks">
-      <div className="card-list">
-        <EventCard event={animated} section={venue} sections={SECTIONS} expanded onToggleExpand={noop} {...eventHandlers} />
-        <EventCard event={tasting} section={venue} sections={SECTIONS} expanded={false} onToggleExpand={noop} {...eventHandlers} />
+      <div className="card-list" ref={listRef} data-closing={step.closing ?? undefined}>
+        <EventCard
+          event={withTicks(visit, visitOpen)}
+          section={SECTIONS[0]}
+          sections={SECTIONS}
+          expanded={step.closing ? step.closing === visit.id : visitOpen}
+          onToggleExpand={noop}
+          {...eventHandlers}
+        />
+        <EventCard
+          event={withTicks(ATTIRE, !visitOpen)}
+          section={SECTIONS[2]}
+          sections={SECTIONS}
+          expanded={step.closing ? step.closing === ATTIRE.id : !visitOpen}
+          onToggleExpand={noop}
+          {...eventHandlers}
+        />
       </div>
     </Frame>
   );
