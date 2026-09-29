@@ -1965,3 +1965,39 @@ html:has(.hp) {
 .hp-shot-budget .section-subtotal {
   font-variant-numeric: tabular-nums;
 }
+
+/* the inspiration hearts are real toggles on the Home page */
+.hp-inspo-heart {
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease, transform 0.15s ease;
+}
+
+/* a comfortable tap area around the 34px circle */
+.hp-inspo-heart::before {
+  content: "";
+  position: absolute;
+  inset: -6px;
+}
+
+.hp-inspo-heart:hover {
+  transform: scale(1.08);
+}
+
+.hp-inspo-heart:focus-visible {
+  outline: 2px solid var(--hp-gold-deep);
+  outline-offset: 2px;
+}
+
+.hp-inspo-heart.loved {
+  animation: hp-tick-pop 0.35s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hp-inspo-heart,
+  .hp-inspo-heart.loved {
+    transition: none;
+    animation: none;
+  }
+}

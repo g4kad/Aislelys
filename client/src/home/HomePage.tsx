@@ -192,6 +192,17 @@ function SignInDialog({ onClose }: { onClose: () => void }) {
 
 export default function HomePage() {
   const [signInOpen, setSignInOpen] = useState(false);
+  // the inspiration hearts can be toggled, like in the app (nothing is saved)
+  const [loved, setLoved] = useState(() => new Set(INSPO.filter((i) => i.loved).map((i) => i.caption)));
+
+  function toggleLoved(caption: string) {
+    setLoved((prev) => {
+      const next = new Set(prev);
+      if (next.has(caption)) next.delete(caption);
+      else next.add(caption);
+      return next;
+    });
+  }
 
   useEffect(() => {
     const previous = document.title;
@@ -355,7 +366,7 @@ export default function HomePage() {
               both love — so you always know what's in.
             </p>
           </div>
-          <div className="hp-inspo-grid" aria-hidden="true">
+          <div className="hp-inspo-grid">
             {INSPO.map((i) => (
               <div className="hp-inspo-item" key={i.caption}>
                 <div
@@ -370,9 +381,16 @@ export default function HomePage() {
                   }
                 >
                   <span className="hp-inspo-cat">{i.cat}</span>
-                  <span className={`hp-inspo-heart ${i.loved ? "loved" : ""}`}>
-                    <Heart filled={i.loved} />
-                  </span>
+                  <button
+                    type="button"
+                    className={`hp-inspo-heart ${loved.has(i.caption) ? "loved" : ""}`}
+                    aria-pressed={loved.has(i.caption)}
+                    aria-label={`Approve ${i.caption}`}
+                    title={loved.has(i.caption) ? "Approved" : "Mark as approved"}
+                    onClick={() => toggleLoved(i.caption)}
+                  >
+                    <Heart filled={loved.has(i.caption)} />
+                  </button>
                 </div>
                 <span className="hp-inspo-caption">{i.caption}</span>
                 <span className="hp-inspo-by">{i.by}</span>
