@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { BudgetCategory, BudgetItem, EventItem, GuestOwner, Section, User } from "../types";
 import { DemoAuthProvider } from "../auth";
 import SectionsBoard from "../components/SectionsBoard";
@@ -442,18 +442,22 @@ export function TaskPreview() {
   const listRef = useRef<HTMLDivElement>(null);
   const visitShown = step.open === "visit" && !step.closing;
 
-  // Hold the list at its height with the visit open (the tallest view),
-  // re-measured on resize while the visit is showing.
-  useLayoutEffect(() => {
+  // Keep the list at least as tall as it is with the visit open (the tallest
+  // view), measured once that card has finished dropping open, and again on
+  // resize while it's showing. A floor, never a cap, so it can't squash.
+  useEffect(() => {
     const el = listRef.current;
     if (!el || !visitShown) return;
     const measure = () => {
-      el.style.height = "";
-      el.style.height = `${el.offsetHeight}px`;
+      el.style.minHeight = "";
+      el.style.minHeight = `${el.offsetHeight}px`;
     };
-    measure();
+    const timer = window.setTimeout(measure, SWITCH_MS + 100);
     window.addEventListener("resize", measure);
-    return () => window.removeEventListener("resize", measure);
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener("resize", measure);
+    };
   }, [visitShown]);
 
   useEffect(() => {
