@@ -296,12 +296,29 @@ async function unusablePassword() {
   return hashPassword(randomToken());
 }
 
+// Partner invite codes grant access to a planner, so unlike guest IDs they use
+// secure randomness: 10 characters from the short alphabet is about 50 bits.
+const INVITE_CODE_LENGTH = 10;
+
+function secureShortId(length) {
+  const max = 256 - (256 % SHORT_ID_ALPHABET.length); // reject bytes that would bias the pick
+  let id = "";
+  while (id.length < length) {
+    for (const byte of crypto.getRandomValues(new Uint8Array(length * 2))) {
+      if (byte < max && id.length < length) id += SHORT_ID_ALPHABET[byte % SHORT_ID_ALPHABET.length];
+    }
+  }
+  return id;
+}
+
 async function partnerInviteFor(db, coupleId, userId) {
-  const existing = await db.prepare("SELECT token FROM partner_invites WHERE coupleId = ? AND userId = ?")
-    .bind(coupleId, userId)
+  // Older invites used long tokens; those links keep working, but the link we
+  // show is always a short one.
+  const existing = await db.prepare("SELECT token FROM partner_invites WHERE coupleId = ? AND userId = ? AND length(token) = ?")
+    .bind(coupleId, userId, INVITE_CODE_LENGTH)
     .first();
   if (existing) return existing.token;
-  const token = randomToken().slice(0, 24);
+  const token = secureShortId(INVITE_CODE_LENGTH);
   await db.prepare("INSERT INTO partner_invites (token, coupleId, userId, createdAt) VALUES (?,?,?,?)")
     .bind(token, coupleId, userId, new Date().toISOString())
     .run();
