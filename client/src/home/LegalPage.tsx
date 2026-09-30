@@ -361,8 +361,8 @@ export function PrivacyPage() {
         <h2>6. How long we keep data</h2>
         <p>
           We keep your planner for as long as it exists. When you delete an item, such as a guest, task or photo,
-          it’s removed from your planner straight away. You can delete your whole planner at any time from Settings,
-          and it’s removed straight away. If you ask us to delete it for you, we’ll do it within 30 days. Deleted data may stay in our hosting provider’s backups for up to 30 more days before it’s
+          it’s removed from your planner straight away. You can delete your planner at any time from Settings. If
+          your partner has joined, it stays with them and you lose access; if not, it’s removed straight away. If you ask us to delete it for you, we’ll do it within 30 days. Deleted data may stay in our hosting provider’s backups for up to 30 more days before it’s
           gone for good.
         </p>
       </section>

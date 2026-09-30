@@ -93,9 +93,12 @@ export const getWeddingDate = () => request<WeddingDate>("/wedding-date");
 export const updateWeddingDate = (date: string | null) =>
   request<WeddingDate>("/wedding-date", { method: "PUT", body: JSON.stringify({ date }) });
 
-// Deletes the whole planner for both partners; `confirm` is the typed phrase.
+// Delete planner: while the partner has joined it only removes you and they
+// keep everything; otherwise the whole planner goes. `confirm` is the typed phrase.
+export const getDeletePlannerInfo = () =>
+  request<{ partnerName: string | null; partnerJoined: boolean }>("/couple/delete-info");
 export const deletePlanner = (confirm: string) =>
-  request<void>("/couple", { method: "DELETE", body: JSON.stringify({ confirm }) });
+  request<{ deleted: "membership" | "planner" }>("/couple", { method: "DELETE", body: JSON.stringify({ confirm }) });
 
 // Day to-dos
 export const getTodos = () => request<TodoItem[]>("/todos");

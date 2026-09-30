@@ -73,7 +73,7 @@ const FAQS = [
   },
   {
     q: "Can we delete our planner?",
-    a: "Yes. Anything you delete in the app is removed straight away. To delete your whole planner, go to Settings and choose Delete planner. It's gone for both of you right away.",
+    a: "Yes. Anything you delete in the app is removed straight away. To delete your planner, go to Settings and choose Delete planner. If your partner has joined, they keep everything; if not, it's gone right away.",
   },
 ];
 

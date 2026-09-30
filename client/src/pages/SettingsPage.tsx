@@ -74,16 +74,23 @@ const DELETE_PHRASE = "yes, I do want to delete";
 
 // Deleting takes three deliberate steps: the muted button arms on the first
 // click, opens the confirmation on the second, and the confirmation only
-// goes through once the phrase is typed out.
+// goes through once the phrase is typed out. A partner who has joined keeps
+// the planner; only when there's nobody else in it is it deleted outright.
 function DeletePlannerCard() {
   const { logout } = useAuth();
+  const [info, setInfo] = useState<{ partnerName: string | null; partnerJoined: boolean } | null>(null);
   const [armed, setArmed] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [typed, setTyped] = useState("");
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  useEffect(() => {
+    api.getDeletePlannerInfo().then(setInfo).catch(() => setInfo(null));
+  }, []);
+
   const matches = typed.trim().toLowerCase() === DELETE_PHRASE.toLowerCase();
+  const partner = info?.partnerName ?? "your partner";
 
   function closeConfirm() {
     if (deleting) return;
@@ -113,7 +120,11 @@ function DeletePlannerCard() {
     <section className="settings-card settings-danger">
       <h3>Delete planner</h3>
       <p className="page-subtitle">
-        Permanently deletes this planner for both of you: plans, guests, budget, vendors and inspiration.
+        {!info
+          ? "Removes you from this planner. If your partner has joined, they keep everything."
+          : info.partnerJoined
+            ? `Removes you from this planner. ${partner} keeps everything: plans, guests, budget, vendors and inspiration.`
+            : `${partner} hasn't joined yet, so this permanently deletes the planner: plans, guests, budget, vendors and inspiration.`}
       </p>
       <button
         type="button"
@@ -128,8 +139,11 @@ function DeletePlannerCard() {
         <Modal title="Delete this planner?" onClose={closeConfirm}>
           <form className="settings-delete-confirm" onSubmit={handleDelete}>
             <p>
-              Are you sure you want to delete this planner? Everything in it will be gone for both of you, and it
-              can't be undone.
+              {!info
+                ? "Are you sure you want to delete this planner? If your partner has joined, they keep everything in it; if not, it will be gone for good. This can't be undone."
+                : info.partnerJoined
+                ? `Are you sure you want to delete this planner? You'll lose access to it, but ${partner} keeps everything in it. This can't be undone.`
+                : `Are you sure you want to delete this planner? ${partner} hasn't joined yet, so everything in it will be gone for good. This can't be undone.`}
             </p>
             <label className="title-field">
               Type “{DELETE_PHRASE}” to confirm

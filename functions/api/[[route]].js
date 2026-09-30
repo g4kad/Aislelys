@@ -508,15 +508,52 @@ const COUPLE_TABLES = [
   "vendor_categories",
 ];
 
-// Removes the whole planner for both partners: every couple-owned row, their
-// sessions and logins, and the inspiration photos they uploaded.
+// The other partner has joined if they've linked an Aislelys account or ever
+// signed in with a password (older planners). A partner who left, or was only
+// ever invited, has neither.
+async function partnerOf(db, coupleId, userId) {
+  const partner = await db.prepare("SELECT id, name, clerkUserId FROM users WHERE coupleId = ? AND id != ?")
+    .bind(coupleId, userId)
+    .first();
+  if (!partner) return null;
+  const session = partner.clerkUserId
+    ? null
+    : await db.prepare("SELECT token FROM sessions WHERE userId = ? LIMIT 1").bind(partner.id).first();
+  return { id: partner.id, name: partner.name, joined: !!(partner.clerkUserId || session) };
+}
+
+// What deleting would do, so Settings can say it before anyone confirms.
+app.get("/couple/delete-info", async (c) => {
+  const partner = await partnerOf(c.env.DB, c.get("coupleId"), c.get("user").id);
+  return c.json({ partnerName: partner?.name ?? null, partnerJoined: !!partner?.joined });
+});
+
+// Deleting the planner only removes the partner who asks: while the other
+// partner has joined, the planner and everything in it stays with them, and
+// the one leaving is signed out and unlinked (their name stays on tasks so
+// the plans still read right). With nobody else in it, the whole planner goes.
 app.delete("/couple", async (c) => {
   const coupleId = c.get("coupleId");
+  const me = c.get("user");
   const { confirm } = await c.req.json().catch(() => ({}));
   if (typeof confirm !== "string" || confirm.trim().toLowerCase() !== DELETE_PLANNER_PHRASE) {
     return c.json({ error: "Type the confirmation phrase to delete the planner" }, 400);
   }
   const db = c.env.DB;
+  const partner = await partnerOf(db, coupleId, me.id);
+  if (partner?.joined) {
+    const pw = await unusablePassword();
+    await db.batch([
+      db.prepare("DELETE FROM sessions WHERE userId = ?").bind(me.id),
+      db.prepare("DELETE FROM notifications WHERE userId = ?").bind(me.id),
+      // old invite links for this partner would otherwise work again
+      db.prepare("DELETE FROM partner_invites WHERE userId = ?").bind(me.id),
+      db.prepare("UPDATE users SET clerkUserId = NULL, passwordHash = ?, passwordSalt = ? WHERE id = ?")
+        .bind(pw.hash, pw.salt, me.id),
+    ]);
+    deleteCookie(c, "session", { path: "/" });
+    return c.json({ deleted: "membership" });
+  }
   const { results: photos } = await db.prepare("SELECT url FROM inspiration_items WHERE coupleId = ?").bind(coupleId).all();
   await db.batch([
     db.prepare("DELETE FROM sessions WHERE userId IN (SELECT id FROM users WHERE coupleId = ?)").bind(coupleId),
@@ -529,7 +566,7 @@ app.delete("/couple", async (c) => {
     .filter(Boolean);
   if (photoKeys.length) await c.env.IMAGES.delete(photoKeys).catch(() => {}); // rows are gone either way
   deleteCookie(c, "session", { path: "/" });
-  return c.body(null, 204);
+  return c.json({ deleted: "planner" });
 });
 
 // ---------- Image uploads (for inspiration photos taken/picked on mobile) ----------
