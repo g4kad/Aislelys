@@ -590,17 +590,21 @@ export function WeddingBudgetBadge() {
 // Unpaid and, 0.8s after the window comes into view, turns Paid. Here the
 // figures count paid lines (in the app they count every line), so marking it
 // paid visibly moves Remaining down and the totals up, counting as they go.
-// Once the count settles, the Garden venue drops open to show its add-ons.
+// Once the count settles, the Garden venue drops open to show its add-ons,
+// holds long enough to read them, then folds shut again.
 const GARDEN_ID = "bi1";
 const PAY_DELAY_MS = 800;
 const COUNT_MS = 1200;
 const OPEN_DELAY_MS = PAY_DELAY_MS + COUNT_MS + 300;
+const FOLD_DELAY_MS = OPEN_DELAY_MS + 3500; // open, add-ons listed, time to read
+const FOLD_MS = 350; // the fold (0.35s in CSS), then the card is shut
 
 export function BudgetPreview() {
   const watchRef = useRef<HTMLDivElement>(null);
   const [inView, setInView] = useState(false);
   const [gardenPaid, setGardenPaid] = useState(false);
   const [gardenOpen, setGardenOpen] = useState(false);
+  const [gardenFolding, setGardenFolding] = useState(false);
 
   useEffect(() => {
     const el = watchRef.current;
@@ -626,9 +630,16 @@ export function BudgetPreview() {
     if (!inView) return;
     const pay = window.setTimeout(() => setGardenPaid(true), PAY_DELAY_MS);
     const open = window.setTimeout(() => setGardenOpen(true), OPEN_DELAY_MS);
+    const fold = window.setTimeout(() => setGardenFolding(true), FOLD_DELAY_MS);
+    const shut = window.setTimeout(() => {
+      setGardenOpen(false);
+      setGardenFolding(false);
+    }, FOLD_DELAY_MS + FOLD_MS);
     return () => {
       window.clearTimeout(pay);
       window.clearTimeout(open);
+      window.clearTimeout(fold);
+      window.clearTimeout(shut);
     };
   }, [inView]);
 
@@ -643,19 +654,21 @@ export function BudgetPreview() {
     <div ref={watchRef}>
       <Frame label="Budget" className="hp-shot-budget">
         <BudgetCellsPreview spent={spent} />
-        <BudgetBoard
-          items={items}
-          categories={BUDGET_CATEGORIES}
-          myrToSgd={0.31}
-          onUpdate={noop}
-          onDelete={noop}
-          onCreateCategory={noop}
-          onUpdateCategory={noop}
-          onDeleteCategory={noop}
-          formatTotal={(n) => formatDollars(Math.round(n))}
-          amountFor={amountFor}
-          expandedIds={gardenOpen ? [GARDEN_ID] : []}
-        />
+        <div className="hp-budget-board" data-folding={gardenFolding || undefined}>
+          <BudgetBoard
+            items={items}
+            categories={BUDGET_CATEGORIES}
+            myrToSgd={0.31}
+            onUpdate={noop}
+            onDelete={noop}
+            onCreateCategory={noop}
+            onUpdateCategory={noop}
+            onDeleteCategory={noop}
+            formatTotal={(n) => formatDollars(Math.round(n))}
+            amountFor={amountFor}
+            expandedIds={gardenOpen ? [GARDEN_ID] : []}
+          />
+        </div>
       </Frame>
     </div>
   );

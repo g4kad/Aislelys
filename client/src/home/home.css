@@ -18,6 +18,11 @@
   --hp-on-sage-soft: rgba(255, 254, 232, 0.8);
   --hp-radius-lg: 28px;
   --hp-pad: clamp(20px, 6.5vw, 96px);
+  /* The design is laid out for a 1440px-wide frame. On wider screens the
+     content stays centred at that width and only the background grows. */
+  --hp-max: 1440px;
+  --hp-gutter: max(var(--hp-pad), calc(50% - var(--hp-max) / 2 + var(--hp-pad)));
+  --hp-band-gutter: max(clamp(12px, 2.2vw, 32px), calc(50% - var(--hp-max) / 2 + 32px));
 
   background: var(--hp-bg);
   color: var(--hp-ink);
@@ -30,8 +35,8 @@
 }
 
 .hp-wrap {
-  padding-left: var(--hp-pad);
-  padding-right: var(--hp-pad);
+  padding-left: var(--hp-gutter);
+  padding-right: var(--hp-gutter);
 }
 
 /* ---------- type ---------- */
@@ -137,6 +142,8 @@
 }
 
 .hp-link-btn {
+  display: inline-flex;
+  align-items: center;
   white-space: nowrap;
   min-height: 44px;
   padding: 0 14px;
@@ -163,7 +170,7 @@
   top: 0;
   z-index: 20;
   height: 80px;
-  padding: 0 var(--hp-pad);
+  padding: 0 var(--hp-gutter);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -350,7 +357,7 @@
   position: relative;
   isolation: isolate;
   overflow: hidden;
-  margin: 0 clamp(12px, 2.2vw, 32px);
+  margin: 0 var(--hp-band-gutter);
   padding: clamp(64px, 8vw, 112px) clamp(20px, 4.5vw, 64px);
   border-radius: 40px;
   background: var(--hp-sage);
@@ -537,7 +544,7 @@
 /* ---------- how it works ---------- */
 
 .hp-how {
-  margin: 0 clamp(12px, 2.2vw, 32px);
+  margin: 0 var(--hp-band-gutter);
   padding: clamp(56px, 7vw, 96px) clamp(20px, 4.5vw, 64px);
   border-radius: 40px;
   background: var(--hp-sand);
@@ -699,7 +706,7 @@
 /* ---------- footer ---------- */
 
 .hp-footer {
-  padding: 52px var(--hp-pad);
+  padding: 52px var(--hp-gutter);
   background: var(--hp-sage-deep);
   color: var(--hp-on-sage);
   display: flex;
@@ -2154,6 +2161,15 @@ html:has(.hp) {
 
 .hp-shot-budget .chevron {
   transition-duration: 0.3s;
+}
+
+/* after a read, the Garden venue folds shut again */
+.hp-shot-budget [data-folding] .card-body {
+  animation: hp-card-fold 0.35s ease-in forwards;
+}
+
+.hp-shot-budget [data-folding] .chevron {
+  transform: none;
 }
 
 @keyframes hp-card-drop {
