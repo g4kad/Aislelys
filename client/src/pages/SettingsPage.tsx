@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import * as api from "../api";
 import { formatDateLong } from "../dateUtils";
+import { useAuth } from "../auth";
+import Modal from "../components/Modal";
 
 type Props = {
   weddingDate: string | null;
@@ -62,7 +64,100 @@ export default function SettingsPage({ weddingDate, onWeddingDateChange }: Props
         </form>
         {status && <p className={`settings-status ${status.kind === "error" ? "error" : ""}`}>{status.message}</p>}
       </section>
+
+      <DeletePlannerCard />
     </div>
+  );
+}
+
+const DELETE_PHRASE = "yes, I do want to delete";
+
+// Deleting takes three deliberate steps: the muted button arms on the first
+// click, opens the confirmation on the second, and the confirmation only
+// goes through once the phrase is typed out.
+function DeletePlannerCard() {
+  const { logout } = useAuth();
+  const [armed, setArmed] = useState(false);
+  const [confirming, setConfirming] = useState(false);
+  const [typed, setTyped] = useState("");
+  const [deleting, setDeleting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const matches = typed.trim().toLowerCase() === DELETE_PHRASE.toLowerCase();
+
+  function closeConfirm() {
+    if (deleting) return;
+    setConfirming(false);
+    setArmed(false);
+    setTyped("");
+    setError(null);
+  }
+
+  async function handleDelete(e: React.FormEvent) {
+    e.preventDefault();
+    if (!matches) return;
+    setDeleting(true);
+    setError(null);
+    try {
+      await api.deletePlanner(typed);
+    } catch (err) {
+      setError((err as Error).message);
+      setDeleting(false);
+      return;
+    }
+    await logout().catch(() => {});
+    window.location.replace("/");
+  }
+
+  return (
+    <section className="settings-card settings-danger">
+      <h3>Delete planner</h3>
+      <p className="page-subtitle">
+        Permanently deletes this planner for both of you: plans, guests, budget, vendors and inspiration.
+      </p>
+      <button
+        type="button"
+        className={`btn settings-delete-btn${armed ? " armed" : ""}`}
+        onClick={() => (armed ? setConfirming(true) : setArmed(true))}
+        onBlur={() => !confirming && setArmed(false)}
+      >
+        {armed ? "Click again to delete" : "Delete planner"}
+      </button>
+
+      {confirming && (
+        <Modal title="Delete this planner?" onClose={closeConfirm}>
+          <form className="settings-delete-confirm" onSubmit={handleDelete}>
+            <p>
+              Are you sure you want to delete this planner? Everything in it will be gone for both of you, and it
+              can't be undone.
+            </p>
+            <label className="title-field">
+              Type “{DELETE_PHRASE}” to confirm
+              <input
+                autoFocus
+                value={typed}
+                onChange={(e) => {
+                  setTyped(e.target.value);
+                  setError(null);
+                }}
+                placeholder={DELETE_PHRASE}
+                autoComplete="off"
+                spellCheck={false}
+              />
+            </label>
+            {error && <p className="settings-status error">{error}</p>}
+            <div className="btn-row">
+              <button type="submit" className="btn danger" disabled={!matches || deleting}>
+                {deleting ? "Deleting…" : "Delete planner"}
+              </button>
+              <button type="button" className="btn ghost" onClick={closeConfirm} disabled={deleting}>
+                Cancel
+              </button>
+            </div>
+          </form>
+        </Modal>
+      )}
+    </section>
   );
 }
 

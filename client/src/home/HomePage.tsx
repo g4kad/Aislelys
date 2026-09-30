@@ -56,6 +56,10 @@ const FAQS = [
     a: "You share one planner, and each of you signs in with your own name and password. You can both see and change everything in it.",
   },
   {
+    q: "Why is there no mobile app?",
+    a: "Aislelys runs in your browser so it's easy to jump between phone and computer. Open it on either one and your planner is right where you left it.",
+  },
+  {
     q: "Do our parents need an account?",
     a: "No. Send each side its own guest-list link and they can add their people straight away, without signing up. Share it only with people you trust.",
   },
@@ -69,7 +73,7 @@ const FAQS = [
   },
   {
     q: "Can we delete our planner?",
-    a: "Yes. Anything you delete in the app is removed straight away, and if you ask us to delete your whole planner, we'll do it within 30 days.",
+    a: "Yes. Anything you delete in the app is removed straight away. To delete your whole planner, go to Settings and choose Delete planner. It's gone for both of you right away.",
   },
 ];
 
@@ -234,8 +238,8 @@ export default function HomePage() {
             <p className="hp-eyebrow">Day-to-day planner</p>
             <h2 className="hp-h2">Every task has an owner.</h2>
             <p className="hp-body">
-              Add your own plans, give them a category and hand tasks to each other. Everything lands in your wedding
-              cards — one clear view of who's doing what, and when. No more “I thought you were handling that.”
+              Add your own plans, give them a category and hand tasks to each other. Everything lands in a task card,
+              but we call it a wedding card — one clear view of who's doing what, and when. No more “I thought you were handling that.”
             </p>
             <ul className="hp-points">
               {PLANNER_POINTS.map((pt) => (
@@ -257,12 +261,12 @@ export default function HomePage() {
             <div>
               <p className="hp-eyebrow hp-eyebrow-light">Guest list</p>
               <h2 className="hp-h2 hp-h2-light">
-                Everyone who matters. <em>Even Mum's list.</em>
+                Invite everyone who matters <em>to you &amp; the families.</em>
               </h2>
             </div>
             <p className="hp-body hp-body-light">
-              Add friends and family, mark your VIPs and sort everyone into lists. Then send a link to your parents —
-              they add their own guests, and it all lands in one place. No more chasing names across group chats.
+              Add friends and family, mark your VIPs and sort everyone into lists. Make things easier by sending a link
+              to the parents — they add their own guests, and it all lands in one place. No more chasing names across group chats.
             </p>
           </div>
           <div className="hp-guests-grid">

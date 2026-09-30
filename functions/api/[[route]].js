@@ -484,6 +484,54 @@ app.put("/wedding-date", async (c) => {
   return c.json({ date });
 });
 
+// ---------- Delete planner ----------
+
+// The phrase Settings asks for before deleting; checked here too so a stray
+// request can't wipe a planner.
+const DELETE_PLANNER_PHRASE = "yes, i do want to delete";
+
+const COUPLE_TABLES = [
+  "notifications",
+  "partner_invites",
+  "tasks",
+  "events",
+  "sections",
+  "todos",
+  "guests",
+  "guest_categories",
+  "guest_owners",
+  "inspiration_items",
+  "inspiration_categories",
+  "budget_items",
+  "budget_categories",
+  "vendors",
+  "vendor_categories",
+];
+
+// Removes the whole planner for both partners: every couple-owned row, their
+// sessions and logins, and the inspiration photos they uploaded.
+app.delete("/couple", async (c) => {
+  const coupleId = c.get("coupleId");
+  const { confirm } = await c.req.json().catch(() => ({}));
+  if (typeof confirm !== "string" || confirm.trim().toLowerCase() !== DELETE_PLANNER_PHRASE) {
+    return c.json({ error: "Type the confirmation phrase to delete the planner" }, 400);
+  }
+  const db = c.env.DB;
+  const { results: photos } = await db.prepare("SELECT url FROM inspiration_items WHERE coupleId = ?").bind(coupleId).all();
+  await db.batch([
+    db.prepare("DELETE FROM sessions WHERE userId IN (SELECT id FROM users WHERE coupleId = ?)").bind(coupleId),
+    ...COUPLE_TABLES.map((table) => db.prepare(`DELETE FROM ${table} WHERE coupleId = ?`).bind(coupleId)),
+    db.prepare("DELETE FROM users WHERE coupleId = ?").bind(coupleId),
+    db.prepare("DELETE FROM couples WHERE id = ?").bind(coupleId),
+  ]);
+  const photoKeys = photos
+    .map((p) => p.url.match(/^https:\/\/images\.saranniankris\.online\/([^/?#]+)$/)?.[1])
+    .filter(Boolean);
+  if (photoKeys.length) await c.env.IMAGES.delete(photoKeys).catch(() => {}); // rows are gone either way
+  deleteCookie(c, "session", { path: "/" });
+  return c.body(null, 204);
+});
+
 // ---------- Image uploads (for inspiration photos taken/picked on mobile) ----------
 
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024;

@@ -93,6 +93,10 @@ export const getWeddingDate = () => request<WeddingDate>("/wedding-date");
 export const updateWeddingDate = (date: string | null) =>
   request<WeddingDate>("/wedding-date", { method: "PUT", body: JSON.stringify({ date }) });
 
+// Deletes the whole planner for both partners; `confirm` is the typed phrase.
+export const deletePlanner = (confirm: string) =>
+  request<void>("/couple", { method: "DELETE", body: JSON.stringify({ confirm }) });
+
 // Day to-dos
 export const getTodos = () => request<TodoItem[]>("/todos");
 export const createTodo = (date: string, text: string) =>

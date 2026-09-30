@@ -2725,6 +2725,39 @@
   color: var(--danger);
 }
 
+/* Delete planner: a muted red until the first click arms it */
+.settings-delete-btn {
+  background: color-mix(in srgb, var(--danger) 8%, var(--surface));
+  border-color: color-mix(in srgb, var(--danger) 25%, var(--surface));
+  color: color-mix(in srgb, var(--danger) 60%, var(--surface));
+}
+
+.settings-delete-btn:hover {
+  border-color: color-mix(in srgb, var(--danger) 45%, var(--surface));
+  color: color-mix(in srgb, var(--danger) 80%, var(--surface));
+}
+
+.settings-delete-btn.armed,
+.settings-delete-btn.armed:hover {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: #fff;
+}
+
+.settings-delete-confirm p {
+  margin: 0 0 14px;
+  line-height: 1.5;
+}
+
+.settings-delete-confirm .title-field {
+  margin: 0 0 16px;
+}
+
+.settings-delete-confirm .btn.danger:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 /* ---------- Extra costs (vendors + budget) ---------- */
 
 .extras-editor {
