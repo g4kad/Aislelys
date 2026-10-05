@@ -300,7 +300,7 @@ function CategorySection({
                     <li key={g.id} className="guest-row">
                       <div className={`task-view-item ${g.included === false ? "task-item-excluded" : ""}`}>
                         <span className="task-status">
-                          {g.isVip ? <IconHeart className="vip-heart" filled size={12} /> : "•"}
+                          <IconChevronRight size={12} />
                         </span>
                         <button
                           type="button"
@@ -312,6 +312,7 @@ function CategorySection({
                         </button>
                         {g.included === false && <span className="not-counted-badge">not counted</span>}
                         {g.plusCount > 0 && <span className="plus-badge">+{g.plusCount}</span>}
+                        {g.isVip && <IconHeart className="vip-heart" filled size={12} />}
                       </div>
                       {openContactId === g.id && (
                         editingContactId === g.id ? (
