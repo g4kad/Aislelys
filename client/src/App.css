@@ -922,6 +922,38 @@
   text-align: left;
 }
 
+/* ---------- Swipe-to-delete (wraps a card) ---------- */
+
+.swipe-row {
+  position: relative;
+}
+
+.swipe-delete-action {
+  position: absolute;
+  inset: 0 0 0 auto;
+  width: 40px;
+  display: flex;
+  align-items: stretch;
+}
+
+.swipe-delete-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 10px;
+  background: var(--danger);
+  color: #fff;
+  cursor: pointer;
+}
+
+.swipe-content {
+  position: relative;
+  width: 100%;
+  touch-action: pan-y;
+}
+
 .chevron {
   display: inline-flex;
   align-items: center;
@@ -1208,6 +1240,14 @@
 
 .guest-contact-field textarea {
   resize: vertical;
+}
+
+.guest-contact-actions {
+  justify-content: flex-end;
+}
+
+.guest-contact-actions-right {
+  margin-left: auto;
 }
 
 .guest-contact-field-view {

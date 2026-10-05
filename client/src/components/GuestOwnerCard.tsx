@@ -4,6 +4,9 @@ import { IconChevronRight, IconClose, IconEdit, IconEye, IconEyeOff, IconHeart, 
 import { guestNamePlaceholder } from "../textUtils";
 import Dropdown from "./Dropdown";
 
+type ContactDetails = { phone: string; email: string; address: string; notes: string };
+const emptyContact: ContactDetails = { phone: "", email: "", address: "", notes: "" };
+
 type Props = {
   owner: GuestOwner;
   defaultExpanded?: boolean;
@@ -14,7 +17,7 @@ type Props = {
   nameEditable?: boolean;
   onUpdateOwner: (patch: Partial<Pick<GuestOwner, "name">>) => void;
   onDeleteOwner: () => void;
-  onAddGuest: (name: string, plusCount: number, categoryId: string, isVip: boolean) => void;
+  onAddGuest: (name: string, plusCount: number, categoryId: string, isVip: boolean, contact?: ContactDetails) => void;
   onUpdateGuest: (guestId: string, patch: Partial<Pick<Guest, "name" | "plusCount" | "isVip" | "included" | "phone" | "email" | "address" | "notes">>) => void;
   onDeleteGuest: (guestId: string) => void;
   onAddCategory: (title: string) => void;
@@ -29,27 +32,30 @@ function attendeeTotal(list: Guest[]) {
 type AddFormProps = {
   lists: GuestCategory[];
   defaultListId: string;
-  onAddGuest: (name: string, plusCount: number, categoryId: string, isVip: boolean) => void;
+  onAddGuest: (name: string, plusCount: number, categoryId: string, isVip: boolean, contact?: ContactDetails) => void;
   onAdded?: (listId: string) => void;
 };
 
-// Name, +count, VIP and which list to put them in.
+// Name, +count, which list to put them in, and — tucked behind an "optional"
+// link so the quick-add row stays uncluttered — their contact info.
 function GuestAddForm({ lists, defaultListId, onAddGuest, onAdded }: AddFormProps) {
   const [name, setName] = useState("");
   const [count, setCount] = useState("");
-  const [vip, setVip] = useState(false);
   const [targetListId, setTargetListId] = useState(defaultListId);
   const [addedTo, setAddedTo] = useState<string | null>(null);
+  const [showDetails, setShowDetails] = useState(false);
+  const [contact, setContact] = useState<ContactDetails>(emptyContact);
   const target = lists.find((l) => l.id === targetListId) ?? lists[0];
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
     if (!name.trim() || !target) return;
     const plusCount = count === "" ? 0 : Math.max(0, Math.floor(Number(count)) || 0);
-    onAddGuest(name.trim(), plusCount, target.id, vip);
+    onAddGuest(name.trim(), plusCount, target.id, false, contact);
     setName("");
     setCount("");
-    setVip(false);
+    setContact(emptyContact);
+    setShowDetails(false);
     setAddedTo(target.title);
     setTimeout(() => setAddedTo(null), 2500);
     onAdded?.(target.id);
@@ -58,44 +64,86 @@ function GuestAddForm({ lists, defaultListId, onAddGuest, onAdded }: AddFormProp
   if (!target) return null;
 
   return (
-    <form className="guest-add-form" onSubmit={submit}>
-      <button
-        type="button"
-        className={`icon-btn vip-toggle ${vip ? "active" : ""}`}
-        title={vip ? "Will be marked VIP" : "Mark as VIP"}
-        onClick={() => setVip((v) => !v)}
-      >
-        <IconHeart filled={vip} size={13} />
-      </button>
-      <input
-        type="text"
-        placeholder={guestNamePlaceholder(target.title)}
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-      />
-      <label className="plus-input-label">
-        +
+    <form className="guest-add-form-block" onSubmit={submit}>
+      <div className="guest-add-form">
         <input
-          className="plus-input"
-          type="number"
-          min={0}
-          placeholder="0"
-          value={count}
-          onChange={(e) => setCount(e.target.value)}
+          type="text"
+          placeholder={guestNamePlaceholder(target.title)}
+          value={name}
+          onChange={(e) => setName(e.target.value)}
         />
-      </label>
-      {lists.length > 1 && (
-        <label className="guest-add-list-picker">
-          <span>List</span>
-          <Dropdown
-            value={target.id}
-            onChange={setTargetListId}
-            options={lists.map((l) => ({ value: l.id, label: l.title }))}
+        <label className="plus-input-label">
+          +
+          <input
+            className="plus-input"
+            type="number"
+            min={0}
+            placeholder="0"
+            value={count}
+            onChange={(e) => setCount(e.target.value)}
           />
         </label>
+        {lists.length > 1 && (
+          <label className="guest-add-list-picker">
+            <span>List</span>
+            <Dropdown
+              value={target.id}
+              onChange={setTargetListId}
+              options={lists.map((l) => ({ value: l.id, label: l.title }))}
+            />
+          </label>
+        )}
+        <button className="btn small" type="submit">Add guest</button>
+        {addedTo && <span className="guest-added-hint">Added to {addedTo}</span>}
+      </div>
+
+      {showDetails ? (
+        <div className="guest-contact-panel">
+          <label className="guest-contact-field">
+            Number
+            <input
+              type="text"
+              placeholder="e.g. 012-345 6789"
+              value={contact.phone}
+              onChange={(e) => setContact((c) => ({ ...c, phone: e.target.value }))}
+            />
+          </label>
+          <label className="guest-contact-field">
+            Email
+            <input
+              type="email"
+              placeholder="e.g. alice@example.com"
+              value={contact.email}
+              onChange={(e) => setContact((c) => ({ ...c, email: e.target.value }))}
+            />
+          </label>
+          <label className="guest-contact-field">
+            Address
+            <input
+              type="text"
+              placeholder="Mailing address"
+              value={contact.address}
+              onChange={(e) => setContact((c) => ({ ...c, address: e.target.value }))}
+            />
+          </label>
+          <label className="guest-contact-field">
+            Notes
+            <textarea
+              rows={2}
+              placeholder="Dietary needs, seating preference, etc."
+              value={contact.notes}
+              onChange={(e) => setContact((c) => ({ ...c, notes: e.target.value }))}
+            />
+          </label>
+          <button type="button" className="link-btn" onClick={() => setShowDetails(false)}>
+            Hide contact details
+          </button>
+        </div>
+      ) : (
+        <button type="button" className="link-btn" onClick={() => setShowDetails(true)}>
+          + Add their contact details (optional)
+        </button>
       )}
-      <button className="btn small" type="submit">Add guest</button>
-      {addedTo && <span className="guest-added-hint">Added to {addedTo}</span>}
     </form>
   );
 }
@@ -107,7 +155,7 @@ type SectionProps = {
   editing: boolean;
   open: boolean;
   onToggleOpen: () => void;
-  onAddGuest: (name: string, plusCount: number, categoryId: string, isVip: boolean) => void;
+  onAddGuest: (name: string, plusCount: number, categoryId: string, isVip: boolean, contact?: ContactDetails) => void;
   onUpdateGuest: (guestId: string, patch: Partial<Pick<Guest, "name" | "plusCount" | "isVip" | "included" | "phone" | "email" | "address" | "notes">>) => void;
   onDeleteGuest: (guestId: string) => void;
   onUpdateCategory: (categoryId: string, title: string) => void;
@@ -131,12 +179,21 @@ function CategorySection({
   const [renaming, setRenaming] = useState(false);
   const [draftTitle, setDraftTitle] = useState(category.title);
   const [openContactId, setOpenContactId] = useState<string | null>(null);
+  // within an open (read-only) contact panel, which guest's own panel has
+  // been switched into its editable form
+  const [editingContactId, setEditingContactId] = useState<string | null>(null);
   const [contactDraft, setContactDraft] = useState({ phone: "", email: "", address: "", notes: "" });
 
   const total = attendeeTotal(guests);
 
   function toggleContact(guestId: string) {
     setOpenContactId((prev) => (prev === guestId ? null : guestId));
+    setEditingContactId(null);
+  }
+
+  function startEditingContact(g: Guest) {
+    setContactDraft({ phone: g.phone ?? "", email: g.email ?? "", address: g.address ?? "", notes: g.notes ?? "" });
+    setEditingContactId(g.id);
   }
 
   function openContactEditor(g: Guest) {
@@ -151,6 +208,7 @@ function CategorySection({
   function saveContact(guestId: string) {
     onUpdateGuest(guestId, { ...contactDraft });
     setOpenContactId(null);
+    setEditingContactId(null);
   }
 
   function startRenaming() {
@@ -256,24 +314,100 @@ function CategorySection({
                         {g.plusCount > 0 && <span className="plus-badge">+{g.plusCount}</span>}
                       </div>
                       {openContactId === g.id && (
-                        <div className="guest-contact-panel guest-contact-panel-readonly">
-                          <div className="guest-contact-field-view">
-                            <span className="guest-contact-label">Number</span>
-                            <span className="guest-contact-value">{g.phone || "—"}</span>
+                        editingContactId === g.id ? (
+                          <div className="guest-contact-panel">
+                            <label className="guest-contact-field">
+                              Number
+                              <input
+                                type="text"
+                                placeholder="e.g. 012-345 6789"
+                                value={contactDraft.phone}
+                                onChange={(e) => setContactDraft((d) => ({ ...d, phone: e.target.value }))}
+                                autoFocus
+                              />
+                            </label>
+                            <label className="guest-contact-field">
+                              Email
+                              <input
+                                type="email"
+                                placeholder="e.g. alice@example.com"
+                                value={contactDraft.email}
+                                onChange={(e) => setContactDraft((d) => ({ ...d, email: e.target.value }))}
+                              />
+                            </label>
+                            <label className="guest-contact-field">
+                              Address
+                              <input
+                                type="text"
+                                placeholder="Mailing address"
+                                value={contactDraft.address}
+                                onChange={(e) => setContactDraft((d) => ({ ...d, address: e.target.value }))}
+                              />
+                            </label>
+                            <label className="guest-contact-field">
+                              Notes
+                              <textarea
+                                rows={2}
+                                placeholder="Dietary needs, seating preference, etc."
+                                value={contactDraft.notes}
+                                onChange={(e) => setContactDraft((d) => ({ ...d, notes: e.target.value }))}
+                              />
+                            </label>
+                            <div className="btn-row">
+                              <button type="button" className="btn small primary" onClick={() => saveContact(g.id)}>
+                                Save
+                              </button>
+                              <button type="button" className="btn small ghost" onClick={() => setEditingContactId(null)}>
+                                Cancel
+                              </button>
+                              <button
+                                type="button"
+                                className="icon-btn danger guest-contact-actions-right"
+                                title={`Delete ${g.name}`}
+                                onClick={() => onDeleteGuest(g.id)}
+                              >
+                                <IconTrash size={14} />
+                              </button>
+                            </div>
                           </div>
-                          <div className="guest-contact-field-view">
-                            <span className="guest-contact-label">Email</span>
-                            <span className="guest-contact-value">{g.email || "—"}</span>
+                        ) : (
+                          <div className="guest-contact-panel guest-contact-panel-readonly">
+                            <div className="guest-contact-field-view">
+                              <span className="guest-contact-label">Number</span>
+                              <span className="guest-contact-value">{g.phone || "—"}</span>
+                            </div>
+                            <div className="guest-contact-field-view">
+                              <span className="guest-contact-label">Email</span>
+                              <span className="guest-contact-value">{g.email || "—"}</span>
+                            </div>
+                            <div className="guest-contact-field-view">
+                              <span className="guest-contact-label">Address</span>
+                              <span className="guest-contact-value">{g.address || "—"}</span>
+                            </div>
+                            <div className="guest-contact-field-view">
+                              <span className="guest-contact-label">Notes</span>
+                              <span className="guest-contact-value">{g.notes || "—"}</span>
+                            </div>
+                            <div className="btn-row guest-contact-actions">
+                              <button
+                                type="button"
+                                className="icon-btn"
+                                title={`Edit ${g.name}'s contact details`}
+                                onClick={() => startEditingContact(g)}
+                              >
+                                <IconEdit size={14} />
+                              </button>
+                              <button
+                                type="button"
+                                className="icon-btn danger"
+                                title={`Delete ${g.name}`}
+                                onClick={() => onDeleteGuest(g.id)}
+                              >
+                                <IconTrash size={14} />
+                              </button>
+                            </div>
                           </div>
-                          <div className="guest-contact-field-view">
-                            <span className="guest-contact-label">Address</span>
-                            <span className="guest-contact-value">{g.address || "—"}</span>
-                          </div>
-                          <div className="guest-contact-field-view">
-                            <span className="guest-contact-label">Notes</span>
-                            <span className="guest-contact-value">{g.notes || "—"}</span>
-                          </div>
-                        </div>
+                        )
                       )}
                     </li>
                   ))}
@@ -382,6 +516,14 @@ function CategorySection({
                           </button>
                           <button type="button" className="btn small ghost" onClick={() => setOpenContactId(null)}>
                             Cancel
+                          </button>
+                          <button
+                            type="button"
+                            className="icon-btn danger guest-contact-actions-right"
+                            title={`Delete ${g.name}`}
+                            onClick={() => onDeleteGuest(g.id)}
+                          >
+                            <IconTrash size={14} />
                           </button>
                         </div>
                       </div>

@@ -90,6 +90,13 @@ function isPublicCouplePath(reqPath, method) {
   return false;
 }
 
+// Local-dev-only shortcut (never enabled in production) so you can open a
+// single link on another device and land logged in, skipping the password
+// form — handy for testing on a phone over the LAN.
+function isDevLoginPath(reqPath, method) {
+  return process.env.NODE_ENV !== "production" && method === "GET" && /^\/api\/dev-login\/[^/]+$/.test(reqPath);
+}
+
 const PUBLIC_AUTH_PATHS = new Set(["/api/auth/logout", "/api/signup", "/api/default-couple"]);
 
 app.use(async (req, res, next) => {
@@ -106,7 +113,12 @@ app.use(async (req, res, next) => {
       }
     }
   }
-  if (PUBLIC_AUTH_PATHS.has(req.path) || isPublicGuestInvitePath(req.path, req.method) || isPublicCouplePath(req.path, req.method)) {
+  if (
+    PUBLIC_AUTH_PATHS.has(req.path) ||
+    isPublicGuestInvitePath(req.path, req.method) ||
+    isPublicCouplePath(req.path, req.method) ||
+    isDevLoginPath(req.path, req.method)
+  ) {
     return next();
   }
   if (req.path.startsWith("/api/") && !req.user) {
@@ -240,6 +252,16 @@ app.post("/api/couples/:coupleId/login", async (req, res) => {
   await createSession(res, data, user.id);
   res.json({ id: user.id, name: user.name });
 });
+
+if (process.env.NODE_ENV !== "production") {
+  app.get("/api/dev-login/:userId", async (req, res) => {
+    const data = await readData();
+    const user = (data.users || []).find((u) => u.id === req.params.userId);
+    if (!user) return res.status(404).send("Unknown dev user id");
+    await createSession(res, data, user.id);
+    res.redirect(`/${user.coupleId}/planner`);
+  });
+}
 
 app.post("/api/auth/logout", async (req, res) => {
   const cookies = parseCookies(req);

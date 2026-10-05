@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { EventItem, Section, Task } from "../types";
 import EventCard from "./EventCard";
 import SectionManagerModal from "./SectionManagerModal";
+import SwipeToDelete from "./SwipeToDelete";
 import { IconGrip } from "./Icons";
 import {
   DndContext,
@@ -139,19 +140,24 @@ export default function SectionsBoard(props: Props) {
                 <SortableSection key={section.id} section={section} count={sectionEvents.length}>
                   <div className="card-list">
                     {sectionEvents.map((ev) => (
-                      <EventCard
+                      <SwipeToDelete
                         key={ev.id}
-                        event={ev}
-                        section={section}
-                        sections={sections}
-                        expanded={expandedEventId === ev.id}
-                        onToggleExpand={() => toggleExpand(ev.id)}
-                        onUpdateEvent={(patch) => props.onUpdateEvent(ev.id, patch)}
-                        onDeleteEvent={() => props.onDeleteEvent(ev.id)}
-                        onAddTask={(name, assignee) => props.onAddTask(ev.id, name, assignee)}
-                        onUpdateTask={(taskId, patch) => props.onUpdateTask(ev.id, taskId, patch)}
-                        onDeleteTask={(taskId) => props.onDeleteTask(ev.id, taskId)}
-                      />
+                        onDelete={() => props.onDeleteEvent(ev.id)}
+                        disabled={expandedEventId === ev.id}
+                      >
+                        <EventCard
+                          event={ev}
+                          section={section}
+                          sections={sections}
+                          expanded={expandedEventId === ev.id}
+                          onToggleExpand={() => toggleExpand(ev.id)}
+                          onUpdateEvent={(patch) => props.onUpdateEvent(ev.id, patch)}
+                          onDeleteEvent={() => props.onDeleteEvent(ev.id)}
+                          onAddTask={(name, assignee) => props.onAddTask(ev.id, name, assignee)}
+                          onUpdateTask={(taskId, patch) => props.onUpdateTask(ev.id, taskId, patch)}
+                          onDeleteTask={(taskId) => props.onDeleteTask(ev.id, taskId)}
+                        />
+                      </SwipeToDelete>
                     ))}
                   </div>
                 </SortableSection>

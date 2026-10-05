@@ -66,9 +66,16 @@ export default function GuestListPage() {
     }
   }
 
-  async function handleAddGuest(ownerId: string, name: string, plusCount: number, categoryId: string, isVip: boolean) {
+  async function handleAddGuest(
+    ownerId: string,
+    name: string,
+    plusCount: number,
+    categoryId: string,
+    isVip: boolean,
+    contact?: Pick<Guest, "phone" | "email" | "address" | "notes">
+  ) {
     try {
-      const guest = await api.addGuest(ownerId, name, plusCount, categoryId, isVip);
+      const guest = await api.addGuest(ownerId, name, plusCount, categoryId, isVip, contact);
       setOwners((prev) =>
         prev.map((o) => (o.id === ownerId ? { ...o, guests: [...o.guests, guest] } : o))
       );
@@ -212,7 +219,9 @@ export default function GuestListPage() {
                 nameEditable={index >= 2}
                 onUpdateOwner={(patch) => handleUpdateOwner(owner.id, patch)}
                 onDeleteOwner={() => handleDeleteOwner(owner.id)}
-                onAddGuest={(name, plusCount, categoryId, isVip) => handleAddGuest(owner.id, name, plusCount, categoryId, isVip)}
+                onAddGuest={(name, plusCount, categoryId, isVip, contact) =>
+                  handleAddGuest(owner.id, name, plusCount, categoryId, isVip, contact)
+                }
                 onUpdateGuest={(guestId, patch) => handleUpdateGuest(owner.id, guestId, patch)}
                 onDeleteGuest={(guestId) => handleDeleteGuest(owner.id, guestId)}
                 onAddCategory={(title) => handleAddCategory(owner.id, title)}
