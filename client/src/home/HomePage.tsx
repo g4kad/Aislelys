@@ -238,8 +238,9 @@ export default function HomePage() {
             <p className="hp-eyebrow">Day-to-day planner</p>
             <h2 className="hp-h2">Every task has an owner.</h2>
             <p className="hp-body">
-              Add your own plans, give them a category and hand tasks to each other. Everything lands in a task card,
-              but we call it a wedding card — one clear view of who's doing what, and when. No more “I thought you were handling that.”
+              Add your own plans, give them a category and hand tasks to each other. Think of it as a project management
+              platform, but with a lot of love. Everything lands in a task card, but we call it a wedding card — one clear
+              view of who's doing what, and when. No more “I thought you were handling that.”
             </p>
             <ul className="hp-points">
               {PLANNER_POINTS.map((pt) => (
