@@ -6,7 +6,7 @@ import EventCard from "../components/EventCard";
 import BudgetBoard from "../components/BudgetBoard";
 import GuestOwnerCard from "../components/GuestOwnerCard";
 import InspirationCard from "../components/InspirationCard";
-import { budgetLineAmount, formatDollars } from "../money";
+import { budgetLineAmount, DEFAULT_RATES, formatDollars } from "../money";
 import { toDateKey } from "../dateUtils";
 
 // The Home page's pictures of the app are the app's own components, rendered
@@ -658,7 +658,8 @@ export function BudgetPreview() {
           <BudgetBoard
             items={items}
             categories={BUDGET_CATEGORIES}
-            myrToSgd={0.31}
+            homeCurrency="SGD"
+            rates={DEFAULT_RATES}
             onUpdate={noop}
             onDelete={noop}
             onCreateCategory={noop}

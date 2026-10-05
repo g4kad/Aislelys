@@ -3,6 +3,9 @@ import * as api from "../api";
 import { formatDateLong } from "../dateUtils";
 import { useAuth } from "../auth";
 import Modal from "../components/Modal";
+import Dropdown from "../components/Dropdown";
+import { CURRENCIES } from "../constants";
+import type { Currency } from "../types";
 
 type Props = {
   weddingDate: string | null;
@@ -65,8 +68,59 @@ export default function SettingsPage({ weddingDate, onWeddingDateChange }: Props
         {status && <p className={`settings-status ${status.kind === "error" ? "error" : ""}`}>{status.message}</p>}
       </section>
 
+      <CurrencySection />
+
       <DeletePlannerCard />
     </div>
+  );
+}
+
+// Which currency most of the spending ends up in — every budget total and
+// category subtotal converts into this, no matter what currency an
+// individual expense or vendor cost was recorded in.
+function CurrencySection() {
+  const [homeCurrency, setHomeCurrency] = useState<Currency | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [status, setStatus] = useState<{ kind: "saved" | "error"; message: string } | null>(null);
+
+  useEffect(() => {
+    api.getBudget().then((b) => setHomeCurrency(b.homeCurrency)).catch(() => {});
+  }, []);
+
+  async function handleChange(value: string) {
+    const next = value as Currency;
+    setHomeCurrency(next);
+    setSaving(true);
+    setStatus(null);
+    try {
+      await api.updateBudget({ homeCurrency: next });
+      setStatus({ kind: "saved", message: `Saved — totals now convert to ${next}` });
+    } catch (err) {
+      setStatus({ kind: "error", message: (err as Error).message });
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (!homeCurrency) return null;
+
+  return (
+    <section className="settings-card">
+      <h3>Currency</h3>
+      <p className="page-subtitle">
+        Pick whichever currency most of your spending is paid in — that's the one every budget total converts to,
+        even when an individual expense is logged in a different currency (e.g. a Malaysia vendor paid in MYR still
+        adds to a SGD total).
+      </p>
+      <label className="title-field">
+        Home currency
+        <Dropdown value={homeCurrency} onChange={handleChange} options={CURRENCIES} />
+      </label>
+      {saving && <p className="settings-status">Saving…</p>}
+      {!saving && status && (
+        <p className={`settings-status ${status.kind === "error" ? "error" : ""}`}>{status.message}</p>
+      )}
+    </section>
   );
 }
 

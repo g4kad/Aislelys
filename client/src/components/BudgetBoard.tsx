@@ -1,19 +1,20 @@
 import { useMemo, useState } from "react";
-import type { BudgetCategory, BudgetItem } from "../types";
+import type { BudgetCategory, BudgetItem, Currency } from "../types";
 import BudgetItemCard from "./BudgetItemCard";
 import BudgetCategoryManagerModal from "./BudgetCategoryManagerModal";
-import { budgetLineAmount, formatSgd, toSgd } from "../money";
+import { budgetLineAmount, convertCurrency, formatHome } from "../money";
 
 type Props = {
   items: BudgetItem[];
   categories: BudgetCategory[];
-  myrToSgd: number;
+  homeCurrency: Currency;
+  rates: Record<Currency, number>;
   onUpdate: (id: string, patch: Partial<Pick<BudgetItem, "item" | "category" | "currency" | "estimated" | "actual" | "paid" | "downpayment" | "notes" | "extras">>) => void;
   onDelete: (id: string) => void;
   onCreateCategory: (title: string, color: string) => void;
   onUpdateCategory: (id: string, patch: Partial<Pick<BudgetCategory, "title" | "color">>) => void;
   onDeleteCategory: (id: string) => void;
-  formatTotal?: (amount: number) => string; // category subtotals; S$ by default
+  formatTotal?: (amount: number) => string; // category subtotals; the home currency by default
   amountFor?: (item: BudgetItem) => number; // what each line adds to its subtotal; its cost by default
   expandedIds?: string[]; // when set, exactly these lines are held open
 };
@@ -21,17 +22,19 @@ type Props = {
 export default function BudgetBoard({
   items,
   categories,
-  myrToSgd,
+  homeCurrency,
+  rates,
   onUpdate,
   onDelete,
   onCreateCategory,
   onUpdateCategory,
   onDeleteCategory,
-  formatTotal = formatSgd,
+  formatTotal,
   amountFor = budgetLineAmount,
   expandedIds,
 }: Props) {
   const [showManageCategories, setShowManageCategories] = useState(false);
+  const formatTotalAmount = formatTotal ?? ((amount: number) => formatHome(amount, homeCurrency));
   const groups = useMemo(() => {
     const byCategory = new Map<string, BudgetItem[]>();
     const uncategorized: BudgetItem[] = [];
@@ -47,8 +50,8 @@ export default function BudgetBoard({
     return { byCategory, uncategorized };
   }, [items, categories]);
 
-  function categorySgd(list: BudgetItem[]) {
-    return list.reduce((sum, i) => sum + toSgd(amountFor(i), i.currency, myrToSgd), 0);
+  function categoryHomeTotal(list: BudgetItem[]) {
+    return list.reduce((sum, i) => sum + convertCurrency(amountFor(i), i.currency, homeCurrency, rates), 0);
   }
 
   const subtotalLabel = "spent";
@@ -64,7 +67,7 @@ export default function BudgetBoard({
             <div className="board-section-header">
               <span className="section-dot" style={{ background: category.color }} />
               <h3>{category.title}</h3>
-              <span className="section-subtotal">{formatTotal(categorySgd(categoryItems))} {subtotalLabel}</span>
+              <span className="section-subtotal">{formatTotalAmount(categoryHomeTotal(categoryItems))} {subtotalLabel}</span>
               <span className="section-count">{categoryItems.length}</span>
             </div>
             <div className="card-list">
@@ -89,7 +92,7 @@ export default function BudgetBoard({
           <div className="board-section-header">
             <span className="section-dot" style={{ background: "#ede2cc" }} />
             <h3>Uncategorized</h3>
-            <span className="section-subtotal">{formatTotal(categorySgd(groups.uncategorized))} {subtotalLabel}</span>
+            <span className="section-subtotal">{formatTotalAmount(categoryHomeTotal(groups.uncategorized))} {subtotalLabel}</span>
             <span className="section-count">{groups.uncategorized.length}</span>
           </div>
           <div className="card-list">

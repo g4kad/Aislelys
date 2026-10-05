@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS couples (
   weddingDate TEXT,
   budgetTotal REAL NOT NULL DEFAULT 0,
   savings REAL NOT NULL DEFAULT 0,
+  homeCurrency TEXT NOT NULL DEFAULT 'SGD',
   notificationsHoldUntil TEXT,
   createdAt TEXT NOT NULL
 );

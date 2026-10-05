@@ -3,7 +3,7 @@ import type { BudgetCategory, BudgetItem, Currency, ExtraCost } from "../types";
 import * as api from "../api";
 import BudgetBoard from "../components/BudgetBoard";
 import BudgetFormModal from "../components/BudgetFormModal";
-import { budgetLineAmount, formatSgd, toSgd } from "../money";
+import { budgetLineAmount, convertCurrency, CURRENCY_SYMBOL, DEFAULT_RATES, formatHome } from "../money";
 import { SECTION_COLORS } from "../palette";
 
 export default function BudgetPage() {
@@ -12,7 +12,8 @@ export default function BudgetPage() {
   const [savingsInput, setSavingsInput] = useState("0");
   const [items, setItems] = useState<BudgetItem[]>([]);
   const [categories, setCategories] = useState<BudgetCategory[]>([]);
-  const [myrToSgd, setMyrToSgd] = useState(0.31);
+  const [homeCurrency, setHomeCurrency] = useState<Currency>("SGD");
+  const [rates, setRates] = useState<Record<Currency, number>>(DEFAULT_RATES);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -23,17 +24,18 @@ export default function BudgetPage() {
         setTotal(budget.total);
         setTotalInput(String(budget.total));
         setSavingsInput(String(budget.savings));
+        setHomeCurrency(budget.homeCurrency);
         setItems(budgetItems);
         setCategories(budgetCategories);
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
 
-    // Keep the SGD conversion current without exposing any rate UI.
+    // Keep the conversion rates current without exposing any rate UI.
     api
       .refreshExchangeRate()
-      .then((rate) => setMyrToSgd(rate.myrToSgd))
-      .catch(() => api.getExchangeRate().then((rate) => setMyrToSgd(rate.myrToSgd)).catch(() => {}));
+      .then((rate) => setRates(rate.rates))
+      .catch(() => api.getExchangeRate().then((rate) => setRates(rate.rates)).catch(() => {}));
   }, []);
 
   async function handleCreateCategory(title: string, color?: string): Promise<BudgetCategory> {
@@ -62,8 +64,8 @@ export default function BudgetPage() {
   }
 
   const spentSum = useMemo(
-    () => items.reduce((sum, i) => sum + toSgd(budgetLineAmount(i), i.currency, myrToSgd), 0),
-    [items, myrToSgd]
+    () => items.reduce((sum, i) => sum + convertCurrency(budgetLineAmount(i), i.currency, homeCurrency, rates), 0),
+    [items, homeCurrency, rates]
   );
   const remaining = total - spentSum;
   const savingsPercent = total > 0 ? Math.round(((Number(savingsInput) || 0) / total) * 100) : 0;
@@ -147,14 +149,15 @@ export default function BudgetPage() {
       </div>
 
       <p className="page-subtitle">
-        Set your overall budget and log expenses in SGD or MYR — everything totals in SGD automatically.
+        Set your overall budget and log expenses in any currency — everything totals in {homeCurrency} automatically.
+        Change your home currency in Settings.
       </p>
 
       <div className="budget-summary">
         <label className="budget-summary-stat budget-total-stat">
-          <span className="budget-stat-label">Total budget (SGD)</span>
+          <span className="budget-stat-label">Total budget ({homeCurrency})</span>
           <div className="budget-total-input-row">
-            <span className="budget-currency-prefix">S$</span>
+            <span className="budget-currency-prefix">{CURRENCY_SYMBOL[homeCurrency]}</span>
             <input
               type="number"
               min={0}
@@ -167,7 +170,7 @@ export default function BudgetPage() {
         <label className="budget-summary-stat budget-total-stat">
           <span className="budget-stat-label">Total savings</span>
           <div className="budget-total-input-row">
-            <span className="budget-currency-prefix">S$</span>
+            <span className="budget-currency-prefix">{CURRENCY_SYMBOL[homeCurrency]}</span>
             <input
               type="number"
               min={0}
@@ -179,12 +182,12 @@ export default function BudgetPage() {
           </div>
         </label>
         <div className="budget-summary-stat">
-          <span className="budget-stat-label">Remaining (SGD)</span>
-          <span className={`budget-stat-value ${remaining < 0 ? "over" : "positive"}`}>{formatSgd(remaining)}</span>
+          <span className="budget-stat-label">Remaining ({homeCurrency})</span>
+          <span className={`budget-stat-value ${remaining < 0 ? "over" : "positive"}`}>{formatHome(remaining, homeCurrency)}</span>
         </div>
         <div className="budget-summary-stat budget-stat-highlight">
-          <span className="budget-stat-label">Total (SGD)</span>
-          <span className="budget-stat-value">{formatSgd(spentSum)}</span>
+          <span className="budget-stat-label">Total ({homeCurrency})</span>
+          <span className="budget-stat-value">{formatHome(spentSum, homeCurrency)}</span>
         </div>
       </div>
 
@@ -197,7 +200,8 @@ export default function BudgetPage() {
       <BudgetBoard
         items={items}
         categories={categories}
-        myrToSgd={myrToSgd}
+        homeCurrency={homeCurrency}
+        rates={rates}
         onUpdate={handleUpdate}
         onDelete={handleDelete}
         onCreateCategory={handleCreateCategory}

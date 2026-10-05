@@ -435,6 +435,11 @@ app.post("/notifications/read-all", async (c) => {
   return c.body(null, 204);
 });
 
+const CURRENCIES = ["SGD", "MYR", "THB", "PHP", "USD", "EUR", "GBP", "JPY", "CNY", "KRW"];
+function toCurrency(value) {
+  return CURRENCIES.includes(value) ? value : "SGD";
+}
+
 // ---------- Settings helper (shared, non-couple-specific exchange rate) ----------
 
 async function getSetting(db, key, fallback) {
@@ -1320,20 +1325,21 @@ app.get("/resolve-preview", async (c) => {
 
 app.get("/budget", async (c) => {
   const coupleId = c.get("coupleId");
-  const couple = await c.env.DB.prepare("SELECT budgetTotal, savings FROM couples WHERE id = ?").bind(coupleId).first();
-  return c.json({ total: couple?.budgetTotal ?? 0, savings: couple?.savings ?? 0 });
+  const couple = await c.env.DB.prepare("SELECT budgetTotal, savings, homeCurrency FROM couples WHERE id = ?").bind(coupleId).first();
+  return c.json({ total: couple?.budgetTotal ?? 0, savings: couple?.savings ?? 0, homeCurrency: toCurrency(couple?.homeCurrency) });
 });
 
 app.put("/budget", async (c) => {
   const coupleId = c.get("coupleId");
-  const { total, savings } = await c.req.json();
-  const couple = await c.env.DB.prepare("SELECT budgetTotal, savings FROM couples WHERE id = ?").bind(coupleId).first();
+  const { total, savings, homeCurrency } = await c.req.json();
+  const couple = await c.env.DB.prepare("SELECT budgetTotal, savings, homeCurrency FROM couples WHERE id = ?").bind(coupleId).first();
   const newTotal = total !== undefined ? Math.max(0, Number(total) || 0) : couple?.budgetTotal ?? 0;
   const newSavings = savings !== undefined ? Math.max(0, Number(savings) || 0) : couple?.savings ?? 0;
-  await c.env.DB.prepare("UPDATE couples SET budgetTotal = ?, savings = ? WHERE id = ?")
-    .bind(newTotal, newSavings, coupleId)
+  const newHomeCurrency = homeCurrency !== undefined ? toCurrency(homeCurrency) : toCurrency(couple?.homeCurrency);
+  await c.env.DB.prepare("UPDATE couples SET budgetTotal = ?, savings = ?, homeCurrency = ? WHERE id = ?")
+    .bind(newTotal, newSavings, newHomeCurrency, coupleId)
     .run();
-  return c.json({ total: newTotal, savings: newSavings });
+  return c.json({ total: newTotal, savings: newSavings, homeCurrency: newHomeCurrency });
 });
 
 app.get("/budget-items", async (c) => {
@@ -1393,7 +1399,7 @@ app.post("/budget-items", async (c) => {
     id: crypto.randomUUID(),
     item: item.trim(),
     category: category || PURCHASES_CATEGORY,
-    currency: currency === "MYR" ? "MYR" : "SGD",
+    currency: toCurrency(currency),
     estimated: Math.max(0, Number(estimated) || 0),
     actual: Math.max(0, Number(actual) || 0),
     paid: Boolean(paid),
@@ -1459,7 +1465,7 @@ app.put("/budget-items/:id", async (c) => {
   if (!existing) return c.json({ error: "Budget item not found" }, 404);
   const item = body.item !== undefined ? body.item : existing.item;
   const category = body.category !== undefined ? body.category : existing.category;
-  const currency = body.currency !== undefined ? (body.currency === "MYR" ? "MYR" : "SGD") : existing.currency;
+  const currency = body.currency !== undefined ? toCurrency(body.currency) : existing.currency;
   const estimated = body.estimated !== undefined ? Math.max(0, Number(body.estimated) || 0) : existing.estimated;
   const actual = body.actual !== undefined ? Math.max(0, Number(body.actual) || 0) : existing.actual;
   const paid = body.paid !== undefined ? Boolean(body.paid) : !!existing.paid;
@@ -1587,38 +1593,78 @@ app.delete("/budget-categories/:id", async (c) => {
 
 // ---------- Exchange rate (MYR -> SGD) — shared across all couples ----------
 
+const FOREIGN_CURRENCIES = CURRENCIES.filter((cur) => cur !== "SGD");
+const DEFAULT_RATES = {
+  SGD: 1,
+  MYR: 0.3128,
+  THB: 0.0375,
+  PHP: 0.0237,
+  USD: 1.34,
+  EUR: 1.45,
+  GBP: 1.7,
+  JPY: 0.0089,
+  CNY: 0.186,
+  KRW: 0.00097,
+};
+
+// Older stored settings only have { myrToSgd }: normalize on read so a
+// couple's home currency can be any of the four, not just SGD.
+function normalizedExchangeRate(exchangeRate) {
+  if (exchangeRate?.rates) return exchangeRate;
+  const myrToSgd = exchangeRate?.myrToSgd ?? DEFAULT_RATES.MYR;
+  return {
+    base: "SGD",
+    rates: { ...DEFAULT_RATES, MYR: myrToSgd },
+    updatedAt: exchangeRate?.updatedAt ?? null,
+    source: exchangeRate?.source ?? "default",
+  };
+}
+
 app.get("/exchange-rate", async (c) => {
-  const rate = await getSetting(c.env.DB, "exchangeRate", { myrToSgd: 0.3128, updatedAt: null, source: "default" });
-  return c.json(rate);
+  const rate = await getSetting(c.env.DB, "exchangeRate", { base: "SGD", rates: DEFAULT_RATES, updatedAt: null, source: "default" });
+  return c.json(normalizedExchangeRate(rate));
 });
 
 app.post("/exchange-rate/refresh", async (c) => {
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 8000);
-    const response = await fetch("https://api.frankfurter.app/latest?from=MYR&to=SGD", {
-      signal: controller.signal,
-    });
+    const response = await fetch(
+      `https://api.frankfurter.app/latest?from=SGD&to=${FOREIGN_CURRENCIES.join(",")}`,
+      { signal: controller.signal }
+    );
     clearTimeout(timeout);
     const json = await response.json();
-    const rate = json?.rates?.SGD;
-    if (!rate) throw new Error("No SGD rate in response");
+    const rates = { SGD: 1 };
+    for (const currency of FOREIGN_CURRENCIES) {
+      const sgdPerUnit = json?.rates?.[currency];
+      if (!sgdPerUnit) throw new Error(`No ${currency} rate in response`);
+      rates[currency] = 1 / sgdPerUnit;
+    }
     const exchangeRate = {
-      myrToSgd: rate,
+      base: "SGD",
+      rates,
       updatedAt: new Date().toISOString(),
       source: "frankfurter.app (ECB reference rates)",
     };
     await setSetting(c.env.DB, "exchangeRate", exchangeRate);
     return c.json(exchangeRate);
   } catch (err) {
-    return c.json({ error: "Could not fetch a live rate right now. You can enter one manually below." }, 502);
+    return c.json({ error: "Could not fetch live rates right now. You can enter them manually below." }, 502);
   }
 });
 
 app.put("/exchange-rate", async (c) => {
-  const { myrToSgd } = await c.req.json();
-  if (!myrToSgd || Number(myrToSgd) <= 0) return c.json({ error: "myrToSgd must be a positive number" }, 400);
-  const exchangeRate = { myrToSgd: Number(myrToSgd), updatedAt: new Date().toISOString(), source: "manual" };
+  const { rates: patch } = await c.req.json();
+  if (!patch || typeof patch !== "object") return c.json({ error: "rates must be an object of currency -> SGD value" }, 400);
+  const current = normalizedExchangeRate(await getSetting(c.env.DB, "exchangeRate", { base: "SGD", rates: DEFAULT_RATES }));
+  const rates = { ...current.rates };
+  for (const currency of FOREIGN_CURRENCIES) {
+    if (patch[currency] === undefined) continue;
+    if (!(Number(patch[currency]) > 0)) return c.json({ error: `${currency} rate must be a positive number` }, 400);
+    rates[currency] = Number(patch[currency]);
+  }
+  const exchangeRate = { base: "SGD", rates, updatedAt: new Date().toISOString(), source: "manual" };
   await setSetting(c.env.DB, "exchangeRate", exchangeRate);
   return c.json(exchangeRate);
 });
@@ -1675,10 +1721,6 @@ app.get("/vendors", async (c) => {
   const { results } = await c.env.DB.prepare("SELECT * FROM vendors WHERE coupleId = ? ORDER BY createdAt DESC").bind(coupleId).all();
   return c.json(results.map((v) => ({ ...v, extras: parseExtras(v.extras) })));
 });
-
-function toCurrency(value) {
-  return value === "SGD" ? "SGD" : "MYR";
-}
 
 app.post("/vendors", async (c) => {
   const coupleId = c.get("coupleId");

@@ -17,7 +17,12 @@ const EMPTY_DATA = {
   budgetCategories: [],
   vendors: [],
   vendorCategories: [],
-  exchangeRate: { myrToSgd: 0.3128, updatedAt: null, source: "default" },
+  exchangeRate: {
+    base: "SGD",
+    rates: { SGD: 1, MYR: 0.3128, THB: 0.0375, PHP: 0.0237, USD: 1.34, EUR: 1.45, GBP: 1.7, JPY: 0.0089, CNY: 0.186, KRW: 0.00097 },
+    updatedAt: null,
+    source: "default",
+  },
   todos: [],
   users: [],
   sessions: [],

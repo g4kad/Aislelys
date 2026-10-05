@@ -99,9 +99,10 @@ export type InspirationCategory = {
 export type Budget = {
   total: number;
   savings: number;
+  homeCurrency: Currency;
 };
 
-export type Currency = "SGD" | "MYR";
+export type Currency = "SGD" | "MYR" | "THB" | "PHP" | "USD" | "KRW" | "JPY" | "CNY" | "EUR" | "GBP";
 
 export type BudgetCategory = {
   id: string;
@@ -131,8 +132,12 @@ export type BudgetItem = {
   extras?: ExtraCost[]; // shared with the vendor on vendor lines
 };
 
+// Every rate is "how many SGD equal 1 unit of this currency" (SGD itself is
+// always 1), so any two currencies can be converted via SGD as the pivot —
+// regardless of which one a couple has picked as their home currency.
 export type ExchangeRate = {
-  myrToSgd: number;
+  base: "SGD";
+  rates: Record<Currency, number>;
   updatedAt: string | null;
   source: string;
 };

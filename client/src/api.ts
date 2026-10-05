@@ -294,14 +294,14 @@ export const updateBudgetCategory = (id: string, patch: Partial<Pick<BudgetCateg
 export const deleteBudgetCategory = (id: string) =>
   request<void>(`/budget-categories/${id}`, { method: "DELETE" });
 
-// Exchange rate (MYR -> SGD)
+// Exchange rate (every supported currency, relative to SGD)
 export const getExchangeRate = () => request<ExchangeRate>("/exchange-rate");
 export const refreshExchangeRate = () =>
   request<ExchangeRate>("/exchange-rate/refresh", { method: "POST" });
-export const updateExchangeRate = (myrToSgd: number) =>
+export const updateExchangeRate = (rates: Partial<Record<Currency, number>>) =>
   request<ExchangeRate>("/exchange-rate", {
     method: "PUT",
-    body: JSON.stringify({ myrToSgd }),
+    body: JSON.stringify({ rates }),
   });
 
 // Vendor categories

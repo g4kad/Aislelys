@@ -41,6 +41,22 @@ function randomToken() {
   return crypto.randomBytes(32).toString("hex");
 }
 
+const CURRENCIES = ["SGD", "MYR", "THB", "PHP", "USD", "EUR", "GBP", "JPY", "CNY", "KRW"];
+function validCurrency(currency) {
+  return CURRENCIES.includes(currency) ? currency : "SGD";
+}
+
+function sanitizeExtras(value) {
+  if (!Array.isArray(value)) return [];
+  return value
+    .filter((e) => e && typeof e === "object")
+    .map((e) => ({
+      id: typeof e.id === "string" && e.id ? e.id : crypto.randomUUID(),
+      label: typeof e.label === "string" ? e.label : "",
+      amount: Math.max(0, Number(e.amount) || 0),
+    }));
+}
+
 // Short, unambiguous alphabet (no 0/O/1/l/i) for shareable IDs like guest
 // invite links, so they're easy to read aloud/retype and short to send.
 const SHORT_ID_ALPHABET = "23456789abcdefghjkmnpqrstuvwxyz";
@@ -926,17 +942,26 @@ app.get("/api/resolve-preview", async (req, res) => {
 app.get("/api/budget", async (req, res) => {
   const data = await readData();
   const couple = (data.couples || []).find((c) => c.id === req.coupleId);
-  res.json({ total: couple?.budgetTotal ?? 0, savings: couple?.savings ?? 0 });
+  res.json({
+    total: couple?.budgetTotal ?? 0,
+    savings: couple?.savings ?? 0,
+    homeCurrency: validCurrency(couple?.homeCurrency),
+  });
 });
 
 app.put("/api/budget", async (req, res) => {
-  const { total, savings } = req.body;
+  const { total, savings, homeCurrency } = req.body;
   const data = await readData();
   const couple = (data.couples || []).find((c) => c.id === req.coupleId);
   if (total !== undefined) couple.budgetTotal = Math.max(0, Number(total) || 0);
   if (savings !== undefined) couple.savings = Math.max(0, Number(savings) || 0);
+  if (homeCurrency !== undefined) couple.homeCurrency = validCurrency(homeCurrency);
   await writeData(data);
-  res.json({ total: couple.budgetTotal, savings: couple.savings ?? 0 });
+  res.json({
+    total: couple.budgetTotal,
+    savings: couple.savings ?? 0,
+    homeCurrency: validCurrency(couple.homeCurrency),
+  });
 });
 
 app.get("/api/budget-items", async (req, res) => {
@@ -945,7 +970,7 @@ app.get("/api/budget-items", async (req, res) => {
 });
 
 app.post("/api/budget-items", async (req, res) => {
-  const { item, category, estimated, actual, paid, currency } = req.body;
+  const { item, category, estimated, actual, paid, currency, notes, extras } = req.body;
   if (!item || !item.trim()) {
     return res.status(400).json({ error: "item is required" });
   }
@@ -955,10 +980,12 @@ app.post("/api/budget-items", async (req, res) => {
     coupleId: req.coupleId,
     item: item.trim(),
     category: category || "Other",
-    currency: currency === "MYR" ? "MYR" : "SGD",
+    currency: validCurrency(currency),
     estimated: Math.max(0, Number(estimated) || 0),
     actual: Math.max(0, Number(actual) || 0),
     paid: Boolean(paid),
+    notes: notes || "",
+    extras: sanitizeExtras(extras),
     createdAt: new Date().toISOString(),
   };
   data.budgetItems.push(budgetItem);
@@ -967,17 +994,19 @@ app.post("/api/budget-items", async (req, res) => {
 });
 
 app.put("/api/budget-items/:id", async (req, res) => {
-  const { item, category, estimated, actual, paid, currency } = req.body;
+  const { item, category, estimated, actual, paid, currency, notes, extras } = req.body;
   const data = await readData();
   const budgetItem = data.budgetItems.find((b) => b.id === req.params.id && b.coupleId === req.coupleId);
   if (!budgetItem) return res.status(404).json({ error: "Budget item not found" });
   const wasPaid = budgetItem.paid;
   if (item !== undefined) budgetItem.item = item;
   if (category !== undefined) budgetItem.category = category;
-  if (currency !== undefined) budgetItem.currency = currency === "MYR" ? "MYR" : "SGD";
+  if (currency !== undefined) budgetItem.currency = validCurrency(currency);
   if (estimated !== undefined) budgetItem.estimated = Math.max(0, Number(estimated) || 0);
   if (actual !== undefined) budgetItem.actual = Math.max(0, Number(actual) || 0);
   if (paid !== undefined) budgetItem.paid = Boolean(paid);
+  if (notes !== undefined) budgetItem.notes = notes;
+  if (extras !== undefined) budgetItem.extras = sanitizeExtras(extras);
   await writeData(data);
 
   if (paid !== undefined && budgetItem.paid !== wasPaid) {
@@ -1047,48 +1076,86 @@ app.delete("/api/budget-categories/:id", async (req, res) => {
   res.status(204).end();
 });
 
-// ---------- Exchange rate (MYR -> SGD, shared across all couples) ----------
+// ---------- Exchange rate (every supported currency, relative to SGD, shared across all couples) ----------
+
+const FOREIGN_CURRENCIES = CURRENCIES.filter((c) => c !== "SGD");
+const DEFAULT_RATES = {
+  SGD: 1,
+  MYR: 0.3128,
+  THB: 0.0375,
+  PHP: 0.0237,
+  USD: 1.34,
+  EUR: 1.45,
+  GBP: 1.7,
+  JPY: 0.0089,
+  CNY: 0.186,
+  KRW: 0.00097,
+};
+
+// Older data.json files only have { myrToSgd }: normalize on read so a
+// couple's home currency can be any of the four, not just SGD.
+function normalizedExchangeRate(exchangeRate) {
+  if (exchangeRate?.rates) return exchangeRate;
+  const myrToSgd = exchangeRate?.myrToSgd ?? DEFAULT_RATES.MYR;
+  return {
+    base: "SGD",
+    rates: { ...DEFAULT_RATES, MYR: myrToSgd },
+    updatedAt: exchangeRate?.updatedAt ?? null,
+    source: exchangeRate?.source ?? "default",
+  };
+}
 
 app.get("/api/exchange-rate", async (req, res) => {
   const data = await readData();
-  res.json(data.exchangeRate);
+  res.json(normalizedExchangeRate(data.exchangeRate));
 });
 
 app.post("/api/exchange-rate/refresh", async (req, res) => {
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 8000);
-    const response = await fetch("https://api.frankfurter.app/latest?from=MYR&to=SGD", {
-      signal: controller.signal,
-    });
+    const response = await fetch(
+      `https://api.frankfurter.app/latest?from=SGD&to=${FOREIGN_CURRENCIES.join(",")}`,
+      { signal: controller.signal }
+    );
     clearTimeout(timeout);
     const json = await response.json();
-    const rate = json?.rates?.SGD;
-    if (!rate) throw new Error("No SGD rate in response");
+    const rates = { SGD: 1 };
+    for (const currency of FOREIGN_CURRENCIES) {
+      const sgdPerUnit = json?.rates?.[currency];
+      if (!sgdPerUnit) throw new Error(`No ${currency} rate in response`);
+      rates[currency] = 1 / sgdPerUnit;
+    }
     const data = await readData();
     data.exchangeRate = {
-      myrToSgd: rate,
+      base: "SGD",
+      rates,
       updatedAt: new Date().toISOString(),
       source: "frankfurter.app (ECB reference rates)",
     };
     await writeData(data);
     res.json(data.exchangeRate);
   } catch (err) {
-    res.status(502).json({ error: "Could not fetch a live rate right now. You can enter one manually below." });
+    res.status(502).json({ error: "Could not fetch live rates right now. You can enter them manually below." });
   }
 });
 
 app.put("/api/exchange-rate", async (req, res) => {
-  const { myrToSgd } = req.body;
-  if (!myrToSgd || Number(myrToSgd) <= 0) {
-    return res.status(400).json({ error: "myrToSgd must be a positive number" });
+  const { rates: patch } = req.body;
+  if (!patch || typeof patch !== "object") {
+    return res.status(400).json({ error: "rates must be an object of currency -> SGD value" });
   }
   const data = await readData();
-  data.exchangeRate = {
-    myrToSgd: Number(myrToSgd),
-    updatedAt: new Date().toISOString(),
-    source: "manual",
-  };
+  const current = normalizedExchangeRate(data.exchangeRate);
+  const rates = { ...current.rates };
+  for (const currency of FOREIGN_CURRENCIES) {
+    if (patch[currency] === undefined) continue;
+    if (!(Number(patch[currency]) > 0)) {
+      return res.status(400).json({ error: `${currency} rate must be a positive number` });
+    }
+    rates[currency] = Number(patch[currency]);
+  }
+  data.exchangeRate = { base: "SGD", rates, updatedAt: new Date().toISOString(), source: "manual" };
   await writeData(data);
   res.json(data.exchangeRate);
 });
@@ -1146,7 +1213,7 @@ app.get("/api/vendors", async (req, res) => {
 });
 
 app.post("/api/vendors", async (req, res) => {
-  const { name, category, contact, cost, status, notes } = req.body;
+  const { name, category, contact, cost, status, notes, currency, budgetCategory, downpayment, extras } = req.body;
   if (!name || !name.trim()) {
     return res.status(400).json({ error: "name is required" });
   }
@@ -1161,6 +1228,10 @@ app.post("/api/vendors", async (req, res) => {
     status: status || "inquired",
     notes: notes || "",
     createdAt: new Date().toISOString(),
+    currency: validCurrency(currency),
+    budgetCategory: budgetCategory !== undefined ? budgetCategory : category || "",
+    downpayment: Math.max(0, Number(downpayment) || 0),
+    extras: sanitizeExtras(extras),
   };
   data.vendors.push(vendor);
   await writeData(data);
@@ -1189,7 +1260,7 @@ async function syncVendorBudgetLink(data, vendor, wasPaid, wasName, wasCost) {
         coupleId: vendor.coupleId,
         item: vendor.name,
         category: "",
-        currency: "MYR",
+        currency: validCurrency(vendor.currency),
         estimated: vendor.cost,
         actual: vendor.cost,
         paid: true,
@@ -1207,7 +1278,7 @@ async function syncVendorBudgetLink(data, vendor, wasPaid, wasName, wasCost) {
 }
 
 app.put("/api/vendors/:id", async (req, res) => {
-  const { name, category, contact, cost, status, notes } = req.body;
+  const { name, category, contact, cost, status, notes, currency, budgetCategory, downpayment, extras } = req.body;
   const data = await readData();
   const vendor = data.vendors.find((v) => v.id === req.params.id && v.coupleId === req.coupleId);
   if (!vendor) return res.status(404).json({ error: "Vendor not found" });
@@ -1220,6 +1291,10 @@ app.put("/api/vendors/:id", async (req, res) => {
   if (cost !== undefined) vendor.cost = Math.max(0, Number(cost) || 0);
   if (status !== undefined) vendor.status = status;
   if (notes !== undefined) vendor.notes = notes;
+  if (currency !== undefined) vendor.currency = validCurrency(currency);
+  if (budgetCategory !== undefined) vendor.budgetCategory = budgetCategory;
+  if (downpayment !== undefined) vendor.downpayment = Math.max(0, Number(downpayment) || 0);
+  if (extras !== undefined) vendor.extras = sanitizeExtras(extras);
   await syncVendorBudgetLink(data, vendor, wasPaid, wasName, wasCost);
   await writeData(data);
   res.json(vendor);

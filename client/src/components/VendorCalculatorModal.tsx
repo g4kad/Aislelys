@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { Currency, Vendor, VendorCategory } from "../types";
 import Modal from "./Modal";
 import * as api from "../api";
-import { extrasTotal, formatMoney, formatSgd, toSgd } from "../money";
+import { convertCurrency, DEFAULT_RATES, extrasTotal, formatHome, formatMoney } from "../money";
 
 type Props = {
   vendors: Vendor[];
@@ -18,12 +18,14 @@ function vendorTotal(v: Vendor) {
 // they'd add up to. Nothing here is saved or touches the budget.
 export default function VendorCalculatorModal({ vendors, categories, onClose }: Props) {
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [myrToSgd, setMyrToSgd] = useState(0.31);
+  const [homeCurrency, setHomeCurrency] = useState<Currency>("SGD");
+  const [rates, setRates] = useState<Record<Currency, number>>(DEFAULT_RATES);
 
   useEffect(() => {
+    api.getBudget().then((b) => setHomeCurrency(b.homeCurrency)).catch(() => {});
     api
       .getExchangeRate()
-      .then((rate) => setMyrToSgd(rate.myrToSgd))
+      .then((rate) => setRates(rate.rates))
       .catch(() => {});
   }, []);
 
@@ -61,9 +63,8 @@ export default function VendorCalculatorModal({ vendors, categories, onClose }: 
   const chosen = vendors.filter((v) => selected.has(v.id));
   const byCurrency = (currency: Currency) =>
     chosen.filter((v) => v.currency === currency).reduce((sum, v) => sum + vendorTotal(v), 0);
-  const myrSum = byCurrency("MYR");
-  const sgdSum = byCurrency("SGD");
-  const totalSgd = chosen.reduce((sum, v) => sum + toSgd(vendorTotal(v), v.currency, myrToSgd), 0);
+  const currenciesUsed = Array.from(new Set(chosen.map((v) => v.currency)));
+  const totalHome = chosen.reduce((sum, v) => sum + convertCurrency(vendorTotal(v), v.currency, homeCurrency, rates), 0);
 
   return (
     <Modal title="Cost calculator" onClose={onClose} className="calculator-modal">
@@ -99,21 +100,17 @@ export default function VendorCalculatorModal({ vendors, categories, onClose }: 
       )}
 
       <div className="calculator-summary">
-        {myrSum > 0 && sgdSum > 0 && (
+        {currenciesUsed.length > 1 && (
           <div className="calculator-summary-row muted">
-            <span>In RM / in S$</span>
+            <span>By currency</span>
             <span>
-              {formatMoney(myrSum, "MYR")} + {formatMoney(sgdSum, "SGD")}
+              {currenciesUsed.map((c) => formatMoney(byCurrency(c), c)).join(" + ")}
             </span>
           </div>
         )}
         <div className="calculator-summary-row total">
           <span>Total</span>
-          <span>{formatSgd(totalSgd)}</span>
-        </div>
-        <div className="calculator-summary-row calculator-alt">
-          <span>In RM</span>
-          <span>≈ {formatMoney(totalSgd / myrToSgd, "MYR")}</span>
+          <span>{formatHome(totalHome, homeCurrency)}</span>
         </div>
         <div className="calculator-summary-row calculator-selected">
           <span>{chosen.length} selected</span>

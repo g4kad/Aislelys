@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import type { Budget, BudgetItem, EventItem, InspirationItem, Section } from "../types";
+import type { Budget, BudgetItem, Currency, EventItem, InspirationItem, Section } from "../types";
 import * as api from "../api";
 import { daysUntil, formatDateDMY, formatDateLong, formatTime, todayKey } from "../dateUtils";
 import { getInstagramEmbedUrl, getTikTokEmbedUrl, getVimeoEmbedUrl, getYouTubeEmbedUrl } from "../inspirationUtils";
 import { LOVE_QUOTES } from "../loveQuotes";
-import { budgetLineAmount, formatDollars, toSgd } from "../money";
+import { budgetLineAmount, convertCurrency, DEFAULT_RATES, formatHome } from "../money";
 
 type Props = {
   weddingDate: string | null;
@@ -26,7 +26,7 @@ export default function OverviewPage({ weddingDate }: Props) {
   const [inspiration, setInspiration] = useState<InspirationItem[]>([]);
   const [budget, setBudget] = useState<Budget | null>(null);
   const [budgetItems, setBudgetItems] = useState<BudgetItem[]>([]);
-  const [myrToSgd, setMyrToSgd] = useState(0.31);
+  const [rates, setRates] = useState<Record<Currency, number>>(DEFAULT_RATES);
   const [loading, setLoading] = useState(true);
   // a new quote each time the page is opened
   const [quote] = useState(() => LOVE_QUOTES[Math.floor(Math.random() * LOVE_QUOTES.length)]);
@@ -46,7 +46,7 @@ export default function OverviewPage({ weddingDate }: Props) {
         setInspiration(i);
         setBudget(b);
         setBudgetItems(bi);
-        if (rate) setMyrToSgd(rate.myrToSgd);
+        if (rate) setRates(rate.rates);
       })
       .finally(() => setLoading(false));
   }, []);
@@ -131,7 +131,7 @@ export default function OverviewPage({ weddingDate }: Props) {
                 <h2>Budget</h2>
                 <Link to={`${base}/budget`} className="overview-view-all">Budget →</Link>
               </div>
-              <BudgetCells budget={budget} items={budgetItems} myrToSgd={myrToSgd} />
+              <BudgetCells budget={budget} items={budgetItems} rates={rates} />
             </section>
           )}
 
@@ -149,26 +149,27 @@ export default function OverviewPage({ weddingDate }: Props) {
 }
 
 // Read-only version of the summary cells at the top of the Budget page.
-function BudgetCells({ budget, items, myrToSgd }: { budget: Budget; items: BudgetItem[]; myrToSgd: number }) {
-  const spent = items.reduce((sum, i) => sum + toSgd(budgetLineAmount(i), i.currency, myrToSgd), 0);
+function BudgetCells({ budget, items, rates }: { budget: Budget; items: BudgetItem[]; rates: Record<Currency, number> }) {
+  const home = budget.homeCurrency;
+  const spent = items.reduce((sum, i) => sum + convertCurrency(budgetLineAmount(i), i.currency, home, rates), 0);
   const remaining = budget.total - spent;
   return (
     <div className="budget-summary overview-budget">
       <div className="budget-summary-stat">
         <span className="budget-stat-label">Total budget</span>
-        <span className="budget-stat-value">{formatDollars(budget.total)}</span>
+        <span className="budget-stat-value">{formatHome(budget.total, home)}</span>
       </div>
       <div className="budget-summary-stat">
         <span className="budget-stat-label">Total savings</span>
-        <span className="budget-stat-value">{formatDollars(budget.savings)}</span>
+        <span className="budget-stat-value">{formatHome(budget.savings, home)}</span>
       </div>
       <div className="budget-summary-stat">
-        <span className="budget-stat-label">Remaining (SGD)</span>
-        <span className={`budget-stat-value ${remaining < 0 ? "over" : "positive"}`}>{formatDollars(remaining)}</span>
+        <span className="budget-stat-label">Remaining ({home})</span>
+        <span className={`budget-stat-value ${remaining < 0 ? "over" : "positive"}`}>{formatHome(remaining, home)}</span>
       </div>
       <div className="budget-summary-stat budget-stat-highlight">
-        <span className="budget-stat-label">Total (SGD)</span>
-        <span className="budget-stat-value">{formatDollars(spent)}</span>
+        <span className="budget-stat-label">Total ({home})</span>
+        <span className="budget-stat-value">{formatHome(spent, home)}</span>
       </div>
     </div>
   );
