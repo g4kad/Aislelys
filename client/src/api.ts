@@ -20,6 +20,7 @@ import type {
   Currency,
   ExtraCost,
   BigDay,
+  BigDayTask,
 } from "./types";
 
 const BASE = "/api";
@@ -252,6 +253,18 @@ export const deleteInspirationCategory = (id: string) =>
 export const getBigDay = () => request<{ bigDay: BigDay | null }>("/big-day").then((r) => r.bigDay);
 export const saveBigDay = (bigDay: BigDay) =>
   request<{ bigDay: BigDay }>("/big-day", { method: "PUT", body: JSON.stringify(bigDay) }).then((r) => r.bigDay);
+// task calls return the whole updated big day
+export const addBigDayTask = (sessionId: string, task: Omit<BigDayTask, "id">) =>
+  request<{ bigDay: BigDay }>(`/big-day/sessions/${sessionId}/tasks`, {
+    method: "POST",
+    body: JSON.stringify(task),
+  }).then((r) => r.bigDay);
+export const updateBigDayTask = (taskId: string, task: Omit<BigDayTask, "id">) =>
+  request<{ bigDay: BigDay }>(`/big-day/tasks/${taskId}`, { method: "PUT", body: JSON.stringify(task) }).then(
+    (r) => r.bigDay
+  );
+export const deleteBigDayTask = (taskId: string) =>
+  request<{ bigDay: BigDay }>(`/big-day/tasks/${taskId}`, { method: "DELETE" }).then((r) => r.bigDay);
 
 export const getBudget = () => request<Budget>("/budget");
 export const updateBudget = (patch: Partial<Budget>) =>
