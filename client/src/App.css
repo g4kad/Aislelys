@@ -4057,17 +4057,59 @@ body:has(.glass-page) {
   overflow-x: clip;
 }
 
+/* one glass recipe for everything frosted on the page, so the panels, the
+   to-do list, the task rows and the Manage cards button all match */
+.glass-page {
+  --glass-fill:
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.3)),
+    rgba(255, 255, 255, 0.3);
+  --glass-blur: blur(22px) saturate(150%);
+  --glass-edge: rgba(255, 255, 255, 0.8);
+  --glass-shadow:
+    0 6px 22px rgba(60, 45, 35, 0.07),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
 .glass-page .calendar-panel,
 .glass-page .day-panel,
-.glass-page .board-section {
-  background: rgba(255, 255, 255, 0.42);
-  -webkit-backdrop-filter: blur(24px) saturate(160%);
-  backdrop-filter: blur(24px) saturate(160%);
-  /* the board sections' colour stripe is an inline style, so it stays */
-  border-color: rgba(255, 255, 255, 0.75);
+.glass-page .board-section,
+.glass-page .card,
+.glass-page .board-footer .btn {
+  background: var(--glass-fill);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  /* coloured left stripes (cards, board sections) are set separately and stay */
+  border-top-color: var(--glass-edge);
+  border-right-color: var(--glass-edge);
+  border-bottom-color: var(--glass-edge);
+  box-shadow: var(--glass-shadow);
+}
+
+.glass-page .calendar-panel,
+.glass-page .day-panel,
+.glass-page .board-footer .btn {
+  border-left-color: var(--glass-edge);
+}
+
+/* the to-do list stands on its own like the panels, so it shares their
+   corners; rows inside a panel keep their smaller ones */
+.glass-page .day-todo-card {
+  border-radius: var(--radius);
+}
+
+/* rows inside a frosted panel are clear glass: they keep the edge,
+   highlight and shadow but add no extra white, so they sit in the same
+   tone as the to-do list and the panels */
+.glass-page .day-panel .card,
+.glass-page .board-section .card {
+  background: rgba(255, 255, 255, 0.16);
+  /* the panel already frosts what's behind it; blurring again inside it
+     would wash the row out whiter than the panel */
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
   box-shadow:
-    0 10px 34px rgba(60, 45, 35, 0.08),
-    inset 0 1px 0 rgba(255, 255, 255, 0.85);
+    0 3px 12px rgba(60, 45, 35, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
 }
 
 .glass-page .calendar-cell:not(.empty):not(.selected) {
@@ -4081,44 +4123,16 @@ body:has(.glass-page) {
     rgba(253, 249, 239, 0.6);
 }
 
-/* drop-down rows (task cards, the to-do list) get the frosted look too;
-   their coloured left stripe is untouched */
-.glass-page .card {
-  background:
-    linear-gradient(to bottom, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.28)),
-    rgba(255, 255, 255, 0.3);
-  -webkit-backdrop-filter: blur(18px) saturate(150%);
-  backdrop-filter: blur(18px) saturate(150%);
-  border-top-color: rgba(255, 255, 255, 0.85);
-  border-right-color: rgba(255, 255, 255, 0.7);
-  border-bottom-color: rgba(255, 255, 255, 0.6);
-  box-shadow:
-    0 4px 16px rgba(60, 45, 35, 0.06),
-    inset 0 1px 0 rgba(255, 255, 255, 0.9);
-}
-
-/* "Manage cards" button: the same frosted glass */
-.glass-page .board-footer .btn {
-  background:
-    linear-gradient(to bottom, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0.3)),
-    rgba(255, 255, 255, 0.3);
-  -webkit-backdrop-filter: blur(18px) saturate(150%);
-  backdrop-filter: blur(18px) saturate(150%);
-  border-color: rgba(255, 255, 255, 0.8);
-  box-shadow:
-    0 4px 16px rgba(60, 45, 35, 0.07),
-    inset 0 1px 0 rgba(255, 255, 255, 0.9);
-}
-
 .glass-page .board-footer .btn:hover {
   background:
     linear-gradient(to bottom, rgba(255, 255, 255, 0.75), rgba(255, 255, 255, 0.5)),
     rgba(255, 255, 255, 0.4);
 }
 
-/* swipeable rows: a solid warm layer under the glass, so the delete
-   button behind the row can never show through */
+/* swipeable rows: a solid layer under the glass, so the delete button
+   behind the row can never show through — the same tone the frosted
+   board section shows, so the row still matches its neighbours */
 .glass-page .swipe-content {
-  background: #fbf7f0;
+  background: #fbf9f5;
   border-radius: 10px;
 }
