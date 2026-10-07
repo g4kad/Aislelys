@@ -256,6 +256,7 @@ export const deleteInspirationCategory = (id: string) =>
 export const getBigDay = () => request<{ bigDay: BigDay | null }>("/big-day").then((r) => r.bigDay);
 export const saveBigDay = (bigDay: BigDay) =>
   request<{ bigDay: BigDay }>("/big-day", { method: "PUT", body: JSON.stringify(bigDay) }).then((r) => r.bigDay);
+export const resetBigDay = () => request<{ bigDay: null }>("/big-day", { method: "DELETE" });
 // task calls return the whole updated big day
 export const addBigDayTask = (sessionId: string, task: Omit<BigDayTask, "id">) =>
   request<{ bigDay: BigDay }>(`/big-day/sessions/${sessionId}/tasks`, {

@@ -424,6 +424,15 @@ app.put("/api/big-day", async (req, res) => {
   res.json({ bigDay: couple.bigDay });
 });
 
+// Reset: clears the days, sessions and every task — back to the first-time setup.
+app.delete("/api/big-day", async (req, res) => {
+  const data = await readData();
+  const couple = (data.couples || []).find((c) => c.id === req.coupleId);
+  if (couple) delete couple.bigDay;
+  await writeData(data);
+  res.json({ bigDay: null });
+});
+
 app.post("/api/big-day/sessions/:sessionId/tasks", async (req, res) => {
   const data = await readData();
   const couple = (data.couples || []).find((c) => c.id === req.coupleId);

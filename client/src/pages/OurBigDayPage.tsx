@@ -89,10 +89,32 @@ function CountPicker({ value, max, onChange, label }: { value: number; max: numb
   );
 }
 
-function BigDaySetup({ initial, onSave, onCancel }: { initial: BigDay | null; onSave: (b: BigDay) => Promise<void>; onCancel?: () => void }) {
+function BigDaySetup({
+  initial,
+  onSave,
+  onCancel,
+  onReset,
+}: {
+  initial: BigDay | null;
+  onSave: (b: BigDay) => Promise<void>;
+  onCancel?: () => void;
+  onReset?: () => Promise<void>;
+}) {
   const [days, setDays] = useState(initial?.days ?? 1);
   const [sessions, setSessions] = useState<BigDaySession[]>(initial?.sessions ?? [blankSession()]);
   const [saving, setSaving] = useState(false);
+  const [confirmReset, setConfirmReset] = useState(false);
+  const taskCount = initial?.sessions.reduce((n, s) => n + s.tasks.length, 0) ?? 0;
+
+  async function handleReset() {
+    if (!onReset) return;
+    setSaving(true);
+    try {
+      await onReset();
+    } finally {
+      setSaving(false);
+    }
+  }
 
   function changeDays(n: number) {
     setDays(n);
@@ -178,7 +200,30 @@ function BigDaySetup({ initial, onSave, onCancel }: { initial: BigDay | null; on
             Cancel
           </button>
         )}
+        {onReset && !confirmReset && (
+          <button type="button" className="btn ghost big-day-reset" onClick={() => setConfirmReset(true)}>
+            Reset
+          </button>
+        )}
       </div>
+
+      {onReset && confirmReset && (
+        <div className="big-day-reset-confirm">
+          <p>
+            This clears every session
+            {taskCount > 0 ? ` and all ${taskCount} task${taskCount === 1 ? "" : "s"}` : ""} and starts the setup
+            again. It can’t be undone.
+          </p>
+          <div className="btn-row">
+            <button type="button" className="btn danger" disabled={saving} onClick={handleReset}>
+              Yes, reset everything
+            </button>
+            <button type="button" className="btn ghost" onClick={() => setConfirmReset(false)}>
+              Keep it
+            </button>
+          </div>
+        </div>
+      )}
     </form>
   );
 }
@@ -337,6 +382,17 @@ export default function OurBigDayPage() {
     }
   }
 
+  async function handleReset() {
+    try {
+      await api.resetBigDay();
+      setBigDay(null);
+      setEditing(false);
+      setError(null);
+    } catch (err) {
+      setError((err as Error).message);
+    }
+  }
+
   // modal actions rethrow so the modal stays open (with the banner showing) on failure
   async function applyTaskChange(change: Promise<BigDay>) {
     try {
@@ -385,7 +441,12 @@ export default function OurBigDayPage() {
       {loading && <p className="empty-hint">Loading…</p>}
 
       {showSetup && (
-        <BigDaySetup initial={bigDay} onSave={handleSave} onCancel={bigDay ? () => setEditing(false) : undefined} />
+        <BigDaySetup
+          initial={bigDay}
+          onSave={handleSave}
+          onCancel={bigDay ? () => setEditing(false) : undefined}
+          onReset={bigDay ? handleReset : undefined}
+        />
       )}
 
       {bigDay && !editing && (

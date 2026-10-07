@@ -576,6 +576,12 @@ app.put("/big-day", async (c) => {
   return c.json({ bigDay });
 });
 
+// Reset: clears the days, sessions and every task — back to the first-time setup.
+app.delete("/big-day", async (c) => {
+  await c.env.DB.prepare("UPDATE couples SET bigDay = NULL WHERE id = ?").bind(c.get("coupleId")).run();
+  return c.json({ bigDay: null });
+});
+
 app.post("/big-day/sessions/:sessionId/tasks", async (c) => {
   const bigDay = await loadBigDay(c);
   const session = bigDay?.sessions.find((s) => s.id === c.req.param("sessionId"));

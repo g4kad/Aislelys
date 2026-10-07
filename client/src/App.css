@@ -3921,3 +3921,20 @@
 .big-day-full-group .big-day-full-tasks {
   margin-top: 4px;
 }
+
+.btn-row .big-day-reset {
+  margin-left: auto;
+}
+
+.big-day-reset-confirm {
+  padding: 14px 16px;
+  border: 1px solid #e6c4bd;
+  border-radius: 10px;
+  background: #fbf1ef;
+}
+
+.big-day-reset-confirm p {
+  margin: 0 0 12px;
+  font-size: 0.88rem;
+  color: var(--danger);
+}
