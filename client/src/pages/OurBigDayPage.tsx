@@ -6,8 +6,51 @@ import Dropdown from "../components/Dropdown";
 const MAX_DAYS = 10;
 const MAX_SESSIONS = 10;
 
-// placeholders only — every session name starts blank
-const SESSION_EXAMPLES = ["Tea ceremony", "Reception", "Party", "After party", "Pre-wedding", "Church ceremony"];
+// Placeholders only — every session name starts blank. Each list fits that
+// many sessions, in the order they happen; 4–9 build up from the core day
+// (Pre-Wedding → Reception → After Wedding) towards the full 10.
+const SESSION_EXAMPLES: Record<number, string[]> = {
+  1: ["Wedding Reception"],
+  2: ["Pre Wedding", "Wedding Reception"],
+  3: ["Pre Wedding", "Wedding Reception", "After Wedding"],
+  4: ["Pre-Wedding", "Reception", "Party", "After Wedding"],
+  5: ["Morning of the Wedding", "Pre-Wedding", "Reception", "Party", "After Wedding"],
+  6: ["Morning of the Wedding", "Pre-Wedding", "Reception", "Party", "After Party", "After Wedding"],
+  7: ["Morning of the Wedding", "Pre-Wedding", "Reception", "Lunch/Dinner", "Party", "After Party", "After Wedding"],
+  8: [
+    "Night before the wedding",
+    "Morning of the Wedding",
+    "Pre-Wedding",
+    "Reception",
+    "Lunch/Dinner",
+    "Party",
+    "After Party",
+    "After Wedding",
+  ],
+  9: [
+    "Night before the wedding",
+    "Morning of the Wedding",
+    "Pre-Wedding",
+    "Reception",
+    "Lunch/Dinner",
+    "Party",
+    "After Party",
+    "After Wedding",
+    "Honeymoon",
+  ],
+  10: [
+    "Night before the wedding",
+    "Morning of the Wedding",
+    "Pre-Wedding",
+    "Reception",
+    "Lunch/Dinner",
+    "Party",
+    "After Party",
+    "Tear down",
+    "After Wedding",
+    "Honeymoon",
+  ],
+};
 
 function sessionLabel(session: BigDaySession, index: number) {
   return session.name || `Session ${index + 1}`;
@@ -96,7 +139,7 @@ function BigDaySetup({ initial, onSave, onCancel }: { initial: BigDay | null; on
                 <input
                   type="text"
                   maxLength={60}
-                  placeholder={`e.g. ${SESSION_EXAMPLES[i % SESSION_EXAMPLES.length]}`}
+                  placeholder={`e.g. ${SESSION_EXAMPLES[sessions.length]?.[i] ?? "Reception"}`}
                   value={s.name}
                   onChange={(e) => updateSession(s.id, { name: e.target.value })}
                 />
