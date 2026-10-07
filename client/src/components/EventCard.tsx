@@ -143,6 +143,21 @@ export default function EventCard({
           </div>
 
           <div className="card-footer">
+            {confirmDelete ? (
+              <span className="confirm-row">
+                Delete this task?
+                <button className="btn small danger" onClick={onDeleteEvent}>Yes, delete</button>
+                <button className="btn small ghost" onClick={() => setConfirmDelete(false)}>Cancel</button>
+              </span>
+            ) : (
+              <button
+                className="icon-btn danger card-footer-delete-desktop"
+                title="Delete task"
+                onClick={() => setConfirmDelete(true)}
+              >
+                <IconTrash />
+              </button>
+            )}
             <button className="btn small ghost card-footer-right" onClick={() => setEditing(true)}>Edit</button>
           </div>
         </div>

@@ -46,6 +46,64 @@ function validCurrency(currency) {
   return CURRENCIES.includes(currency) ? currency : "SGD";
 }
 
+// A new couple's workspace starts with one worked example — a "Venue" card
+// on the Planner, Budget and Vendors pages — so they see how each page works
+// instead of three empty boards, plus a matching wedding-card/category on
+// each so "Manage cards"/"Manage categories" isn't empty either.
+const SAMPLE_CARD_COLOR = "#ad9ca6";
+const SAMPLE_CARD_NOTE = "Sample card — edit the details or delete it to start fresh.";
+
+function seedSampleVenue(data, coupleId) {
+  const now = new Date().toISOString();
+  const today = now.slice(0, 10);
+
+  const section = { id: uuid(), coupleId, title: "Venue", color: SAMPLE_CARD_COLOR, position: 0 };
+  data.sections.push(section);
+  data.events.push({
+    id: uuid(),
+    coupleId,
+    title: "Call venue manager",
+    date: today,
+    time: "",
+    sectionId: section.id,
+    notes: SAMPLE_CARD_NOTE,
+    tasks: [],
+    createdAt: now,
+  });
+
+  data.budgetCategories.push({ id: uuid(), coupleId, title: "Venue", color: SAMPLE_CARD_COLOR, createdAt: now });
+  data.budgetItems.push({
+    id: uuid(),
+    coupleId,
+    item: "Venue",
+    category: "Venue",
+    currency: "SGD",
+    estimated: 0,
+    actual: 0,
+    paid: false,
+    notes: SAMPLE_CARD_NOTE,
+    extras: [],
+    createdAt: now,
+  });
+
+  data.vendorCategories.push({ id: uuid(), coupleId, title: "Venue", color: SAMPLE_CARD_COLOR, createdAt: now });
+  data.vendors.push({
+    id: uuid(),
+    coupleId,
+    name: "Venue",
+    category: "Venue",
+    contact: "",
+    cost: 0,
+    status: "inquired",
+    notes: SAMPLE_CARD_NOTE,
+    createdAt: now,
+    currency: "SGD",
+    budgetCategory: "Venue",
+    downpayment: 0,
+    extras: [],
+  });
+}
+
 function sanitizeExtras(value) {
   if (!Array.isArray(value)) return [];
   return value
@@ -238,6 +296,7 @@ app.post("/api/signup", async (req, res) => {
     { id: p1Id, coupleId, name: partner1.name.trim(), passwordHash: p1Hash.hash, passwordSalt: p1Hash.salt },
     { id: p2Id, coupleId, name: partner2.name.trim(), passwordHash: p2Hash.hash, passwordSalt: p2Hash.salt }
   );
+  seedSampleVenue(data, coupleId);
   await createSession(res, data, p1Id);
   res.status(201).json({ coupleId, user: { id: p1Id, name: partner1.name.trim() } });
 });

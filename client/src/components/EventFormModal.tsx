@@ -3,6 +3,7 @@ import type { Section } from "../types";
 import Modal from "./Modal";
 import Dropdown from "./Dropdown";
 import { SECTION_COLORS } from "../palette";
+import { GENERIC_BUDGET_CATEGORIES } from "../constants";
 import { useIsMobile } from "../useIsMobile";
 
 type Props = {
@@ -23,6 +24,11 @@ export default function EventFormModal({ initialDate, sections, onClose, onCreat
   const [creatingSection, setCreatingSection] = useState(false);
   const [newSectionTitle, setNewSectionTitle] = useState("");
   const [newSectionColor, setNewSectionColor] = useState(SECTION_COLORS[0].value);
+
+  const existingSectionTitles = new Set(sections.map((s) => s.title.trim().toLowerCase()));
+  const sectionSuggestions = GENERIC_BUDGET_CATEGORIES.filter(
+    (title) => !existingSectionTitles.has(title.toLowerCase())
+  );
 
   async function handleAddSection() {
     if (!newSectionTitle.trim()) return;
@@ -90,6 +96,23 @@ export default function EventFormModal({ initialDate, sections, onClose, onCreat
               value={newSectionTitle}
               onChange={(e) => setNewSectionTitle(e.target.value)}
             />
+            {sectionSuggestions.length > 0 && (
+              <div className="category-suggestions">
+                <span className="category-suggestions-label">Or pick a common one:</span>
+                <div className="category-suggestions-row">
+                  {sectionSuggestions.map((title) => (
+                    <button
+                      key={title}
+                      type="button"
+                      className="category-suggestion-chip"
+                      onClick={() => setNewSectionTitle(title)}
+                    >
+                      {title}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
             <div className="color-swatches">
               {SECTION_COLORS.map((c) => (
                 <button

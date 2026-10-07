@@ -9,6 +9,8 @@ import { SECTION_COLORS } from "../palette";
 export default function BudgetPage() {
   const [total, setTotal] = useState(0);
   const [totalInput, setTotalInput] = useState("0");
+  // the "set your budget" hint pulses until they click into the field once
+  const [totalFocused, setTotalFocused] = useState(false);
   const [savingsInput, setSavingsInput] = useState("0");
   const [items, setItems] = useState<BudgetItem[]>([]);
   const [categories, setCategories] = useState<BudgetCategory[]>([]);
@@ -154,7 +156,7 @@ export default function BudgetPage() {
       </p>
 
       <div className="budget-summary">
-        <label className="budget-summary-stat budget-total-stat">
+        <label className={`budget-summary-stat budget-total-stat ${total === 0 && !totalFocused ? "needs-attention" : ""}`}>
           <span className="budget-stat-label">Total budget ({homeCurrency})</span>
           <div className="budget-total-input-row">
             <span className="budget-currency-prefix">{CURRENCY_SYMBOL[homeCurrency]}</span>
@@ -163,6 +165,7 @@ export default function BudgetPage() {
               min={0}
               value={totalInput}
               onChange={(e) => setTotalInput(e.target.value)}
+              onFocus={() => setTotalFocused(true)}
               onBlur={commitTotal}
             />
           </div>

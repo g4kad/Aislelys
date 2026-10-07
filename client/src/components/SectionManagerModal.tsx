@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { Section } from "../types";
 import Modal from "./Modal";
 import { SECTION_COLORS } from "../palette";
+import { GENERIC_BUDGET_CATEGORIES } from "../constants";
 import { IconClose } from "./Icons";
 
 type Props = {
@@ -45,6 +46,9 @@ export default function SectionManagerModal({ sections, onClose, onCreate, onUpd
   function cancelEdit() {
     setEditingId(null);
   }
+
+  const existingTitles = new Set(sections.map((s) => s.title.trim().toLowerCase()));
+  const suggestions = GENERIC_BUDGET_CATEGORIES.filter((title) => !existingTitles.has(title.toLowerCase()));
 
   return (
     <Modal title="Manage cards" onClose={onClose}>
@@ -117,6 +121,23 @@ export default function SectionManagerModal({ sections, onClose, onCreate, onUpd
               onChange={(e) => setNewTitle(e.target.value)}
             />
           </label>
+          {suggestions.length > 0 && (
+            <div className="category-suggestions">
+              <span className="category-suggestions-label">Or pick a common one:</span>
+              <div className="category-suggestions-row">
+                {suggestions.map((title) => (
+                  <button
+                    key={title}
+                    type="button"
+                    className="category-suggestion-chip"
+                    onClick={() => setNewTitle(title)}
+                  >
+                    {title}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
           <div className="color-swatches">
             {SECTION_COLORS.map((c) => (
               <button

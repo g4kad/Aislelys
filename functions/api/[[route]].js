@@ -223,6 +223,40 @@ async function generateCoupleSlug(db, partner1Name, partner2Name) {
   return candidate;
 }
 
+// A new couple's workspace starts with one worked example — a "Venue" card
+// on the Planner, Budget and Vendors pages — so they see how each page works
+// instead of three empty boards, plus a matching wedding-card/category on
+// each so "Manage cards"/"Manage categories" isn't empty either. Returns
+// prepared statements to fold into the same signup batch() as the couple
+// and user inserts, so it's all one atomic write.
+const SAMPLE_CARD_COLOR = "#ad9ca6";
+const SAMPLE_CARD_NOTE = "Sample card — edit the details or delete it to start fresh.";
+
+function seedSampleVenueStatements(db, coupleId) {
+  const now = new Date().toISOString();
+  const today = now.slice(0, 10);
+  const sectionId = crypto.randomUUID();
+  const budgetCategoryId = crypto.randomUUID();
+  const vendorCategoryId = crypto.randomUUID();
+
+  return [
+    db.prepare("INSERT INTO sections (id,coupleId,title,color,position) VALUES (?,?,?,?,0)")
+      .bind(sectionId, coupleId, "Venue", SAMPLE_CARD_COLOR),
+    db.prepare("INSERT INTO events (id,coupleId,title,date,time,sectionId,notes,createdAt) VALUES (?,?,?,?,?,?,?,?)")
+      .bind(crypto.randomUUID(), coupleId, "Call venue manager", today, "", sectionId, SAMPLE_CARD_NOTE, now),
+    db.prepare("INSERT INTO budget_categories (id,coupleId,title,color,createdAt) VALUES (?,?,?,?,?)")
+      .bind(budgetCategoryId, coupleId, "Venue", SAMPLE_CARD_COLOR, now),
+    db.prepare(
+      "INSERT INTO budget_items (id,coupleId,item,category,currency,estimated,actual,paid,createdAt,notes,extras) VALUES (?,?,?,?,?,?,?,?,?,?,?)"
+    ).bind(crypto.randomUUID(), coupleId, "Venue", "Venue", "SGD", 0, 0, 0, now, SAMPLE_CARD_NOTE, "[]"),
+    db.prepare("INSERT INTO vendor_categories (id,coupleId,title,color,createdAt) VALUES (?,?,?,?,?)")
+      .bind(vendorCategoryId, coupleId, "Venue", SAMPLE_CARD_COLOR, now),
+    db.prepare(
+      "INSERT INTO vendors (id,coupleId,name,category,contact,cost,status,notes,createdAt,currency,budgetCategory,downpayment,extras) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)"
+    ).bind(crypto.randomUUID(), coupleId, "Venue", "Venue", "", 0, "inquired", SAMPLE_CARD_NOTE, now, "SGD", "Venue", 0, "[]"),
+  ];
+}
+
 app.post("/signup", async (c) => {
   const { partner1, partner2, weddingDate } = await c.req.json();
   if (!partner1?.name?.trim() || !partner1?.password || !partner2?.name?.trim() || !partner2?.password) {
@@ -243,6 +277,7 @@ app.post("/signup", async (c) => {
       .bind(p1Id, coupleId, partner1.name.trim(), p1Hash.hash, p1Hash.salt),
     c.env.DB.prepare("INSERT INTO users (id, coupleId, name, passwordHash, passwordSalt) VALUES (?,?,?,?,?)")
       .bind(p2Id, coupleId, partner2.name.trim(), p2Hash.hash, p2Hash.salt),
+    ...seedSampleVenueStatements(c.env.DB, coupleId),
   ]);
 
   await createSession(c.env.DB, c, p1Id);
@@ -350,6 +385,7 @@ app.post("/account/onboard", async (c) => {
       .bind(meId, coupleId, yourName.trim(), mePw.hash, mePw.salt, clerkUserId),
     db.prepare("INSERT INTO users (id, coupleId, name, passwordHash, passwordSalt, clerkUserId) VALUES (?,?,?,?,?,NULL)")
       .bind(partnerId, coupleId, partnerName.trim(), partnerPw.hash, partnerPw.salt),
+    ...seedSampleVenueStatements(db, coupleId),
   ]);
   const inviteToken = await partnerInviteFor(db, coupleId, partnerId);
   return c.json({ coupleId, inviteToken }, 201);

@@ -1333,6 +1333,14 @@
   margin-left: auto;
 }
 
+/* desktop-only: a quick delete right from the expanded (view) card, without
+   entering Edit first — touch devices already have swipe-to-delete for this. */
+@media (hover: none) {
+  .card-footer-delete-desktop {
+    display: none;
+  }
+}
+
 .icon-btn.danger {
   color: var(--text-muted);
 }
@@ -2328,6 +2336,7 @@
 }
 
 .budget-summary-stat {
+  position: relative;
   min-width: 0;
   background: var(--surface);
   border: 1px solid var(--border);
@@ -2379,6 +2388,46 @@
   display: flex;
   align-items: baseline;
   gap: 4px;
+}
+
+/* "click here" hint: a low-opacity circle pulses outward, centered on the
+   whole Total budget card, until the field is first focused — same effect
+   as the Home page's preview. */
+.budget-total-stat.needs-attention::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 54px;
+  height: 54px;
+  margin: -27px 0 0 -27px;
+  border-radius: 50%;
+  background: var(--accent);
+  opacity: 0.3;
+  pointer-events: none;
+  animation: budget-hint-pulse 1.8s ease-out infinite;
+}
+
+@keyframes budget-hint-pulse {
+  0% {
+    transform: scale(0.55);
+    opacity: 0.35;
+  }
+  70% {
+    transform: scale(1.35);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1.35);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .budget-total-stat.needs-attention::before {
+    animation: none;
+    opacity: 0.25;
+  }
 }
 
 .budget-currency-prefix {
