@@ -119,10 +119,15 @@ function sanitizeExtras(value) {
 // invite links, so they're easy to read aloud/retype and short to send.
 const SHORT_ID_ALPHABET = "23456789abcdefghjkmnpqrstuvwxyz";
 
-function generateShortId(length = 7) {
+// Guest-list IDs grant access to guests' contact details via a public link,
+// so they're drawn with Node's cryptographically secure RNG, not Math.random.
+function secureShortId(length = 7) {
+  const max = 256 - (256 % SHORT_ID_ALPHABET.length); // reject bytes that would bias the pick
   let id = "";
-  for (let i = 0; i < length; i++) {
-    id += SHORT_ID_ALPHABET[Math.floor(Math.random() * SHORT_ID_ALPHABET.length)];
+  while (id.length < length) {
+    for (const byte of crypto.randomBytes(length * 2)) {
+      if (byte < max && id.length < length) id += SHORT_ID_ALPHABET[byte % SHORT_ID_ALPHABET.length];
+    }
   }
   return id;
 }
@@ -130,7 +135,7 @@ function generateShortId(length = 7) {
 function generateUniqueGuestOwnerId(guestOwners) {
   const existing = new Set(guestOwners.map((o) => o.id));
   for (let attempt = 0; attempt < 10; attempt++) {
-    const candidate = generateShortId();
+    const candidate = secureShortId();
     if (!existing.has(candidate)) return candidate;
   }
   return uuid();

@@ -64,17 +64,12 @@ function randomToken() {
 // invite links, so they're easy to read aloud/retype and short to send.
 const SHORT_ID_ALPHABET = "23456789abcdefghjkmnpqrstuvwxyz";
 
-function generateShortId(length = 7) {
-  let id = "";
-  for (let i = 0; i < length; i++) {
-    id += SHORT_ID_ALPHABET[Math.floor(Math.random() * SHORT_ID_ALPHABET.length)];
-  }
-  return id;
-}
-
+// 7 characters from this alphabet, drawn with crypto.getRandomValues (see
+// secureShortId below) — guest-list IDs grant access to guests' contact
+// details, so they use the same secure randomness as partner invite codes.
 async function generateUniqueShortId(db, table) {
   for (let attempt = 0; attempt < 10; attempt++) {
-    const candidate = generateShortId();
+    const candidate = secureShortId(7);
     const existing = await db.prepare(`SELECT id FROM ${table} WHERE id = ?`).bind(candidate).first();
     if (!existing) return candidate;
   }
@@ -331,8 +326,8 @@ async function unusablePassword() {
   return hashPassword(randomToken());
 }
 
-// Partner invite codes grant access to a planner, so unlike guest IDs they use
-// secure randomness: 10 characters from the short alphabet is about 50 bits.
+// Partner invite codes grant access to a whole planner, so they're longer
+// than a guest-list ID: 10 characters from the short alphabet is ~50 bits.
 const INVITE_CODE_LENGTH = 10;
 
 function secureShortId(length) {

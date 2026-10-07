@@ -8,7 +8,7 @@ import "./legal.css";
 // brand, and stay public like it. Update LAST_UPDATED whenever either text
 // changes.
 
-const LAST_UPDATED = "29 September 2026";
+const LAST_UPDATED = "7 October 2026";
 const CONTACT_EMAIL = "planner@aislelys.com";
 
 function Mail() {
@@ -92,14 +92,17 @@ export function TermsPage() {
       <section>
         <h2>2. Your planner and passwords</h2>
         <ul>
-          <li>Each planner is shared by two partners. Each of you signs in with your own name and password.</li>
           <li>
-            Keep your passwords to yourselves. You’re responsible for what happens in your planner, including anything
-            done by someone who signs in with one of your passwords.
+            Each planner is shared by two partners. Each of you signs in with your own email and password, through
+            Clerk, our sign-in provider.
           </li>
           <li>
-            We don’t ask for an email address, so we may not be able to recover a lost password or confirm who you
-            are. If you think someone else has access to your planner, contact us at <Mail />.
+            Keep your sign-in details to yourselves. You’re responsible for what happens in your planner, including
+            anything done by someone signed in to one of your accounts.
+          </li>
+          <li>
+            Lost access to your account? Clerk handles password resets and account verification for you. If you
+            think someone else has access to your planner, contact us at <Mail />.
           </li>
         </ul>
       </section>
@@ -254,15 +257,17 @@ export function PrivacyPage() {
         <ul>
           <li>Both partners’ names, which are also used to make your planner’s web address.</li>
           <li>
-            Your passwords. We store them only in hashed form, which means we can’t read them.
+            An email address and password for each of you, collected and verified by Clerk, our sign-in provider —
+            see Service providers below for what Clerk does with it. We never see your password.
           </li>
-          <li>Your wedding date, if you add one.</li>
+          <li>Your wedding date and ROM date, if you add them.</li>
         </ul>
-        <p>We don’t ask for your email address, phone number or payment details.</p>
+        <p>We don’t ask for a phone number or payment details.</p>
 
         <h3>What you add while planning</h3>
         <ul>
           <li>Events, tasks, to-dos and notes, including which of you each task is assigned to.</li>
+          <li>Your wedding-day timeline — sessions, their tasks and notes.</li>
           <li>Your budget, savings, costs and payments.</li>
           <li>Vendors and the contact details you save for them.</li>
           <li>Inspiration links, captions, and any photos you upload.</li>
@@ -327,6 +332,10 @@ export function PrivacyPage() {
         <p>We use a small number of other companies to run Aislelys:</p>
         <ul>
           <li>
+            <strong>Clerk</strong> handles sign-in: it collects and verifies your email address and password, and
+            keeps you signed in. We never see or store your real password.
+          </li>
+          <li>
             <strong>Cloudflare</strong> hosts the website and stores your planner’s data and uploaded photos.
           </li>
           <li>
@@ -352,8 +361,9 @@ export function PrivacyPage() {
         <h2>5. Cookies</h2>
         <p>
           We use one cookie, called “session”. It keeps you signed in for up to 90 days, or until you sign out.
-          Scripts on the page can’t read it, and it’s only sent over secure connections. We don’t use analytics,
-          advertising or tracking cookies.
+          Scripts on the page can’t read it, and it’s only sent over secure connections. Clerk, our sign-in
+          provider, also sets its own cookies to keep you signed in through it. We don’t use analytics, advertising
+          or tracking cookies.
         </p>
       </section>
 
