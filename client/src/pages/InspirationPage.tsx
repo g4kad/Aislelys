@@ -182,7 +182,7 @@ export default function InspirationPage() {
   if (loading) return <p className="empty-hint">Loading…</p>;
 
   return (
-    <div className="inspiration-page">
+    <div className="inspiration-page glass-page">
       {error && (
         <div className="error-banner" onClick={() => setError(null)}>
           {error} (click to dismiss)

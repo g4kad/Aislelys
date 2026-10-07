@@ -4012,7 +4012,7 @@
   color: var(--danger);
 }
 
-/* ---------- Frosted glass (trial: Planner, Guest List, Budget and Vendors) ---------- */
+/* ---------- Frosted glass (every planner page) ---------- */
 
 /* the page keeps the same vertical rhythm as .app-main */
 .planner-page {
@@ -4041,9 +4041,16 @@
 }
 
 /* ...and a shorter one falls from the divider under the nav (28px above
-   the page: the header's bottom margin), full window width, scrolling
-   with the page */
-.glass-page::after {
+   the page area: the header's bottom margin), full window width, scrolling
+   with the page. It hangs off .app-main rather than the page itself, since
+   some pages (e.g. Settings) are a narrow column and the wash is centred on
+   whatever it's attached to. */
+.app-main:has(> .glass-page) {
+  position: relative;
+  isolation: isolate;
+}
+
+.app-main:has(> .glass-page)::after {
   content: "";
   position: absolute;
   top: -28px;
@@ -4079,7 +4086,10 @@ body:has(.glass-page) {
 .glass-page .card,
 .glass-page .board-footer .btn,
 .glass-page > .btn-row > .btn:not(.primary),
-.glass-page .budget-summary-stat {
+.glass-page .budget-summary-stat,
+.glass-page .overview-panel,
+.glass-page .settings-card,
+.glass-page .inspiration-card {
   background: var(--glass-fill);
   -webkit-backdrop-filter: var(--glass-blur);
   backdrop-filter: var(--glass-blur);
@@ -4094,7 +4104,10 @@ body:has(.glass-page) {
 .glass-page .day-panel,
 .glass-page .board-footer .btn,
 .glass-page > .btn-row > .btn:not(.primary),
-.glass-page .budget-summary-stat {
+.glass-page .budget-summary-stat,
+.glass-page .overview-panel,
+.glass-page .settings-card,
+.glass-page .inspiration-card {
   border-left-color: var(--glass-edge);
 }
 
@@ -4110,7 +4123,8 @@ body:has(.glass-page) {
 /* cards that stand on their own (the to-do list, the guest lists) share
    the panels' corners; rows inside a panel keep their smaller ones */
 .glass-page .day-todo-card,
-.glass-page .guest-owner-card {
+.glass-page .guest-owner-card,
+.glass-page .big-day-session {
   border-radius: var(--radius);
 }
 

@@ -64,7 +64,7 @@ export default function SettingsPage({ weddingDate, onWeddingDateChange }: Props
   }
 
   return (
-    <div className="settings-page">
+    <div className="settings-page glass-page">
       <h2 className="board-region-title">Settings</h2>
 
       <PartnerInviteCard />

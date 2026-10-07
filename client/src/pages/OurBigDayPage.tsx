@@ -410,7 +410,7 @@ export default function OurBigDayPage() {
   const modalTask = taskModal?.taskId ? modalSession?.tasks.find((t) => t.id === taskModal.taskId) : undefined;
 
   return (
-    <div className="our-big-day-page">
+    <div className="our-big-day-page glass-page">
       {error && (
         <div className="error-banner" onClick={() => setError(null)}>
           {error} (click to dismiss)

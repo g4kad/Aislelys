@@ -89,7 +89,7 @@ export default function OverviewPage({ weddingDate }: Props) {
   const days = weddingDate ? daysUntil(weddingDate) : null;
 
   return (
-    <div className="overview-page">
+    <div className="overview-page glass-page">
       <section className="overview-hero">
         <div className="overview-countdown">
           {days === null ? (
