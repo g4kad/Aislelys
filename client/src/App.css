@@ -3978,7 +3978,7 @@
   inset: 0;
   z-index: -1;
   pointer-events: none;
-  background: linear-gradient(to top, rgba(185, 151, 103, 0.36), rgba(196, 164, 120, 0.14) 45%, rgba(196, 164, 120, 0) 75%);
+  background: linear-gradient(to top, rgba(185, 151, 103, 0.22), rgba(196, 164, 120, 0.09) 45%, rgba(196, 164, 120, 0) 75%);
 }
 
 .glass-page .calendar-panel,
