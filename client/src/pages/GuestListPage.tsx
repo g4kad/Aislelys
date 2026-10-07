@@ -162,7 +162,7 @@ export default function GuestListPage() {
   const showCoupleSetup = owners.length < 2;
 
   return (
-    <div className="guest-list-page">
+    <div className="guest-list-page glass-page">
       {error && (
         <div className="error-banner" onClick={() => setError(null)}>
           {error} (click to dismiss)

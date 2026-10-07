@@ -4009,7 +4009,7 @@
   color: var(--danger);
 }
 
-/* ---------- Frosted glass (trial: Planner only) ---------- */
+/* ---------- Frosted glass (trial: Planner and Guest List) ---------- */
 
 /* the page keeps the same vertical rhythm as .app-main */
 .planner-page {
@@ -4091,9 +4091,10 @@ body:has(.glass-page) {
   border-left-color: var(--glass-edge);
 }
 
-/* the to-do list stands on its own like the panels, so it shares their
-   corners; rows inside a panel keep their smaller ones */
-.glass-page .day-todo-card {
+/* cards that stand on their own (the to-do list, the guest lists) share
+   the panels' corners; rows inside a panel keep their smaller ones */
+.glass-page .day-todo-card,
+.glass-page .guest-owner-card {
   border-radius: var(--radius);
 }
 
