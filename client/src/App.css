@@ -3827,7 +3827,7 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: var(--text-muted);
+  color: var(--text);
   margin: 10px 0 2px;
 }
 
@@ -3852,7 +3852,7 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: var(--text-muted);
+  color: var(--text);
 }
 
 .big-day-full-group .big-day-full-tasks {
