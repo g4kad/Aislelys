@@ -137,7 +137,7 @@ export default function BudgetPage() {
   if (loading) return <p className="empty-hint">Loading…</p>;
 
   return (
-    <div className="budget-page">
+    <div className="budget-page glass-page">
       {error && (
         <div className="error-banner" onClick={() => setError(null)}>
           {error} (click to dismiss)
