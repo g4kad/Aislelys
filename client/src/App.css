@@ -1,7 +1,8 @@
-/* light warm-brown wash rising from the bottom: the Planner's page
-   background and its selected calendar day share it */
+/* light warm-brown wash: rising from the bottom of the selected calendar
+   day, and falling (shorter) from the top of the Planner page — same tones */
 :root {
   --warm-rise: linear-gradient(to top, rgba(185, 151, 103, 0.14), rgba(196, 164, 120, 0.06) 45%, rgba(196, 164, 120, 0) 75%);
+  --warm-fall: linear-gradient(to bottom, rgba(185, 151, 103, 0.14), rgba(196, 164, 120, 0.06) 15%, rgba(196, 164, 120, 0) 30%);
 }
 
 .app {
@@ -3992,17 +3993,16 @@
   isolation: isolate;
 }
 
-/* one soft light-brown gradient rising from the bottom of the screen, so
-   the frosted cards have something to blur. Pinned to the window, so it
-   always reaches the very bottom while scrolling; it fades out well below
-   the header and nav. */
+/* one soft light-brown gradient falling from the top of the screen and
+   fading out by about a third of the way down, so the frosted cards have
+   something to blur. Pinned to the window, so it stays put while scrolling. */
 .glass-page::before {
   content: "";
   position: fixed;
   inset: 0;
   z-index: -1;
   pointer-events: none;
-  background: var(--warm-rise);
+  background: var(--warm-fall);
 }
 
 .glass-page .calendar-panel,
