@@ -3,7 +3,7 @@ import type { BigDay, BigDaySession } from "../types";
 import * as api from "../api";
 import Dropdown from "../components/Dropdown";
 
-const MAX_DAYS = 7;
+const MAX_DAYS = 10;
 const MAX_SESSIONS = 10;
 
 // placeholders only — every session name starts blank

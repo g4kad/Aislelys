@@ -335,7 +335,7 @@ app.get("/api/wedding-date", async (req, res) => {
 
 // ---------- Our Big Day ----------
 
-const BIG_DAY_MAX_DAYS = 7;
+const BIG_DAY_MAX_DAYS = 10;
 const BIG_DAY_MAX_SESSIONS = 10;
 
 // {days, sessions: [{id, name, day}]} — names may be blank (the page shows
