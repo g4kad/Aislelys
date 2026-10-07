@@ -111,11 +111,6 @@ export default function EventCard({
           )}
 
           <div className="view-block">
-            <span className="view-label">Notes</span>
-            <p className="notes-text">{event.notes || <em>No notes yet.</em>}</p>
-          </div>
-
-          <div className="view-block">
             <span className="view-label">Tasks</span>
             {event.tasks.length === 0 ? (
               <p className="empty-hint">No tasks yet.</p>
@@ -140,6 +135,27 @@ export default function EventCard({
                 ))}
               </ul>
             )}
+            <form className="task-add-form" onSubmit={submitTask}>
+              <input
+                type="text"
+                placeholder="New task…"
+                value={taskName}
+                onChange={(e) => setTaskName(e.target.value)}
+              />
+              <Dropdown
+                className="assignee-dropdown"
+                value={taskAssignee}
+                onChange={setTaskAssignee}
+                placeholder="Assign"
+                options={assigneeOptions}
+              />
+              <button className="btn small" type="submit">Add task</button>
+            </form>
+          </div>
+
+          <div className="view-block">
+            <span className="view-label">Notes</span>
+            <p className="notes-text">{event.notes || <em>No notes yet.</em>}</p>
           </div>
 
           <div className="card-footer">
@@ -204,18 +220,6 @@ export default function EventCard({
             </label>
           </div>
 
-          <div className="notes-block">
-            <div className="notes-block-header">
-              <span>Notes</span>
-            </div>
-            <textarea
-              value={event.notes}
-              onChange={(e) => onUpdateEvent({ notes: e.target.value })}
-              rows={3}
-              placeholder="Add notes for this date…"
-            />
-          </div>
-
           <div className="tasks-block">
             <div className="notes-block-header">
               <span>Tasks</span>
@@ -259,6 +263,18 @@ export default function EventCard({
               />
               <button className="btn small" type="submit">Add task</button>
             </form>
+          </div>
+
+          <div className="notes-block">
+            <div className="notes-block-header">
+              <span>Notes</span>
+            </div>
+            <textarea
+              value={event.notes}
+              onChange={(e) => onUpdateEvent({ notes: e.target.value })}
+              rows={3}
+              placeholder="Add notes for this date…"
+            />
           </div>
 
           <div className="card-footer">
