@@ -3823,7 +3823,7 @@
   align-items: center;
   gap: 10px;
   font-family: var(--sans);
-  font-size: 0.72rem;
+  font-size: calc(0.72rem + 2px);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -3848,7 +3848,7 @@
 
 .big-day-full-group-title {
   display: block;
-  font-size: 0.68rem;
+  font-size: calc(0.68rem + 2px);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.08em;
