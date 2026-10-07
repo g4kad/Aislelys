@@ -942,6 +942,13 @@
   align-items: stretch;
 }
 
+/* hidden unless the row is swiped open, so its corners never peek out
+   around the card's rounded corners; hiding waits for the close animation */
+.swipe-row:not(.swiping) .swipe-delete-action {
+  visibility: hidden;
+  transition: visibility 0s 0.2s;
+}
+
 .swipe-delete-btn {
   flex: 1;
   display: flex;
@@ -3944,3 +3951,60 @@
   font-size: 0.88rem;
   color: var(--danger);
 }
+
+/* ---------- Frosted glass (trial: Planner only) ---------- */
+
+/* the page keeps the same vertical rhythm as .app-main */
+.planner-page {
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+}
+
+/* own stacking context, so the washes below sit above the app's page
+   background but behind the cards */
+.glass-page {
+  position: relative;
+  isolation: isolate;
+}
+
+/* soft colour washes behind the page so the frosted cards have something
+   to blur; fixed, so they stay put while the page scrolls */
+.glass-page::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(42vmax 32vmax at 18% 32%, rgba(185, 151, 103, 0.5), transparent 70%),
+    radial-gradient(36vmax 30vmax at 82% 24%, rgba(150, 156, 112, 0.5), transparent 70%),
+    radial-gradient(44vmax 34vmax at 72% 78%, rgba(226, 160, 150, 0.42), transparent 70%),
+    radial-gradient(34vmax 28vmax at 14% 86%, rgba(150, 156, 112, 0.38), transparent 70%);
+}
+
+.glass-page .calendar-panel,
+.glass-page .day-panel,
+.glass-page .board-section {
+  background: rgba(255, 255, 255, 0.42);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  backdrop-filter: blur(24px) saturate(160%);
+  /* the board sections' colour stripe is an inline style, so it stays */
+  border-color: rgba(255, 255, 255, 0.75);
+  box-shadow:
+    0 10px 34px rgba(60, 45, 35, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.85);
+}
+
+.glass-page .calendar-cell:not(.empty):not(.selected) {
+  background: rgba(253, 249, 239, 0.55);
+}
+
+.glass-page .calendar-cell.selected,
+.glass-page .calendar-cell.selected:hover {
+  background:
+    linear-gradient(to top, rgba(185, 151, 103, 0.3), rgba(185, 151, 103, 0) 75%),
+    rgba(253, 249, 239, 0.6);
+}
+
+/* task rows stay solid — swipe-to-delete keeps its trash button behind them */

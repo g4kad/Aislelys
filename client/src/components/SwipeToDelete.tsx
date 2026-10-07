@@ -70,7 +70,7 @@ export default function SwipeToDelete({ onDelete, disabled, children }: Props) {
   }
 
   return (
-    <div className="swipe-row">
+    <div className={`swipe-row${dragX !== 0 ? " swiping" : ""}`}>
       <div className="swipe-delete-action">
         <button
           type="button"
