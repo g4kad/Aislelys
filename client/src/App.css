@@ -3135,9 +3135,9 @@
 
 /* phones: "ROM  date" on the first line, "N days to go" below it */
 @media (max-width: 480px) {
-  /* the lily art crowds the small banner — 10% fainter than desktop */
+  /* the lily art crowds the small banner — fainter than on desktop */
   .overview-hero::before {
-    opacity: 0.09;
+    opacity: 0.05;
   }
 
   .overview-rom {
