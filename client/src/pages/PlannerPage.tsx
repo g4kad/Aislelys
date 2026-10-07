@@ -207,7 +207,7 @@ export default function PlannerPage() {
   if (loading) return <p className="empty-hint">Loading…</p>;
 
   return (
-    <>
+    <div className="planner-page glass-page">
       {error && (
         <div className="error-banner" onClick={() => setError(null)}>
           {error} (click to dismiss)
@@ -277,6 +277,6 @@ export default function PlannerPage() {
           onCreateSection={handleCreateSection}
         />
       )}
-    </>
+    </div>
   );
 }

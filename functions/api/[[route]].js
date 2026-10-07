@@ -525,6 +525,146 @@ app.put("/wedding-date", async (c) => {
   return c.json({ date });
 });
 
+// ---------- Our Big Day ----------
+
+const BIG_DAY_MAX_DAYS = 10;
+const BIG_DAY_MAX_SESSIONS = 10;
+
+// {days, sessions: [{id, name, day}]} — names may be blank (the page shows
+// "Session N"), and each session's day is clamped into 1..days.
+function sanitizeBigDay(value) {
+  if (!value || typeof value !== "object") return null;
+  const days = Math.min(BIG_DAY_MAX_DAYS, Math.max(1, Math.floor(Number(value.days)) || 1));
+  const raw = Array.isArray(value.sessions) ? value.sessions : [];
+  const sessions = raw
+    .filter((s) => s && typeof s === "object")
+    .slice(0, BIG_DAY_MAX_SESSIONS)
+    .map((s) => ({
+      id: typeof s.id === "string" && s.id ? s.id : crypto.randomUUID(),
+      name: typeof s.name === "string" ? s.name.trim().slice(0, 60) : "",
+      day: Math.min(days, Math.max(1, Math.floor(Number(s.day)) || 1)),
+      tasks: Array.isArray(s.tasks) ? s.tasks.map((t) => sanitizeBigDayTask(t)).filter(Boolean) : [],
+    }));
+  if (sessions.length === 0) return null;
+  return { days, sessions };
+}
+
+const BIG_DAY_PRIORITIES = ["low", "medium", "high"];
+
+// One task on a session's timeline. Time is optional ("" = not set).
+function sanitizeBigDayTask(value, id) {
+  if (!value || typeof value !== "object") return null;
+  const name = typeof value.name === "string" ? value.name.trim().slice(0, 120) : "";
+  if (!name) return null;
+  return {
+    id: id || (typeof value.id === "string" && value.id ? value.id : crypto.randomUUID()),
+    name,
+    time: typeof value.time === "string" && /^\d{2}:\d{2}$/.test(value.time) ? value.time : "",
+    priority: BIG_DAY_PRIORITIES.includes(value.priority) ? value.priority : "medium",
+    notes: typeof value.notes === "string" ? value.notes.trim().slice(0, 2000) : "",
+  };
+}
+
+// The setup form only changes days and sessions — keep each session's tasks
+// from what's stored, so saving the setup can't wipe tasks added meanwhile.
+function keepStoredTasks(next, stored) {
+  const tasksBySession = new Map((stored?.sessions || []).map((s) => [s.id, s.tasks || []]));
+  return { ...next, sessions: next.sessions.map((s) => ({ ...s, tasks: tasksBySession.get(s.id) || [] })) };
+}
+
+function findBigDayTask(bigDay, taskId) {
+  for (const session of bigDay?.sessions || []) {
+    const index = session.tasks.findIndex((t) => t.id === taskId);
+    if (index !== -1) return { session, index };
+  }
+  return null;
+}
+
+function parseBigDay(text) {
+  if (!text) return null;
+  try {
+    return sanitizeBigDay(JSON.parse(text));
+  } catch {
+    return null;
+  }
+}
+
+app.get("/big-day", async (c) => {
+  const coupleId = c.get("coupleId");
+  const couple = await c.env.DB.prepare("SELECT bigDay FROM couples WHERE id = ?").bind(coupleId).first();
+  return c.json({ bigDay: parseBigDay(couple?.bigDay) });
+});
+
+async function loadBigDay(c) {
+  const couple = await c.env.DB.prepare("SELECT bigDay FROM couples WHERE id = ?").bind(c.get("coupleId")).first();
+  return parseBigDay(couple?.bigDay);
+}
+
+async function storeBigDay(c, bigDay) {
+  await c.env.DB.prepare("UPDATE couples SET bigDay = ? WHERE id = ?").bind(JSON.stringify(bigDay), c.get("coupleId")).run();
+}
+
+app.put("/big-day", async (c) => {
+  const next = sanitizeBigDay(await c.req.json());
+  if (!next) return c.json({ error: "at least one session is required" }, 400);
+  const bigDay = keepStoredTasks(next, await loadBigDay(c));
+  await storeBigDay(c, bigDay);
+  return c.json({ bigDay });
+});
+
+// Reset: clears the days, sessions and every task — back to the first-time setup.
+app.delete("/big-day", async (c) => {
+  await c.env.DB.prepare("UPDATE couples SET bigDay = NULL WHERE id = ?").bind(c.get("coupleId")).run();
+  return c.json({ bigDay: null });
+});
+
+app.post("/big-day/sessions/:sessionId/tasks", async (c) => {
+  const bigDay = await loadBigDay(c);
+  const session = bigDay?.sessions.find((s) => s.id === c.req.param("sessionId"));
+  if (!session) return c.json({ error: "Session not found" }, 404);
+  const task = sanitizeBigDayTask(await c.req.json(), crypto.randomUUID());
+  if (!task) return c.json({ error: "name is required" }, 400);
+  session.tasks.push(task);
+  await storeBigDay(c, bigDay);
+  return c.json({ bigDay }, 201);
+});
+
+app.put("/big-day/tasks/:taskId", async (c) => {
+  const bigDay = await loadBigDay(c);
+  const found = findBigDayTask(bigDay, c.req.param("taskId"));
+  if (!found) return c.json({ error: "Task not found" }, 404);
+  const task = sanitizeBigDayTask(await c.req.json(), c.req.param("taskId"));
+  if (!task) return c.json({ error: "name is required" }, 400);
+  found.session.tasks[found.index] = task;
+  await storeBigDay(c, bigDay);
+  return c.json({ bigDay });
+});
+
+app.delete("/big-day/tasks/:taskId", async (c) => {
+  const bigDay = await loadBigDay(c);
+  const found = findBigDayTask(bigDay, c.req.param("taskId"));
+  if (!found) return c.json({ error: "Task not found" }, 404);
+  found.session.tasks.splice(found.index, 1);
+  await storeBigDay(c, bigDay);
+  return c.json({ bigDay });
+});
+
+// ---------- ROM date ----------
+
+app.get("/rom-date", async (c) => {
+  const couple = await c.env.DB.prepare("SELECT romDate FROM couples WHERE id = ?").bind(c.get("coupleId")).first();
+  return c.json({ date: couple?.romDate ?? null });
+});
+
+app.put("/rom-date", async (c) => {
+  const { date } = await c.req.json();
+  if (date !== null && !(typeof date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(date) && !isNaN(Date.parse(date)))) {
+    return c.json({ error: "date must be YYYY-MM-DD or null" }, 400);
+  }
+  await c.env.DB.prepare("UPDATE couples SET romDate = ? WHERE id = ?").bind(date, c.get("coupleId")).run();
+  return c.json({ date });
+});
+
 // ---------- Delete planner ----------
 
 // The phrase Settings asks for before deleting; checked here too so a stray

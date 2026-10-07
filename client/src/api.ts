@@ -19,6 +19,8 @@ import type {
   Notification,
   Currency,
   ExtraCost,
+  BigDay,
+  BigDayTask,
 } from "./types";
 
 const BASE = "/api";
@@ -92,6 +94,9 @@ export const markAllNotificationsRead = () => request<void>("/notifications/read
 export const getWeddingDate = () => request<WeddingDate>("/wedding-date");
 export const updateWeddingDate = (date: string | null) =>
   request<WeddingDate>("/wedding-date", { method: "PUT", body: JSON.stringify({ date }) });
+export const getRomDate = () => request<WeddingDate>("/rom-date");
+export const updateRomDate = (date: string | null) =>
+  request<WeddingDate>("/rom-date", { method: "PUT", body: JSON.stringify({ date }) });
 
 // Delete planner: while the partner has joined it only removes you and they
 // keep everything; otherwise the whole planner goes. `confirm` is the typed phrase.
@@ -248,6 +253,23 @@ export const deleteInspirationCategory = (id: string) =>
   request<void>(`/inspiration-categories/${id}`, { method: "DELETE" });
 
 // Budget
+export const getBigDay = () => request<{ bigDay: BigDay | null }>("/big-day").then((r) => r.bigDay);
+export const saveBigDay = (bigDay: BigDay) =>
+  request<{ bigDay: BigDay }>("/big-day", { method: "PUT", body: JSON.stringify(bigDay) }).then((r) => r.bigDay);
+export const resetBigDay = () => request<{ bigDay: null }>("/big-day", { method: "DELETE" });
+// task calls return the whole updated big day
+export const addBigDayTask = (sessionId: string, task: Omit<BigDayTask, "id">) =>
+  request<{ bigDay: BigDay }>(`/big-day/sessions/${sessionId}/tasks`, {
+    method: "POST",
+    body: JSON.stringify(task),
+  }).then((r) => r.bigDay);
+export const updateBigDayTask = (taskId: string, task: Omit<BigDayTask, "id">) =>
+  request<{ bigDay: BigDay }>(`/big-day/tasks/${taskId}`, { method: "PUT", body: JSON.stringify(task) }).then(
+    (r) => r.bigDay
+  );
+export const deleteBigDayTask = (taskId: string) =>
+  request<{ bigDay: BigDay }>(`/big-day/tasks/${taskId}`, { method: "DELETE" }).then((r) => r.bigDay);
+
 export const getBudget = () => request<Budget>("/budget");
 export const updateBudget = (patch: Partial<Budget>) =>
   request<Budget>("/budget", { method: "PUT", body: JSON.stringify(patch) });

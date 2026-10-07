@@ -392,6 +392,146 @@ app.get("/api/wedding-date", async (req, res) => {
   res.json({ date: couple?.weddingDate ?? null });
 });
 
+// ---------- ROM date (shown on the Overview) ----------
+
+app.get("/api/rom-date", async (req, res) => {
+  const data = await readData();
+  const couple = (data.couples || []).find((c) => c.id === req.coupleId);
+  res.json({ date: couple?.romDate ?? null });
+});
+
+app.put("/api/rom-date", async (req, res) => {
+  const { date } = req.body;
+  if (date !== null && !(typeof date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(date) && !isNaN(Date.parse(date)))) {
+    return res.status(400).json({ error: "date must be YYYY-MM-DD or null" });
+  }
+  const data = await readData();
+  const couple = (data.couples || []).find((c) => c.id === req.coupleId);
+  couple.romDate = date;
+  await writeData(data);
+  res.json({ date });
+});
+
+// ---------- Our Big Day ----------
+
+const BIG_DAY_MAX_DAYS = 10;
+const BIG_DAY_MAX_SESSIONS = 10;
+
+// {days, sessions: [{id, name, day}]} — names may be blank (the page shows
+// "Session N"), and each session's day is clamped into 1..days.
+function sanitizeBigDay(value) {
+  if (!value || typeof value !== "object") return null;
+  const days = Math.min(BIG_DAY_MAX_DAYS, Math.max(1, Math.floor(Number(value.days)) || 1));
+  const raw = Array.isArray(value.sessions) ? value.sessions : [];
+  const sessions = raw
+    .filter((s) => s && typeof s === "object")
+    .slice(0, BIG_DAY_MAX_SESSIONS)
+    .map((s) => ({
+      id: typeof s.id === "string" && s.id ? s.id : crypto.randomUUID(),
+      name: typeof s.name === "string" ? s.name.trim().slice(0, 60) : "",
+      day: Math.min(days, Math.max(1, Math.floor(Number(s.day)) || 1)),
+      tasks: Array.isArray(s.tasks) ? s.tasks.map((t) => sanitizeBigDayTask(t)).filter(Boolean) : [],
+    }));
+  if (sessions.length === 0) return null;
+  return { days, sessions };
+}
+
+const BIG_DAY_PRIORITIES = ["low", "medium", "high"];
+
+// One task on a session's timeline. Time is optional ("" = not set).
+function sanitizeBigDayTask(value, id) {
+  if (!value || typeof value !== "object") return null;
+  const name = typeof value.name === "string" ? value.name.trim().slice(0, 120) : "";
+  if (!name) return null;
+  return {
+    id: id || (typeof value.id === "string" && value.id ? value.id : crypto.randomUUID()),
+    name,
+    time: typeof value.time === "string" && /^\d{2}:\d{2}$/.test(value.time) ? value.time : "",
+    priority: BIG_DAY_PRIORITIES.includes(value.priority) ? value.priority : "medium",
+    notes: typeof value.notes === "string" ? value.notes.trim().slice(0, 2000) : "",
+  };
+}
+
+// The setup form only changes days and sessions — keep each session's tasks
+// from what's stored, so saving the setup can't wipe tasks added meanwhile.
+function keepStoredTasks(next, stored) {
+  const tasksBySession = new Map((stored?.sessions || []).map((s) => [s.id, s.tasks || []]));
+  return { ...next, sessions: next.sessions.map((s) => ({ ...s, tasks: tasksBySession.get(s.id) || [] })) };
+}
+
+function findBigDayTask(bigDay, taskId) {
+  for (const session of bigDay?.sessions || []) {
+    const index = session.tasks.findIndex((t) => t.id === taskId);
+    if (index !== -1) return { session, index };
+  }
+  return null;
+}
+
+app.get("/api/big-day", async (req, res) => {
+  const data = await readData();
+  const couple = (data.couples || []).find((c) => c.id === req.coupleId);
+  res.json({ bigDay: couple?.bigDay ? sanitizeBigDay(couple.bigDay) : null });
+});
+
+app.put("/api/big-day", async (req, res) => {
+  const next = sanitizeBigDay(req.body);
+  if (!next) return res.status(400).json({ error: "at least one session is required" });
+  const data = await readData();
+  const couple = (data.couples || []).find((c) => c.id === req.coupleId);
+  couple.bigDay = keepStoredTasks(next, couple.bigDay ? sanitizeBigDay(couple.bigDay) : null);
+  await writeData(data);
+  res.json({ bigDay: couple.bigDay });
+});
+
+// Reset: clears the days, sessions and every task — back to the first-time setup.
+app.delete("/api/big-day", async (req, res) => {
+  const data = await readData();
+  const couple = (data.couples || []).find((c) => c.id === req.coupleId);
+  if (couple) delete couple.bigDay;
+  await writeData(data);
+  res.json({ bigDay: null });
+});
+
+app.post("/api/big-day/sessions/:sessionId/tasks", async (req, res) => {
+  const data = await readData();
+  const couple = (data.couples || []).find((c) => c.id === req.coupleId);
+  const bigDay = couple?.bigDay ? sanitizeBigDay(couple.bigDay) : null;
+  const session = bigDay?.sessions.find((s) => s.id === req.params.sessionId);
+  if (!session) return res.status(404).json({ error: "Session not found" });
+  const task = sanitizeBigDayTask(req.body, uuid());
+  if (!task) return res.status(400).json({ error: "name is required" });
+  session.tasks.push(task);
+  couple.bigDay = bigDay;
+  await writeData(data);
+  res.status(201).json({ bigDay });
+});
+
+app.put("/api/big-day/tasks/:taskId", async (req, res) => {
+  const data = await readData();
+  const couple = (data.couples || []).find((c) => c.id === req.coupleId);
+  const bigDay = couple?.bigDay ? sanitizeBigDay(couple.bigDay) : null;
+  const found = findBigDayTask(bigDay, req.params.taskId);
+  if (!found) return res.status(404).json({ error: "Task not found" });
+  const task = sanitizeBigDayTask(req.body, req.params.taskId);
+  if (!task) return res.status(400).json({ error: "name is required" });
+  found.session.tasks[found.index] = task;
+  couple.bigDay = bigDay;
+  await writeData(data);
+  res.json({ bigDay });
+});
+
+app.delete("/api/big-day/tasks/:taskId", async (req, res) => {
+  const data = await readData();
+  const couple = (data.couples || []).find((c) => c.id === req.coupleId);
+  const bigDay = couple?.bigDay ? sanitizeBigDay(couple.bigDay) : null;
+  const found = findBigDayTask(bigDay, req.params.taskId);
+  if (!found) return res.status(404).json({ error: "Task not found" });
+  found.session.tasks.splice(found.index, 1);
+  couple.bigDay = bigDay;
+  await writeData(data);
+  res.json({ bigDay });
+});
+
 // ---------- Sections ----------
 
 app.get("/api/sections", async (req, res) => {

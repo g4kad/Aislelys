@@ -6,14 +6,15 @@ import GuestInviteView from "./pages/GuestInviteView";
 import InspirationPage from "./pages/InspirationPage";
 import BudgetPage from "./pages/BudgetPage";
 import VendorsPage from "./pages/VendorsPage";
+import OurBigDayPage from "./pages/OurBigDayPage";
 import { JoinPage, SignInPage, SignUpPage, StartPage } from "./account/AccountPages";
 import SettingsPage from "./pages/SettingsPage";
 import OverviewPage from "./pages/OverviewPage";
 import HomePage from "./home/HomePage";
-import { TermsPage, PrivacyPage } from "./home/LegalPage";
+import { TermsPage, PrivacyPage, LegalFooter } from "./home/LegalPage";
 import AuthGate, { LoginPage } from "./components/AuthGate";
 import UserMenu from "./components/UserMenu";
-import { IconCalendar, IconUsers, IconWallet, IconStore, IconImage, IconHome } from "./components/Icons";
+import { IconCalendar, IconUsers, IconWallet, IconStore, IconImage, IconHome, IconHeart } from "./components/Icons";
 import { AuthProvider, useAuth } from "./auth";
 import * as api from "./api";
 import { daysUntil, formatDateShort } from "./dateUtils";
@@ -47,57 +48,68 @@ function AppShell() {
   }, []);
 
   return (
-    <div className="app">
-      <header className="app-header">
-        <div className="app-title-block">
-          <h1>{coupleTitle(accounts.map((a) => a.name))}</h1>
-          <WeddingCountdown date={weddingDate} />
-        </div>
-        <nav className="app-nav">
-          <NavLink to={base} end className={({ isActive }) => (isActive ? "active" : "")}>
-            <IconHome className="app-nav-icon" />
-            Overview
-          </NavLink>
-          <NavLink to={`${base}/planner`} className={({ isActive }) => (isActive ? "active" : "")}>
-            <IconCalendar className="app-nav-icon" />
-            Planner
-          </NavLink>
-          <NavLink to={`${base}/guest-list`} className={({ isActive }) => (isActive ? "active" : "")}>
-            <IconUsers className="app-nav-icon" />
-            Guest List
-          </NavLink>
-          <NavLink to={`${base}/budget`} className={({ isActive }) => (isActive ? "active" : "")}>
-            <IconWallet className="app-nav-icon" />
-            Budget
-          </NavLink>
-          <NavLink to={`${base}/vendors`} className={({ isActive }) => (isActive ? "active" : "")}>
-            <IconStore className="app-nav-icon" />
-            Vendors
-          </NavLink>
-          <NavLink to={`${base}/inspiration`} className={({ isActive }) => (isActive ? "active" : "")}>
-            <IconImage className="app-nav-icon" />
-            Inspiration
-          </NavLink>
-        </nav>
-        <div className="app-header-actions">
-          {user && <UserMenu user={user} settingsPath={`${base}/settings`} onLogout={logout} />}
-        </div>
-      </header>
+    <div className="app-shell">
+      <div className="app">
+        <header className="app-header">
+          <div className="app-title-block">
+            <h1>{coupleTitle(accounts.map((a) => a.name))}</h1>
+            <WeddingCountdown date={weddingDate} />
+          </div>
+          <nav className="app-nav">
+            <NavLink to={base} end className={({ isActive }) => (isActive ? "active" : "")}>
+              <IconHome className="app-nav-icon" />
+              Overview
+            </NavLink>
+            <NavLink to={`${base}/planner`} className={({ isActive }) => (isActive ? "active" : "")}>
+              <IconCalendar className="app-nav-icon" />
+              Planner
+            </NavLink>
+            <NavLink to={`${base}/guest-list`} className={({ isActive }) => (isActive ? "active" : "")}>
+              <IconUsers className="app-nav-icon" />
+              Guest List
+            </NavLink>
+            <NavLink to={`${base}/budget`} className={({ isActive }) => (isActive ? "active" : "")}>
+              <IconWallet className="app-nav-icon" />
+              Budget
+            </NavLink>
+            <NavLink to={`${base}/vendors`} className={({ isActive }) => (isActive ? "active" : "")}>
+              <IconStore className="app-nav-icon" />
+              Vendors
+            </NavLink>
+            <NavLink to={`${base}/inspiration`} className={({ isActive }) => (isActive ? "active" : "")}>
+              <IconImage className="app-nav-icon" />
+              Inspiration
+            </NavLink>
+            <NavLink to={`${base}/our-big-day`} className={({ isActive }) => (isActive ? "active" : "")}>
+              <IconHeart className="app-nav-icon" size={15} />
+              Our Big Day
+            </NavLink>
+          </nav>
+          <div className="app-header-actions">
+            {user && <UserMenu user={user} settingsPath={`${base}/settings`} onLogout={logout} />}
+          </div>
+        </header>
 
-      <main className="app-main">
-        <Routes>
-          <Route path="/" element={<OverviewPage weddingDate={weddingDate} />} />
-          <Route path="/planner" element={<PlannerPage />} />
-          <Route path="/guest-list" element={<GuestListPage />} />
-          <Route path="/budget" element={<BudgetPage />} />
-          <Route path="/vendors" element={<VendorsPage />} />
-          <Route path="/inspiration" element={<InspirationPage />} />
-          <Route
-            path="/settings"
-            element={<SettingsPage weddingDate={weddingDate} onWeddingDateChange={setWeddingDate} />}
-          />
-        </Routes>
-      </main>
+        <main className="app-main">
+          <Routes>
+            <Route path="/" element={<OverviewPage weddingDate={weddingDate} />} />
+            <Route path="/planner" element={<PlannerPage />} />
+            <Route path="/guest-list" element={<GuestListPage />} />
+            <Route path="/budget" element={<BudgetPage />} />
+            <Route path="/vendors" element={<VendorsPage />} />
+            <Route path="/inspiration" element={<InspirationPage />} />
+            <Route path="/our-big-day" element={<OurBigDayPage />} />
+            <Route
+              path="/settings"
+              element={<SettingsPage weddingDate={weddingDate} onWeddingDateChange={setWeddingDate} />}
+            />
+          </Routes>
+        </main>
+      </div>
+      {/* same footer as the home page; .hp scopes its colours */}
+      <div className="hp">
+        <LegalFooter />
+      </div>
     </div>
   );
 }

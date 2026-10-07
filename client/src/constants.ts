@@ -1,4 +1,4 @@
-import type { Currency } from "./types";
+import type { BigDayPriority, Currency } from "./types";
 
 export const VENDOR_STATUSES: { value: "inquired" | "downpayment" | "booked" | "paid"; label: string }[] = [
   { value: "inquired", label: "Inquired" },
@@ -54,4 +54,10 @@ export const GENERIC_BUDGET_CATEGORIES: string[] = [
   "Rings",
   "Favors & Gifts",
   "Honeymoon",
+];
+
+export const BIG_DAY_PRIORITIES: { value: BigDayPriority; label: string }[] = [
+  { value: "low", label: "Low" },
+  { value: "medium", label: "Medium" },
+  { value: "high", label: "High" },
 ];

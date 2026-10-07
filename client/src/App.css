@@ -1,3 +1,42 @@
+/* light warm-brown wash rising from the bottom: the Planner page and its
+   selected calendar day share it (the page's top wash uses the same tones) */
+:root {
+  --warm-rise: linear-gradient(to top, rgba(185, 151, 103, 0.14), rgba(196, 164, 120, 0.06) 45%, rgba(196, 164, 120, 0) 75%);
+}
+
+/* the planner app plus the footer; the footer sits at the bottom of the
+   window even when a page is short */
+.app-shell {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-shell > .app {
+  flex: 1;
+  width: 100%;
+}
+
+/* the footer's content lines up with the page content above it
+   (.app is 1180px wide with 24px side padding; 20px on phones) */
+.app-shell .hp-footer {
+  padding-left: max(24px, calc(50% - 566px));
+  padding-right: max(24px, calc(50% - 566px));
+}
+
+@media (max-width: 480px) {
+  .app-shell .hp-footer {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+
+  /* phones trim .app's bottom padding; keep some air above the footer */
+  .app-shell > .app {
+    padding-bottom: 48px;
+  }
+}
+
 .app {
   max-width: 1180px;
   margin: 0 auto;
@@ -7,13 +46,31 @@
 /* ---------- Header ---------- */
 
 .app-header {
+  position: relative;
   display: flex;
   align-items: center;
   flex-wrap: wrap;
   gap: 16px;
   padding: 32px 0 24px;
-  border-bottom: 1px solid var(--border);
+  /* keeps the header's height; the visible line is drawn below */
+  border-bottom: 1px solid transparent;
   margin-bottom: 28px;
+}
+
+/* the divider under the header runs the full width of the window at any
+   screen size: a shadow spread sideways and clipped to 1px tall, which
+   (unlike a 100vw-wide box) can never cause sideways scrolling */
+.app-header::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 1px;
+  background: var(--border);
+  box-shadow: 0 0 0 100vmax var(--border);
+  clip-path: inset(0 -100vmax);
+  pointer-events: none;
 }
 
 .app-header h1 {
@@ -728,12 +785,18 @@
   font-weight: 700;
 }
 
-.calendar-cell.selected {
-  background: var(--accent);
+/* selected day: a thick outline instead of a solid fill (inset, so the
+   grid doesn't shift), with a light gold wash rising from the bottom */
+.calendar-cell.selected,
+.calendar-cell.selected:hover {
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 0.5px var(--accent);
+  background: var(--warm-rise), var(--surface-alt);
 }
 
 .calendar-cell.selected .cell-daynum {
-  color: var(--accent-contrast);
+  color: var(--text);
+  font-weight: 700;
 }
 
 .cell-daynum {
@@ -934,6 +997,13 @@
   width: 40px;
   display: flex;
   align-items: stretch;
+}
+
+/* hidden unless the row is swiped open, so its corners never peek out
+   around the card's rounded corners; hiding waits for the close animation */
+.swipe-row:not(.swiping) .swipe-delete-action {
+  visibility: hidden;
+  transition: visibility 0s 0.2s;
 }
 
 .swipe-delete-btn {
@@ -2116,6 +2186,13 @@
   font-size: 1.2rem;
 }
 
+.modal-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
 .modal-body {
   padding: 20px;
 }
@@ -2357,17 +2434,20 @@
   font-weight: 500;
 }
 
+/* the Total tile: outlined in gold (1.5px, like the selected calendar day)
+   with the same light warm gradient rising from the bottom */
 .budget-stat-highlight {
-  background: rgba(183, 157, 113, 0.34);
-  border-color: rgba(183, 157, 113, 0.34);
+  background: var(--warm-rise), var(--surface);
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 0.5px var(--accent);
 }
 
 .budget-stat-highlight .budget-stat-label {
-  color: #fff;
+  color: var(--accent-dark);
 }
 
 .budget-stat-highlight .budget-stat-value {
-  color: #93816c;
+  color: var(--text);
 }
 
 .budget-stat-value {
@@ -3121,7 +3201,7 @@
 }
 
 .overview-hero-label {
-  margin: 8px 0 0;
+  margin: 2px 0 0;
   font-size: 0.8rem;
   font-weight: 600;
   letter-spacing: 0.14em;
@@ -3138,6 +3218,64 @@
 .overview-hero-date-large {
   font-family: var(--heading);
   font-size: clamp(1.6rem, 5vw, 2.4rem);
+}
+
+.overview-rom {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 6px 10px;
+  margin: 12px 0 0;
+  padding: 8px 16px;
+  border: 1px solid var(--hero-rule);
+  border-radius: 999px;
+  color: var(--hero-text);
+  font-size: 0.9rem;
+}
+
+.overview-rom-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: var(--hero-muted);
+}
+
+.overview-rom-date {
+  font-family: var(--heading);
+  font-size: 1.05rem;
+}
+
+.overview-rom-when {
+  color: var(--hero-muted);
+}
+
+.overview-rom-when::before {
+  content: "·";
+  margin-right: 10px;
+}
+
+/* phones: "ROM  date" on the first line, "N days to go" below it */
+@media (max-width: 480px) {
+  /* the lily art crowds the small banner — fainter than on desktop */
+  .overview-hero::before {
+    opacity: 0.05;
+  }
+
+  .overview-rom {
+    gap: 2px 10px;
+    border-radius: 16px;
+    padding: 10px 22px;
+  }
+
+  .overview-rom-when {
+    flex-basis: 100%;
+    text-align: center;
+  }
+
+  .overview-rom-when::before {
+    content: none;
+  }
 }
 
 .overview-hero-empty {
@@ -3346,6 +3484,11 @@
     padding: 48px 0;
   }
 
+  /* lily art 30% smaller than full width (cover filled the width here) */
+  .overview-hero::before {
+    background-size: 70% auto;
+  }
+
   .overview-quote {
     margin: 0;
     max-width: none;
@@ -3420,4 +3563,634 @@
 .signup-legal a {
   color: var(--accent-dark);
   text-decoration: underline;
+}
+
+/* ---------- Our Big Day ---------- */
+
+.big-day-setup {
+  max-width: 640px;
+  gap: 26px;
+}
+
+.big-day-setup-step h3 {
+  font-size: 1.05rem;
+  margin: 0 0 10px;
+}
+
+.big-day-setup-step .form-hint {
+  margin: -6px 0 12px;
+}
+
+.big-day-count {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.big-day-count-option {
+  min-width: 42px;
+  height: 42px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.big-day-count-option:hover {
+  border-color: var(--accent);
+}
+
+.big-day-count-option.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-contrast);
+}
+
+.big-day-session-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.big-day-session-field label:first-child {
+  flex: 3;
+}
+
+.big-day-days {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.big-day-sessions {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.big-day-session {
+  padding: 22px 26px;
+  min-height: 180px;
+}
+
+.big-day-session-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.big-day-session-header .btn {
+  flex-shrink: 0;
+}
+
+.big-day-session-header .card-title {
+  font-family: var(--heading);
+  font-size: 1.2rem;
+  line-height: 1.3;
+  white-space: normal;
+  margin: 0;
+}
+
+.big-day-session-empty {
+  margin: 0;
+}
+
+.big-day-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  align-items: start;
+}
+
+/* equal gutters either side of the divider; the full timeline's heading
+   lines up with the first session card's title */
+.big-day-layout .big-day-days {
+  padding-right: 40px;
+}
+
+.big-day-full {
+  border-left: 1px solid var(--border);
+  padding: 22px 0 22px 40px;
+  align-self: stretch;
+}
+
+.big-day-full-title {
+  font-size: 1.2rem;
+  line-height: 1.3;
+  margin: 0 0 18px;
+}
+
+.big-day-full-list {
+  list-style: none;
+  margin: 0;
+  padding: 0 0 0 18px;
+  border-left: 2px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.big-day-full-item {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.big-day-full-item::before {
+  content: "";
+  position: absolute;
+  box-sizing: border-box;
+  left: -25px; /* centred on the 2px line: 18px padding + 1px + half of 12px */
+  top: 5px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid var(--bg);
+}
+
+.big-day-full-name {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.big-day-full-item .empty-hint {
+  font-size: 0.82rem;
+}
+
+/* narrow screens: the full timeline moves into a popup (see OurBigDayPage) */
+@media (max-width: 860px) {
+  .big-day-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .big-day-layout .big-day-days {
+    padding-right: 0;
+  }
+}
+
+/* priority colours: low stays quiet, medium is the gold, high the rose */
+.big-day-priority-pill {
+  font-size: 0.675rem;
+  font-weight: 600;
+  border-radius: 999px;
+  padding: 2px 10px;
+  white-space: nowrap;
+  background: var(--surface-alt);
+  color: var(--text-muted);
+}
+
+.big-day-priority-pill.priority-medium {
+  background: #e8d7c1;
+  color: #a66a1f;
+}
+
+.big-day-priority-pill.priority-high {
+  background: #f2dcd8;
+  color: var(--danger);
+}
+
+.big-day-task-list {
+  list-style: none;
+  margin: 4px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.big-day-task-list li + li {
+  border-top: 1px solid var(--border);
+}
+
+.big-day-task {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 76px minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 14px;
+  padding: 12px 8px;
+  margin: 0 -8px;
+  box-sizing: content-box;
+  background: none;
+  border: none;
+  border-radius: 8px;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.big-day-task:hover {
+  background: var(--surface-alt);
+}
+
+.big-day-task-time {
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--accent-dark);
+  white-space: nowrap;
+  padding-top: 1px;
+}
+
+.big-day-task-main {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.big-day-task-name {
+  font-weight: 600;
+  font-size: 0.92rem;
+  color: var(--text);
+}
+
+.big-day-task-notes {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.big-day-task .big-day-priority-pill {
+  margin-top: 1px;
+}
+
+.big-day-field-label {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  font-weight: 600;
+  margin-bottom: 5px;
+}
+
+.big-day-priority {
+  display: flex;
+  gap: 8px;
+}
+
+.big-day-priority-option {
+  flex: 1;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.big-day-priority-option:hover {
+  border-color: var(--accent);
+}
+
+.big-day-priority-option.active {
+  background: var(--surface-alt);
+  border-color: var(--text-muted);
+  color: var(--text);
+}
+
+.big-day-priority-option.priority-medium.active {
+  background: #e8d7c1;
+  border-color: #a66a1f;
+  color: #a66a1f;
+}
+
+.big-day-priority-option.priority-high.active {
+  background: #f2dcd8;
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.btn-row .big-day-task-delete {
+  margin-left: auto;
+}
+
+.big-day-full-tasks {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.big-day-full-task {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 0.82rem;
+}
+
+.big-day-full-task-time {
+  flex-shrink: 0;
+  min-width: 62px;
+  color: var(--accent-dark);
+  font-weight: 600;
+}
+
+.big-day-full-task-name {
+  color: var(--text);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.big-day-full-task-flag {
+  flex-shrink: 0;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--danger);
+  align-self: center;
+}
+
+@media (max-width: 480px) {
+  .big-day-task {
+    grid-template-columns: 64px minmax(0, 1fr);
+    row-gap: 6px;
+  }
+
+  .big-day-task .big-day-priority-pill {
+    grid-column: 2;
+    justify-self: start;
+  }
+}
+
+.big-day-task-view {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.big-day-task-view-meta {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0;
+  padding: 14px 16px;
+  background: var(--surface-alt);
+  border-radius: 10px;
+}
+
+.big-day-task-view-meta dt,
+.big-day-task-view-notes h3 {
+  font-family: var(--sans);
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  margin: 0 0 4px;
+}
+
+.big-day-task-view-meta dd {
+  margin: 0;
+  font-weight: 600;
+  font-size: 0.92rem;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+.big-day-task-view-meta dd.empty-hint {
+  font-weight: 400;
+}
+
+.big-day-task-view-meta dd.big-day-task-view-time {
+  color: var(--accent-dark);
+}
+
+.big-day-task-view-notes p {
+  margin: 0;
+  font-size: 0.92rem;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* morning / afternoon / evening groups inside a session */
+.big-day-task-group + .big-day-task-group {
+  margin-top: 14px;
+}
+
+.big-day-task-group-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--sans);
+  font-size: calc(0.72rem + 2px);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text);
+  margin: 10px 0 2px;
+}
+
+.big-day-task-group-title::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.big-day-task-group .big-day-task-list {
+  margin-top: 0;
+}
+
+.big-day-full-group {
+  margin-top: 8px;
+}
+
+.big-day-full-group-title {
+  display: block;
+  font-size: calc(0.68rem + 2px);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text);
+}
+
+.big-day-full-group .big-day-full-tasks {
+  margin-top: 4px;
+}
+
+.btn-row .big-day-reset {
+  margin-left: auto;
+}
+
+.big-day-reset-confirm {
+  padding: 14px 16px;
+  border: 1px solid #e6c4bd;
+  border-radius: 10px;
+  background: #fbf1ef;
+}
+
+.big-day-reset-confirm p {
+  margin: 0 0 12px;
+  font-size: 0.88rem;
+  color: var(--danger);
+}
+
+/* ---------- Frosted glass (every planner page) ---------- */
+
+/* the page keeps the same vertical rhythm as .app-main */
+.planner-page {
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+}
+
+/* own stacking context, so the washes below sit above the app's page
+   background but behind the cards */
+.glass-page {
+  position: relative;
+  isolation: isolate;
+}
+
+/* soft light-brown gradients behind the page so the frosted cards have
+   something to blur. One rises from the bottom of the screen and is pinned
+   to the window, so it stays put while scrolling... */
+.glass-page::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: var(--warm-rise);
+}
+
+/* ...and a shorter one falls from the divider under the nav (28px above
+   the page area: the header's bottom margin), full window width, scrolling
+   with the page. It hangs off .app-main rather than the page itself, since
+   some pages (e.g. Settings) are a narrow column and the wash is centred on
+   whatever it's attached to. */
+.app-main:has(> .glass-page) {
+  position: relative;
+  isolation: isolate;
+}
+
+.app-main:has(> .glass-page)::after {
+  content: "";
+  position: absolute;
+  top: -28px;
+  left: calc(50% - 50vw);
+  right: calc(50% - 50vw);
+  height: 32vh;
+  z-index: -1;
+  pointer-events: none;
+  background: linear-gradient(to bottom, rgba(185, 151, 103, 0.06), rgba(196, 164, 120, 0.025) 50%, rgba(196, 164, 120, 0));
+}
+
+/* the full-width wash mustn't add a sideways scrollbar */
+body:has(.glass-page) {
+  overflow-x: clip;
+}
+
+/* one glass recipe for everything frosted on the page, so the panels, the
+   to-do list, the task rows and the Manage cards button all match */
+.glass-page {
+  --glass-fill:
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.3)),
+    rgba(255, 255, 255, 0.3);
+  --glass-blur: blur(22px) saturate(150%);
+  --glass-edge: rgba(255, 255, 255, 0.8);
+  --glass-shadow:
+    0 6px 22px rgba(60, 45, 35, 0.07),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+.glass-page .calendar-panel,
+.glass-page .day-panel,
+.glass-page .board-section,
+.glass-page .card,
+.glass-page .board-footer .btn,
+.glass-page > .btn-row > .btn:not(.primary),
+.glass-page .budget-summary-stat,
+.glass-page .overview-panel,
+.glass-page .settings-card,
+.glass-page .inspiration-card {
+  background: var(--glass-fill);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  /* coloured left stripes (cards, board sections) are set separately and stay */
+  border-top-color: var(--glass-edge);
+  border-right-color: var(--glass-edge);
+  border-bottom-color: var(--glass-edge);
+  box-shadow: var(--glass-shadow);
+}
+
+.glass-page .calendar-panel,
+.glass-page .day-panel,
+.glass-page .board-footer .btn,
+.glass-page > .btn-row > .btn:not(.primary),
+.glass-page .budget-summary-stat,
+.glass-page .overview-panel,
+.glass-page .settings-card,
+.glass-page .inspiration-card {
+  border-left-color: var(--glass-edge);
+}
+
+/* the Total tile on glass: frosted, with its gold outline and warm gradient */
+.glass-page .budget-stat-highlight {
+  background: var(--warm-rise), var(--glass-fill);
+  border-color: var(--accent);
+  box-shadow:
+    inset 0 0 0 0.5px var(--accent),
+    0 6px 22px rgba(60, 45, 35, 0.07);
+}
+
+/* cards that stand on their own (the to-do list, the guest lists) share
+   the panels' corners; rows inside a panel keep their smaller ones */
+.glass-page .day-todo-card,
+.glass-page .guest-owner-card,
+.glass-page .big-day-session {
+  border-radius: var(--radius);
+}
+
+/* rows inside a frosted panel are clear glass: they keep the edge,
+   highlight and shadow but add no extra white, so they sit in the same
+   tone as the to-do list and the panels */
+.glass-page .day-panel .card,
+.glass-page .board-section .card {
+  background: rgba(255, 255, 255, 0.16);
+  /* the panel already frosts what's behind it; blurring again inside it
+     would wash the row out whiter than the panel */
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  box-shadow:
+    0 3px 12px rgba(60, 45, 35, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+.glass-page .calendar-cell:not(.empty):not(.selected) {
+  background: rgba(253, 249, 239, 0.55);
+}
+
+.glass-page .calendar-cell.selected,
+.glass-page .calendar-cell.selected:hover {
+  background:
+    var(--warm-rise),
+    rgba(253, 249, 239, 0.6);
+}
+
+.glass-page .board-footer .btn:hover,
+.glass-page > .btn-row > .btn:not(.primary):hover {
+  background:
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.75), rgba(255, 255, 255, 0.5)),
+    rgba(255, 255, 255, 0.4);
+}
+
+/* swipeable rows: a solid layer under the glass, so the delete button
+   behind the row can never show through — the same tone the frosted
+   board section shows, so the row still matches its neighbours */
+.glass-page .swipe-content {
+  background: #fbf9f5;
+  border-radius: 10px;
 }
