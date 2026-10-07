@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import type { BigDay, BigDaySession, BigDayTask } from "../types";
 import * as api from "../api";
-import Dropdown from "../components/Dropdown";
 import BigDayTaskModal from "../components/BigDayTaskModal";
 import { BIG_DAY_PRIORITIES } from "../constants";
 import { formatTime } from "../dateUtils";
@@ -13,7 +12,6 @@ import { useIsMobile } from "../useIsMobile";
 // moves behind a button (matches the stacking breakpoint in App.css)
 const FULL_TIMELINE_POPUP_WIDTH = 860;
 
-const MAX_DAYS = 10;
 const MAX_SESSIONS = 10;
 
 // Placeholders only — every session name starts blank. Each list fits that
@@ -66,8 +64,8 @@ function sessionLabel(session: BigDaySession, index: number) {
   return session.name || `Session ${index + 1}`;
 }
 
-function blankSession(day = 1): BigDaySession {
-  return { id: crypto.randomUUID(), name: "", day, tasks: [] };
+function blankSession(): BigDaySession {
+  return { id: crypto.randomUUID(), name: "", day: 1, tasks: [] };
 }
 
 function CountPicker({ value, max, onChange, label }: { value: number; max: number; onChange: (n: number) => void; label: string }) {
@@ -100,8 +98,9 @@ function BigDaySetup({
   onCancel?: () => void;
   onReset?: () => Promise<void>;
 }) {
-  const [days, setDays] = useState(initial?.days ?? 1);
-  const [sessions, setSessions] = useState<BigDaySession[]>(initial?.sessions ?? [blankSession()]);
+  const [sessions, setSessions] = useState<BigDaySession[]>(
+    initial ? orderedSessions(initial).map(({ s }) => s) : [blankSession()]
+  );
   const [saving, setSaving] = useState(false);
   const [confirmReset, setConfirmReset] = useState(false);
   const taskCount = initial?.sessions.reduce((n, s) => n + s.tasks.length, 0) ?? 0;
@@ -116,16 +115,11 @@ function BigDaySetup({
     }
   }
 
-  function changeDays(n: number) {
-    setDays(n);
-    setSessions((prev) => prev.map((s) => (s.day > n ? { ...s, day: n } : s)));
-  }
-
   function changeSessionCount(n: number) {
     setSessions((prev) =>
       n <= prev.length
         ? prev.slice(0, n)
-        : [...prev, ...Array.from({ length: n - prev.length }, () => blankSession(prev[prev.length - 1]?.day ?? 1))]
+        : [...prev, ...Array.from({ length: n - prev.length }, () => blankSession())]
     );
   }
 
@@ -137,21 +131,15 @@ function BigDaySetup({
     e.preventDefault();
     setSaving(true);
     try {
-      await onSave({ days, sessions });
+      // the wedding is no longer split into days: everything sits on one
+      await onSave({ days: 1, sessions: sessions.map((s) => ({ ...s, day: 1 })) });
     } finally {
       setSaving(false);
     }
   }
 
-  const dayOptions = Array.from({ length: days }, (_, i) => ({ value: String(i + 1), label: `Day ${i + 1}` }));
-
   return (
     <form className="settings-card big-day-setup event-form" onSubmit={handleSubmit}>
-      <div className="big-day-setup-step">
-        <h3>How many days is the wedding?</h3>
-        <CountPicker value={days} max={MAX_DAYS} onChange={changeDays} label="Number of days" />
-      </div>
-
       <div className="big-day-setup-step">
         <h3>How many sessions are happening?</h3>
         <p className="form-hint">
@@ -176,16 +164,6 @@ function BigDaySetup({
                   onChange={(e) => updateSession(s.id, { name: e.target.value })}
                 />
               </label>
-              {days > 1 && (
-                <label className="big-day-session-day">
-                  Day
-                  <Dropdown
-                    value={String(s.day)}
-                    onChange={(v) => updateSession(s.id, { day: Number(v) })}
-                    options={dayOptions}
-                  />
-                </label>
-              )}
             </div>
           ))}
         </div>
@@ -304,53 +282,44 @@ function SessionTimeline({
   );
 }
 
-function sessionsByDay(bigDay: BigDay) {
-  return Array.from({ length: bigDay.days }, (_, d) => d + 1).map((day) => ({
-    day,
-    sessions: bigDay.sessions.map((s, i) => ({ s, i })).filter(({ s }) => s.day === day),
-  }));
+// Sessions in the order they're shown, each with its position (for the
+// "Session N" fallback name). Setups saved back when the wedding could span
+// several days keep their day order.
+function orderedSessions(bigDay: BigDay) {
+  return [...bigDay.sessions].sort((a, b) => a.day - b.day).map((s, i) => ({ s, i }));
 }
 
-// Every session, day by day, on one line — the whole wedding at a glance.
+// Every session on one line — the whole wedding at a glance.
 // Sits beside the sessions on wide screens, in a popup on narrow ones.
 function FullTimeline({ bigDay }: { bigDay: BigDay }) {
   return (
-    <>
-      {sessionsByDay(bigDay)
-        .filter(({ sessions }) => sessions.length > 0)
-        .map(({ day, sessions }) => (
-          <div key={day} className="big-day-full-day">
-            {bigDay.days > 1 && <h4 className="big-day-full-day-title">Day {day}</h4>}
-            <ol className="big-day-full-list">
-              {sessions.map(({ s, i }) => (
-                <li key={s.id} className="big-day-full-item">
-                  <span className="big-day-full-name">{sessionLabel(s, i)}</span>
-                  {s.tasks.length === 0 ? (
-                    <span className="empty-hint">Nothing scheduled yet.</span>
-                  ) : (
-                    tasksByTimeOfDay(s.tasks).map((g) => (
-                      <div key={g.key} className="big-day-full-group">
-                        <span className="big-day-full-group-title">{g.label}</span>
-                        <ul className="big-day-full-tasks">
-                          {g.tasks.map((t) => (
-                            <li key={t.id} className="big-day-full-task">
-                              <span className="big-day-full-task-time">{t.time ? formatTime(t.time) : "—"}</span>
-                              <span className="big-day-full-task-name">{t.name}</span>
-                              {t.priority === "high" && (
-                                <span className="big-day-full-task-flag" title="High priority" aria-label="High priority" />
-                              )}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    ))
-                  )}
-                </li>
-              ))}
-            </ol>
-          </div>
-        ))}
-    </>
+    <ol className="big-day-full-list">
+      {orderedSessions(bigDay).map(({ s, i }) => (
+        <li key={s.id} className="big-day-full-item">
+          <span className="big-day-full-name">{sessionLabel(s, i)}</span>
+          {s.tasks.length === 0 ? (
+            <span className="empty-hint">Nothing scheduled yet.</span>
+          ) : (
+            tasksByTimeOfDay(s.tasks).map((g) => (
+              <div key={g.key} className="big-day-full-group">
+                <span className="big-day-full-group-title">{g.label}</span>
+                <ul className="big-day-full-tasks">
+                  {g.tasks.map((t) => (
+                    <li key={t.id} className="big-day-full-task">
+                      <span className="big-day-full-task-time">{t.time ? formatTime(t.time) : "—"}</span>
+                      <span className="big-day-full-task-name">{t.name}</span>
+                      {t.priority === "high" && (
+                        <span className="big-day-full-task-flag" title="High priority" aria-label="High priority" />
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))
+          )}
+        </li>
+      ))}
+    </ol>
   );
 }
 
@@ -405,8 +374,9 @@ export default function OurBigDayPage() {
   }
 
   const showSetup = !loading && (!bigDay || editing);
-  const modalSessionIndex = bigDay?.sessions.findIndex((s) => s.id === taskModal?.sessionId) ?? -1;
-  const modalSession = bigDay && modalSessionIndex !== -1 ? bigDay.sessions[modalSessionIndex] : null;
+  const modalEntry = bigDay ? orderedSessions(bigDay).find(({ s }) => s.id === taskModal?.sessionId) : undefined;
+  const modalSession = modalEntry?.s ?? null;
+  const modalSessionIndex = modalEntry?.i ?? -1;
   const modalTask = taskModal?.taskId ? modalSession?.tasks.find((t) => t.id === taskModal.taskId) : undefined;
 
   return (
@@ -435,7 +405,7 @@ export default function OurBigDayPage() {
       <p className="page-subtitle">
         {bigDay
           ? "The timeline for every part of the day, session by session, minute by minute."
-          : "Let’s set up your big day. Tell us how many days it runs and how many sessions are happening — each one gets its own timeline."}
+          : "Let’s set up your big day. Tell us how many sessions are happening — each one gets its own timeline."}
       </p>
 
       {loading && <p className="empty-hint">Loading…</p>}
@@ -452,26 +422,17 @@ export default function OurBigDayPage() {
       {bigDay && !editing && (
         <div className="big-day-layout">
           <div className="big-day-days">
-            {sessionsByDay(bigDay).map(({ day, sessions }) => (
-              <div key={day} className="big-day-day">
-                {bigDay.days > 1 && <h3 className="big-day-day-title">Day {day}</h3>}
-                {sessions.length === 0 ? (
-                  <p className="empty-hint">No sessions on this day.</p>
-                ) : (
-                  <div className="big-day-sessions">
-                    {sessions.map(({ s, i }) => (
-                      <SessionTimeline
-                        key={s.id}
-                        session={s}
-                        index={i}
-                        onAddTask={() => setTaskModal({ sessionId: s.id })}
-                        onOpenTask={(task) => setTaskModal({ sessionId: s.id, taskId: task.id })}
-                      />
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))}
+            <div className="big-day-sessions">
+              {orderedSessions(bigDay).map(({ s, i }) => (
+                <SessionTimeline
+                  key={s.id}
+                  session={s}
+                  index={i}
+                  onAddTask={() => setTaskModal({ sessionId: s.id })}
+                  onOpenTask={(task) => setTaskModal({ sessionId: s.id, taskId: task.id })}
+                />
+              ))}
+            </div>
           </div>
 
           {!timelineInPopup && (
