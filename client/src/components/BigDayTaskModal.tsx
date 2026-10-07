@@ -2,12 +2,7 @@ import { useState } from "react";
 import type { BigDayPriority, BigDayTask } from "../types";
 import Modal from "./Modal";
 import { useIsMobile } from "../useIsMobile";
-
-export const BIG_DAY_PRIORITIES: { value: BigDayPriority; label: string }[] = [
-  { value: "low", label: "Low" },
-  { value: "medium", label: "Medium" },
-  { value: "high", label: "High" },
-];
+import { BIG_DAY_PRIORITIES } from "../constants";
 
 type Props = {
   sessionName: string;

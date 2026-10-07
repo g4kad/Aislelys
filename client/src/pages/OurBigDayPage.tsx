@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import type { BigDay, BigDaySession, BigDayTask } from "../types";
 import * as api from "../api";
 import Dropdown from "../components/Dropdown";
-import BigDayTaskModal, { BIG_DAY_PRIORITIES } from "../components/BigDayTaskModal";
+import BigDayTaskModal from "../components/BigDayTaskModal";
+import { BIG_DAY_PRIORITIES } from "../constants";
 import { formatTime } from "../dateUtils";
 
 const MAX_DAYS = 10;
