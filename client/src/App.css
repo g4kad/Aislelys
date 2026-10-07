@@ -13,13 +13,31 @@
 /* ---------- Header ---------- */
 
 .app-header {
+  position: relative;
   display: flex;
   align-items: center;
   flex-wrap: wrap;
   gap: 16px;
   padding: 32px 0 24px;
-  border-bottom: 1px solid var(--border);
+  /* keeps the header's height; the visible line is drawn below */
+  border-bottom: 1px solid transparent;
   margin-bottom: 28px;
+}
+
+/* the divider under the header runs the full width of the window at any
+   screen size: a shadow spread sideways and clipped to 1px tall, which
+   (unlike a 100vw-wide box) can never cause sideways scrolling */
+.app-header::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 1px;
+  background: var(--border);
+  box-shadow: 0 0 0 100vmax var(--border);
+  clip-path: inset(0 -100vmax);
+  pointer-events: none;
 }
 
 .app-header h1 {
