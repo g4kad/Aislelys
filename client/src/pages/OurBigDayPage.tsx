@@ -188,6 +188,25 @@ function sortedTasks(tasks: BigDayTask[]) {
   return [...tasks].sort((a, b) => (a.time || "99:99").localeCompare(b.time || "99:99"));
 }
 
+// Morning is until noon, afternoon until 5 PM, evening the rest of the day;
+// tasks with no time go in their own group at the end.
+const TIME_OF_DAY = [
+  { key: "morning", label: "Morning", until: "12:00" },
+  { key: "afternoon", label: "Afternoon", until: "17:00" },
+  { key: "evening", label: "Evening", until: "24:00" },
+] as const;
+
+function tasksByTimeOfDay(tasks: BigDayTask[]) {
+  const sorted = sortedTasks(tasks);
+  const groups: { key: string; label: string; tasks: BigDayTask[] }[] = TIME_OF_DAY.map((g, gi) => ({
+    key: g.key,
+    label: g.label,
+    tasks: sorted.filter((t) => t.time && t.time < g.until && (gi === 0 || t.time >= TIME_OF_DAY[gi - 1].until)),
+  }));
+  groups.push({ key: "untimed", label: "No time set", tasks: sorted.filter((t) => !t.time) });
+  return groups.filter((g) => g.tasks.length > 0);
+}
+
 function PriorityPill({ priority }: { priority: BigDayTask["priority"] }) {
   const label = BIG_DAY_PRIORITIES.find((p) => p.value === priority)?.label ?? priority;
   return <span className={`big-day-priority-pill priority-${priority}`}>{label}</span>;
@@ -204,7 +223,7 @@ function SessionTimeline({
   onAddTask: () => void;
   onOpenTask: (task: BigDayTask) => void;
 }) {
-  const tasks = sortedTasks(session.tasks);
+  const groups = tasksByTimeOfDay(session.tasks);
   return (
     <section className="card big-day-session">
       <div className="big-day-session-header">
@@ -213,23 +232,28 @@ function SessionTimeline({
           + Add task
         </button>
       </div>
-      {tasks.length === 0 ? (
+      {groups.length === 0 ? (
         <p className="empty-hint big-day-session-empty">Nothing on this timeline yet.</p>
       ) : (
-        <ul className="big-day-task-list">
-          {tasks.map((t) => (
-            <li key={t.id}>
-              <button type="button" className="big-day-task" onClick={() => onOpenTask(t)}>
-                <span className="big-day-task-time">{t.time ? formatTime(t.time) : "—"}</span>
-                <span className="big-day-task-main">
-                  <span className="big-day-task-name">{t.name}</span>
-                  {t.notes && <span className="big-day-task-notes">{t.notes}</span>}
-                </span>
-                <PriorityPill priority={t.priority} />
-              </button>
-            </li>
-          ))}
-        </ul>
+        groups.map((g) => (
+          <div key={g.key} className="big-day-task-group">
+            <h5 className="big-day-task-group-title">{g.label}</h5>
+            <ul className="big-day-task-list">
+              {g.tasks.map((t) => (
+                <li key={t.id}>
+                  <button type="button" className="big-day-task" onClick={() => onOpenTask(t)}>
+                    <span className="big-day-task-time">{t.time ? formatTime(t.time) : "—"}</span>
+                    <span className="big-day-task-main">
+                      <span className="big-day-task-name">{t.name}</span>
+                      {t.notes && <span className="big-day-task-notes">{t.notes}</span>}
+                    </span>
+                    <PriorityPill priority={t.priority} />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))
       )}
     </section>
   );
@@ -259,17 +283,22 @@ function FullTimeline({ bigDay }: { bigDay: BigDay }) {
                   {s.tasks.length === 0 ? (
                     <span className="empty-hint">Nothing scheduled yet.</span>
                   ) : (
-                    <ul className="big-day-full-tasks">
-                      {sortedTasks(s.tasks).map((t) => (
-                        <li key={t.id} className="big-day-full-task">
-                          <span className="big-day-full-task-time">{t.time ? formatTime(t.time) : "—"}</span>
-                          <span className="big-day-full-task-name">{t.name}</span>
-                          {t.priority === "high" && (
-                            <span className="big-day-full-task-flag" title="High priority" aria-label="High priority" />
-                          )}
-                        </li>
-                      ))}
-                    </ul>
+                    tasksByTimeOfDay(s.tasks).map((g) => (
+                      <div key={g.key} className="big-day-full-group">
+                        <span className="big-day-full-group-title">{g.label}</span>
+                        <ul className="big-day-full-tasks">
+                          {g.tasks.map((t) => (
+                            <li key={t.id} className="big-day-full-task">
+                              <span className="big-day-full-task-time">{t.time ? formatTime(t.time) : "—"}</span>
+                              <span className="big-day-full-task-name">{t.name}</span>
+                              {t.priority === "high" && (
+                                <span className="big-day-full-task-flag" title="High priority" aria-label="High priority" />
+                              )}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ))
                   )}
                 </li>
               ))}

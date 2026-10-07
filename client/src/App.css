@@ -3812,3 +3812,49 @@
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
+
+/* morning / afternoon / evening groups inside a session */
+.big-day-task-group + .big-day-task-group {
+  margin-top: 14px;
+}
+
+.big-day-task-group-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--sans);
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  margin: 10px 0 2px;
+}
+
+.big-day-task-group-title::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.big-day-task-group .big-day-task-list {
+  margin-top: 0;
+}
+
+.big-day-full-group {
+  margin-top: 8px;
+}
+
+.big-day-full-group-title {
+  display: block;
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+}
+
+.big-day-full-group .big-day-full-tasks {
+  margin-top: 4px;
+}
