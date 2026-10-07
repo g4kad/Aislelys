@@ -728,12 +728,17 @@
   font-weight: 700;
 }
 
-.calendar-cell.selected {
-  background: var(--accent);
+/* selected day: a thick outline instead of a solid fill (inset, so the
+   grid doesn't shift) */
+.calendar-cell.selected,
+.calendar-cell.selected:hover {
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 2px var(--accent);
 }
 
 .calendar-cell.selected .cell-daynum {
-  color: var(--accent-contrast);
+  color: var(--text);
+  font-weight: 700;
 }
 
 .cell-daynum {
