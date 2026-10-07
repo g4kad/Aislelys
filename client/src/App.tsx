@@ -6,6 +6,7 @@ import GuestInviteView from "./pages/GuestInviteView";
 import InspirationPage from "./pages/InspirationPage";
 import BudgetPage from "./pages/BudgetPage";
 import VendorsPage from "./pages/VendorsPage";
+import OurBigDayPage from "./pages/OurBigDayPage";
 import { JoinPage, SignInPage, SignUpPage, StartPage } from "./account/AccountPages";
 import SettingsPage from "./pages/SettingsPage";
 import OverviewPage from "./pages/OverviewPage";
@@ -13,7 +14,7 @@ import HomePage from "./home/HomePage";
 import { TermsPage, PrivacyPage } from "./home/LegalPage";
 import AuthGate, { LoginPage } from "./components/AuthGate";
 import UserMenu from "./components/UserMenu";
-import { IconCalendar, IconUsers, IconWallet, IconStore, IconImage, IconHome } from "./components/Icons";
+import { IconCalendar, IconUsers, IconWallet, IconStore, IconImage, IconHome, IconHeart } from "./components/Icons";
 import { AuthProvider, useAuth } from "./auth";
 import * as api from "./api";
 import { daysUntil, formatDateShort } from "./dateUtils";
@@ -78,6 +79,10 @@ function AppShell() {
             <IconImage className="app-nav-icon" />
             Inspiration
           </NavLink>
+          <NavLink to={`${base}/our-big-day`} className={({ isActive }) => (isActive ? "active" : "")}>
+            <IconHeart className="app-nav-icon" size={15} />
+            Our Big Day
+          </NavLink>
         </nav>
         <div className="app-header-actions">
           {user && <UserMenu user={user} settingsPath={`${base}/settings`} onLogout={logout} />}
@@ -92,6 +97,7 @@ function AppShell() {
           <Route path="/budget" element={<BudgetPage />} />
           <Route path="/vendors" element={<VendorsPage />} />
           <Route path="/inspiration" element={<InspirationPage />} />
+          <Route path="/our-big-day" element={<OurBigDayPage />} />
           <Route
             path="/settings"
             element={<SettingsPage weddingDate={weddingDate} onWeddingDateChange={setWeddingDate} />}
