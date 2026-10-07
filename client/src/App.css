@@ -3133,13 +3133,17 @@
   margin-right: 10px;
 }
 
-/* phones: stack the ROM line instead of letting it wrap mid-sentence */
+/* phones: "ROM  date" on the first line, "N days to go" below it */
 @media (max-width: 480px) {
   .overview-rom {
-    flex-direction: column;
-    gap: 2px;
+    gap: 2px 10px;
     border-radius: 16px;
     padding: 10px 22px;
+  }
+
+  .overview-rom-when {
+    flex-basis: 100%;
+    text-align: center;
   }
 
   .overview-rom-when::before {
