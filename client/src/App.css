@@ -3362,6 +3362,11 @@
     padding: 48px 0;
   }
 
+  /* lily art 30% smaller than full width (cover filled the width here) */
+  .overview-hero::before {
+    background-size: 70% auto;
+  }
+
   .overview-quote {
     margin: 0;
     max-width: none;
