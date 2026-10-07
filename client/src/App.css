@@ -4052,7 +4052,7 @@
   height: 32vh;
   z-index: -1;
   pointer-events: none;
-  background: linear-gradient(to bottom, rgba(185, 151, 103, 0.09), rgba(196, 164, 120, 0.04) 50%, rgba(196, 164, 120, 0));
+  background: linear-gradient(to bottom, rgba(185, 151, 103, 0.06), rgba(196, 164, 120, 0.025) 50%, rgba(196, 164, 120, 0));
 }
 
 /* the full-width wash mustn't add a sideways scrollbar */
