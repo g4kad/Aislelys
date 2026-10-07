@@ -3562,6 +3562,7 @@
   font-size: 0.82rem;
 }
 
+/* narrow screens: the full timeline moves into a popup (see OurBigDayPage) */
 @media (max-width: 860px) {
   .big-day-layout {
     grid-template-columns: minmax(0, 1fr);
@@ -3569,13 +3570,6 @@
 
   .big-day-layout .big-day-days {
     padding-right: 0;
-  }
-
-  .big-day-full {
-    border-left: none;
-    border-top: 1px solid var(--border);
-    padding: 24px 0 0;
-    margin-top: 28px;
   }
 }
 

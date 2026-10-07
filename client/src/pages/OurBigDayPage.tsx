@@ -5,6 +5,13 @@ import Dropdown from "../components/Dropdown";
 import BigDayTaskModal from "../components/BigDayTaskModal";
 import { BIG_DAY_PRIORITIES } from "../constants";
 import { formatTime } from "../dateUtils";
+import Modal from "../components/Modal";
+import { IconLayers } from "../components/Icons";
+import { useIsMobile } from "../useIsMobile";
+
+// below this the full timeline no longer fits beside the sessions, so it
+// moves behind a button (matches the stacking breakpoint in App.css)
+const FULL_TIMELINE_POPUP_WIDTH = 860;
 
 const MAX_DAYS = 10;
 const MAX_SESSIONS = 10;
@@ -236,10 +243,10 @@ function sessionsByDay(bigDay: BigDay) {
 }
 
 // Every session, day by day, on one line — the whole wedding at a glance.
+// Sits beside the sessions on wide screens, in a popup on narrow ones.
 function FullTimeline({ bigDay }: { bigDay: BigDay }) {
   return (
-    <aside className="big-day-full">
-      <h3 className="big-day-full-title">Full Timeline</h3>
+    <>
       {sessionsByDay(bigDay)
         .filter(({ sessions }) => sessions.length > 0)
         .map(({ day, sessions }) => (
@@ -269,7 +276,7 @@ function FullTimeline({ bigDay }: { bigDay: BigDay }) {
             </ol>
           </div>
         ))}
-    </aside>
+    </>
   );
 }
 
@@ -278,6 +285,8 @@ export default function OurBigDayPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
+  const [showFullTimeline, setShowFullTimeline] = useState(false);
+  const timelineInPopup = useIsMobile(FULL_TIMELINE_POPUP_WIDTH);
   // the session a task is being added to, or the task being viewed/edited
   const [taskModal, setTaskModal] = useState<{ sessionId: string; taskId?: string } | null>(null);
 
@@ -325,9 +334,15 @@ export default function OurBigDayPage() {
 
       <div className="board-region-header">
         <h2 className="board-region-title">Our Big Day</h2>
-        {bigDay && !editing && (
-          <button type="button" className="btn small ghost" onClick={() => setEditing(true)}>
-            Edit setup
+        {bigDay && !editing && timelineInPopup && (
+          <button
+            type="button"
+            className="icon-btn"
+            onClick={() => setShowFullTimeline(true)}
+            title="Full timeline"
+            aria-label="Full timeline"
+          >
+            <IconLayers />
           </button>
         )}
       </div>
@@ -369,8 +384,27 @@ export default function OurBigDayPage() {
             ))}
           </div>
 
-          <FullTimeline bigDay={bigDay} />
+          {!timelineInPopup && (
+            <aside className="big-day-full">
+              <h3 className="big-day-full-title">Full Timeline</h3>
+              <FullTimeline bigDay={bigDay} />
+            </aside>
+          )}
         </div>
+      )}
+
+      {bigDay && !editing && (
+        <div className="board-footer">
+          <button type="button" className="btn ghost" onClick={() => setEditing(true)}>
+            Edit setup
+          </button>
+        </div>
+      )}
+
+      {showFullTimeline && bigDay && timelineInPopup && (
+        <Modal title="Full Timeline" onClose={() => setShowFullTimeline(false)} className="timeline-modal">
+          <FullTimeline bigDay={bigDay} />
+        </Modal>
       )}
 
       {taskModal && modalSession && (!taskModal.taskId || modalTask) && (
