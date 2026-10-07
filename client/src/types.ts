@@ -9,6 +9,17 @@ export type WeddingDate = {
   date: string | null; // YYYY-MM-DD, null when not set
 };
 
+export type BigDaySession = {
+  id: string;
+  name: string; // may be blank — shown as "Session N"
+  day: number; // 1-based, within BigDay.days
+};
+
+export type BigDay = {
+  days: number;
+  sessions: BigDaySession[];
+};
+
 export type Task = {
   id: string;
   name: string;

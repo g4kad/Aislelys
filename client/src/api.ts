@@ -19,6 +19,7 @@ import type {
   Notification,
   Currency,
   ExtraCost,
+  BigDay,
 } from "./types";
 
 const BASE = "/api";
@@ -248,6 +249,10 @@ export const deleteInspirationCategory = (id: string) =>
   request<void>(`/inspiration-categories/${id}`, { method: "DELETE" });
 
 // Budget
+export const getBigDay = () => request<{ bigDay: BigDay | null }>("/big-day").then((r) => r.bigDay);
+export const saveBigDay = (bigDay: BigDay) =>
+  request<{ bigDay: BigDay }>("/big-day", { method: "PUT", body: JSON.stringify(bigDay) }).then((r) => r.bigDay);
+
 export const getBudget = () => request<Budget>("/budget");
 export const updateBudget = (patch: Partial<Budget>) =>
   request<Budget>("/budget", { method: "PUT", body: JSON.stringify(patch) });

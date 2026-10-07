@@ -489,6 +489,52 @@ app.put("/wedding-date", async (c) => {
   return c.json({ date });
 });
 
+// ---------- Our Big Day ----------
+
+const BIG_DAY_MAX_DAYS = 7;
+const BIG_DAY_MAX_SESSIONS = 10;
+
+// {days, sessions: [{id, name, day}]} — names may be blank (the page shows
+// "Session N"), and each session's day is clamped into 1..days.
+function sanitizeBigDay(value) {
+  if (!value || typeof value !== "object") return null;
+  const days = Math.min(BIG_DAY_MAX_DAYS, Math.max(1, Math.floor(Number(value.days)) || 1));
+  const raw = Array.isArray(value.sessions) ? value.sessions : [];
+  const sessions = raw
+    .filter((s) => s && typeof s === "object")
+    .slice(0, BIG_DAY_MAX_SESSIONS)
+    .map((s) => ({
+      id: typeof s.id === "string" && s.id ? s.id : crypto.randomUUID(),
+      name: typeof s.name === "string" ? s.name.trim().slice(0, 60) : "",
+      day: Math.min(days, Math.max(1, Math.floor(Number(s.day)) || 1)),
+    }));
+  if (sessions.length === 0) return null;
+  return { days, sessions };
+}
+
+function parseBigDay(text) {
+  if (!text) return null;
+  try {
+    return sanitizeBigDay(JSON.parse(text));
+  } catch {
+    return null;
+  }
+}
+
+app.get("/big-day", async (c) => {
+  const coupleId = c.get("coupleId");
+  const couple = await c.env.DB.prepare("SELECT bigDay FROM couples WHERE id = ?").bind(coupleId).first();
+  return c.json({ bigDay: parseBigDay(couple?.bigDay) });
+});
+
+app.put("/big-day", async (c) => {
+  const coupleId = c.get("coupleId");
+  const bigDay = sanitizeBigDay(await c.req.json());
+  if (!bigDay) return c.json({ error: "at least one session is required" }, 400);
+  await c.env.DB.prepare("UPDATE couples SET bigDay = ? WHERE id = ?").bind(JSON.stringify(bigDay), coupleId).run();
+  return c.json({ bigDay });
+});
+
 // ---------- Delete planner ----------
 
 // The phrase Settings asks for before deleting; checked here too so a stray

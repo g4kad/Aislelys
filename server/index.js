@@ -333,6 +333,45 @@ app.get("/api/wedding-date", async (req, res) => {
   res.json({ date: couple?.weddingDate ?? null });
 });
 
+// ---------- Our Big Day ----------
+
+const BIG_DAY_MAX_DAYS = 7;
+const BIG_DAY_MAX_SESSIONS = 10;
+
+// {days, sessions: [{id, name, day}]} — names may be blank (the page shows
+// "Session N"), and each session's day is clamped into 1..days.
+function sanitizeBigDay(value) {
+  if (!value || typeof value !== "object") return null;
+  const days = Math.min(BIG_DAY_MAX_DAYS, Math.max(1, Math.floor(Number(value.days)) || 1));
+  const raw = Array.isArray(value.sessions) ? value.sessions : [];
+  const sessions = raw
+    .filter((s) => s && typeof s === "object")
+    .slice(0, BIG_DAY_MAX_SESSIONS)
+    .map((s) => ({
+      id: typeof s.id === "string" && s.id ? s.id : crypto.randomUUID(),
+      name: typeof s.name === "string" ? s.name.trim().slice(0, 60) : "",
+      day: Math.min(days, Math.max(1, Math.floor(Number(s.day)) || 1)),
+    }));
+  if (sessions.length === 0) return null;
+  return { days, sessions };
+}
+
+app.get("/api/big-day", async (req, res) => {
+  const data = await readData();
+  const couple = (data.couples || []).find((c) => c.id === req.coupleId);
+  res.json({ bigDay: couple?.bigDay ? sanitizeBigDay(couple.bigDay) : null });
+});
+
+app.put("/api/big-day", async (req, res) => {
+  const bigDay = sanitizeBigDay(req.body);
+  if (!bigDay) return res.status(400).json({ error: "at least one session is required" });
+  const data = await readData();
+  const couple = (data.couples || []).find((c) => c.id === req.coupleId);
+  couple.bigDay = bigDay;
+  await writeData(data);
+  res.json({ bigDay });
+});
+
 // ---------- Sections ----------
 
 app.get("/api/sections", async (req, res) => {

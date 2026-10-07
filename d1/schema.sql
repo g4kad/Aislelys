@@ -21,6 +21,7 @@ CREATE TABLE IF NOT EXISTS couples (
   budgetTotal REAL NOT NULL DEFAULT 0,
   savings REAL NOT NULL DEFAULT 0,
   homeCurrency TEXT NOT NULL DEFAULT 'SGD',
+  bigDay TEXT,
   notificationsHoldUntil TEXT,
   createdAt TEXT NOT NULL
 );
