@@ -1,9 +1,7 @@
-/* light warm-brown washes in the same tones: --warm-rise comes up from the
-   bottom (Planner page and the selected calendar day), --warm-fall comes
-   down from the top of the Planner page, shorter */
+/* light warm-brown wash rising from the bottom: the Planner page and its
+   selected calendar day share it (the page's top wash uses the same tones) */
 :root {
   --warm-rise: linear-gradient(to top, rgba(185, 151, 103, 0.14), rgba(196, 164, 120, 0.06) 45%, rgba(196, 164, 120, 0) 75%);
-  --warm-fall: linear-gradient(to bottom, rgba(185, 151, 103, 0.14), rgba(196, 164, 120, 0.06) 15%, rgba(196, 164, 120, 0) 30%);
 }
 
 /* the planner app plus the footer; the footer sits at the bottom of the
@@ -4028,16 +4026,35 @@
 }
 
 /* soft light-brown gradients behind the page so the frosted cards have
-   something to blur: one rising from the bottom of the screen, and a
-   shorter one falling from the top. Pinned to the window, so they stay put
-   while scrolling. */
+   something to blur. One rises from the bottom of the screen and is pinned
+   to the window, so it stays put while scrolling... */
 .glass-page::before {
   content: "";
   position: fixed;
   inset: 0;
   z-index: -1;
   pointer-events: none;
-  background: var(--warm-fall), var(--warm-rise);
+  background: var(--warm-rise);
+}
+
+/* ...and a shorter one falls from the divider under the nav (28px above
+   the page: the header's bottom margin), full window width, scrolling
+   with the page */
+.glass-page::after {
+  content: "";
+  position: absolute;
+  top: -28px;
+  left: calc(50% - 50vw);
+  right: calc(50% - 50vw);
+  height: 32vh;
+  z-index: -1;
+  pointer-events: none;
+  background: linear-gradient(to bottom, rgba(185, 151, 103, 0.14), rgba(196, 164, 120, 0.06) 50%, rgba(196, 164, 120, 0));
+}
+
+/* the full-width wash mustn't add a sideways scrollbar */
+body:has(.glass-page) {
+  overflow-x: clip;
 }
 
 .glass-page .calendar-panel,
