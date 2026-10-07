@@ -3968,9 +3968,9 @@
   isolation: isolate;
 }
 
-/* soft brown washes behind the page content (never behind the header or
-   nav) so the frosted cards have something to blur. Spans the full window
-   width, faded in at the top and out at the bottom. */
+/* one soft light-brown gradient rising from the bottom, behind the page
+   content only (never the header or nav), so the frosted cards have
+   something to blur. Spans the full window width. */
 .glass-page::before {
   content: "";
   position: absolute;
@@ -3980,13 +3980,7 @@
   right: calc(50% - 50vw);
   z-index: -1;
   pointer-events: none;
-  background:
-    radial-gradient(40% 30% at 22% 18%, rgba(185, 151, 103, 0.34), transparent 70%),
-    radial-gradient(36% 28% at 80% 32%, rgba(196, 164, 120, 0.32), transparent 70%),
-    radial-gradient(42% 30% at 68% 74%, rgba(178, 143, 100, 0.3), transparent 70%),
-    radial-gradient(34% 26% at 18% 82%, rgba(200, 170, 128, 0.3), transparent 70%);
-  -webkit-mask-image: linear-gradient(to bottom, transparent, #000 48px, #000 calc(100% - 80px), transparent);
-  mask-image: linear-gradient(to bottom, transparent, #000 48px, #000 calc(100% - 80px), transparent);
+  background: linear-gradient(to top, rgba(185, 151, 103, 0.34), rgba(196, 164, 120, 0.14) 55%, rgba(196, 164, 120, 0) 90%);
 }
 
 /* the full-width washes mustn't add a sideways scrollbar */
