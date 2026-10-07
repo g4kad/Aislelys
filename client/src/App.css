@@ -6,6 +6,39 @@
   --warm-fall: linear-gradient(to bottom, rgba(185, 151, 103, 0.14), rgba(196, 164, 120, 0.06) 15%, rgba(196, 164, 120, 0) 30%);
 }
 
+/* the planner app plus the footer; the footer sits at the bottom of the
+   window even when a page is short */
+.app-shell {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-shell > .app {
+  flex: 1;
+  width: 100%;
+}
+
+/* the footer's content lines up with the page content above it
+   (.app is 1180px wide with 24px side padding; 20px on phones) */
+.app-shell .hp-footer {
+  padding-left: max(24px, calc(50% - 566px));
+  padding-right: max(24px, calc(50% - 566px));
+}
+
+@media (max-width: 480px) {
+  .app-shell .hp-footer {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+
+  /* phones trim .app's bottom padding; keep some air above the footer */
+  .app-shell > .app {
+    padding-bottom: 48px;
+  }
+}
+
 .app {
   max-width: 1180px;
   margin: 0 auto;
