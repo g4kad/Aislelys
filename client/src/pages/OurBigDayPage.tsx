@@ -434,7 +434,7 @@ export default function OurBigDayPage() {
 
       <p className="page-subtitle">
         {bigDay
-          ? "The timeline for every part of the day, session by session."
+          ? "The timeline for every part of the day, session by session, minute by minute."
           : "Let’s set up your big day. Tell us how many days it runs and how many sessions are happening — each one gets its own timeline."}
       </p>
 
