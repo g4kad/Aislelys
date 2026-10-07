@@ -729,11 +729,12 @@
 }
 
 /* selected day: a thick outline instead of a solid fill (inset, so the
-   grid doesn't shift) */
+   grid doesn't shift), with a light gold wash rising from the bottom */
 .calendar-cell.selected,
 .calendar-cell.selected:hover {
   border-color: var(--accent);
   box-shadow: inset 0 0 0 2px var(--accent);
+  background: linear-gradient(to top, rgba(185, 151, 103, 0.28), rgba(185, 151, 103, 0) 75%), var(--surface-alt);
 }
 
 .calendar-cell.selected .cell-daynum {
