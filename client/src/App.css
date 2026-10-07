@@ -3968,19 +3968,30 @@
   isolation: isolate;
 }
 
-/* soft colour washes behind the page so the frosted cards have something
-   to blur; fixed, so they stay put while the page scrolls */
+/* soft brown washes behind the page content (never behind the header or
+   nav) so the frosted cards have something to blur. Spans the full window
+   width, faded in at the top and out at the bottom. */
 .glass-page::before {
   content: "";
-  position: fixed;
-  inset: 0;
+  position: absolute;
+  top: 0;
+  bottom: -64px;
+  left: calc(50% - 50vw);
+  right: calc(50% - 50vw);
   z-index: -1;
   pointer-events: none;
   background:
-    radial-gradient(42vmax 32vmax at 18% 32%, rgba(185, 151, 103, 0.5), transparent 70%),
-    radial-gradient(36vmax 30vmax at 82% 24%, rgba(150, 156, 112, 0.5), transparent 70%),
-    radial-gradient(44vmax 34vmax at 72% 78%, rgba(226, 160, 150, 0.42), transparent 70%),
-    radial-gradient(34vmax 28vmax at 14% 86%, rgba(150, 156, 112, 0.38), transparent 70%);
+    radial-gradient(40% 30% at 22% 18%, rgba(185, 151, 103, 0.34), transparent 70%),
+    radial-gradient(36% 28% at 80% 32%, rgba(196, 164, 120, 0.32), transparent 70%),
+    radial-gradient(42% 30% at 68% 74%, rgba(178, 143, 100, 0.3), transparent 70%),
+    radial-gradient(34% 26% at 18% 82%, rgba(200, 170, 128, 0.3), transparent 70%);
+  -webkit-mask-image: linear-gradient(to bottom, transparent, #000 48px, #000 calc(100% - 80px), transparent);
+  mask-image: linear-gradient(to bottom, transparent, #000 48px, #000 calc(100% - 80px), transparent);
+}
+
+/* the full-width washes mustn't add a sideways scrollbar */
+body:has(.glass-page) {
+  overflow-x: clip;
 }
 
 .glass-page .calendar-panel,
