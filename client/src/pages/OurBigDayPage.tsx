@@ -184,6 +184,37 @@ function SessionTimeline({ session, index }: { session: BigDaySession; index: nu
   );
 }
 
+function sessionsByDay(bigDay: BigDay) {
+  return Array.from({ length: bigDay.days }, (_, d) => d + 1).map((day) => ({
+    day,
+    sessions: bigDay.sessions.map((s, i) => ({ s, i })).filter(({ s }) => s.day === day),
+  }));
+}
+
+// Every session, day by day, on one line — the whole wedding at a glance.
+function FullTimeline({ bigDay }: { bigDay: BigDay }) {
+  return (
+    <aside className="big-day-full">
+      <h3 className="big-day-full-title">Full Timeline</h3>
+      {sessionsByDay(bigDay)
+        .filter(({ sessions }) => sessions.length > 0)
+        .map(({ day, sessions }) => (
+          <div key={day} className="big-day-full-day">
+            {bigDay.days > 1 && <h4 className="big-day-full-day-title">Day {day}</h4>}
+            <ol className="big-day-full-list">
+              {sessions.map(({ s, i }) => (
+                <li key={s.id} className="big-day-full-item">
+                  <span className="big-day-full-name">{sessionLabel(s, i)}</span>
+                  <span className="empty-hint">Nothing scheduled yet.</span>
+                </li>
+              ))}
+            </ol>
+          </div>
+        ))}
+    </aside>
+  );
+}
+
 export default function OurBigDayPage() {
   const [bigDay, setBigDay] = useState<BigDay | null>(null);
   const [loading, setLoading] = useState(true);
@@ -240,26 +271,25 @@ export default function OurBigDayPage() {
       )}
 
       {bigDay && !editing && (
-        <div className="big-day-days">
-          {Array.from({ length: bigDay.days }, (_, d) => d + 1).map((day) => {
-            const daySessions = bigDay.sessions
-              .map((s, i) => ({ s, i }))
-              .filter(({ s }) => s.day === day);
-            return (
+        <div className="big-day-layout">
+          <div className="big-day-days">
+            {sessionsByDay(bigDay).map(({ day, sessions }) => (
               <div key={day} className="big-day-day">
                 {bigDay.days > 1 && <h3 className="big-day-day-title">Day {day}</h3>}
-                {daySessions.length === 0 ? (
+                {sessions.length === 0 ? (
                   <p className="empty-hint">No sessions on this day.</p>
                 ) : (
                   <div className="big-day-sessions">
-                    {daySessions.map(({ s, i }) => (
+                    {sessions.map(({ s, i }) => (
                       <SessionTimeline key={s.id} session={s} index={i} />
                     ))}
                   </div>
                 )}
               </div>
-            );
-          })}
+            ))}
+          </div>
+
+          <FullTimeline bigDay={bigDay} />
         </div>
       )}
     </div>

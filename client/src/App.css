@@ -3465,3 +3465,92 @@
 .big-day-session-empty {
   margin: 0;
 }
+
+.big-day-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  align-items: start;
+}
+
+.big-day-layout .big-day-days {
+  padding-right: 28px;
+}
+
+.big-day-full {
+  border-left: 1px solid var(--border);
+  padding-left: 28px;
+  align-self: stretch;
+}
+
+.big-day-full-title {
+  font-size: 1.2rem;
+  margin: 0 0 14px;
+}
+
+.big-day-full-day + .big-day-full-day {
+  margin-top: 20px;
+}
+
+.big-day-full-day-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin: 0 0 10px;
+}
+
+.big-day-full-list {
+  list-style: none;
+  margin: 0;
+  padding: 0 0 0 18px;
+  border-left: 2px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.big-day-full-item {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.big-day-full-item::before {
+  content: "";
+  position: absolute;
+  left: -24px;
+  top: 5px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid var(--bg);
+}
+
+.big-day-full-name {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.big-day-full-item .empty-hint {
+  font-size: 0.82rem;
+}
+
+@media (max-width: 860px) {
+  .big-day-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .big-day-layout .big-day-days {
+    padding-right: 0;
+  }
+
+  .big-day-full {
+    border-left: none;
+    border-top: 1px solid var(--border);
+    padding: 24px 0 0;
+    margin-top: 28px;
+  }
+}
