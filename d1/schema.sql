@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS couples (
   partner1Name TEXT NOT NULL,
   partner2Name TEXT NOT NULL,
   weddingDate TEXT,
+  romDate TEXT,
   budgetTotal REAL NOT NULL DEFAULT 0,
   savings REAL NOT NULL DEFAULT 0,
   homeCurrency TEXT NOT NULL DEFAULT 'SGD',

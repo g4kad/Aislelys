@@ -18,6 +18,21 @@ function isEmbed(url: string) {
   return !!(getYouTubeEmbedUrl(url) || getVimeoEmbedUrl(url) || getInstagramEmbedUrl(url) || getTikTokEmbedUrl(url));
 }
 
+// The ROM (Registry of Marriage) date, under the wedding countdown — only
+// here, not in the header countdown.
+function RomDate({ date }: { date: string }) {
+  const days = daysUntil(date);
+  const when =
+    days > 0 ? `${days.toLocaleString()} ${days === 1 ? "day" : "days"} to go` : days === 0 ? "Today!" : "Registered";
+  return (
+    <p className="overview-rom">
+      <span className="overview-rom-label">ROM</span>
+      <span className="overview-rom-date">{formatDateLong(date)}</span>
+      <span className="overview-rom-when">{when}</span>
+    </p>
+  );
+}
+
 export default function OverviewPage({ weddingDate }: Props) {
   const { coupleId } = useParams<{ coupleId: string }>();
   const base = `/${coupleId}`;
@@ -27,9 +42,14 @@ export default function OverviewPage({ weddingDate }: Props) {
   const [budget, setBudget] = useState<Budget | null>(null);
   const [budgetItems, setBudgetItems] = useState<BudgetItem[]>([]);
   const [rates, setRates] = useState<Record<Currency, number>>(DEFAULT_RATES);
+  const [romDate, setRomDate] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   // a new quote each time the page is opened
   const [quote] = useState(() => LOVE_QUOTES[Math.floor(Math.random() * LOVE_QUOTES.length)]);
+
+  useEffect(() => {
+    api.getRomDate().then((d) => setRomDate(d.date)).catch(() => {});
+  }, []);
 
   useEffect(() => {
     Promise.all([
@@ -95,6 +115,7 @@ export default function OverviewPage({ weddingDate }: Props) {
               <p className="overview-hero-date overview-hero-date-large">{formatDateLong(weddingDate!)}</p>
             </>
           )}
+          {romDate && <RomDate date={romDate} />}
         </div>
 
         <figure className="overview-quote">

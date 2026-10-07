@@ -94,6 +94,9 @@ export const markAllNotificationsRead = () => request<void>("/notifications/read
 export const getWeddingDate = () => request<WeddingDate>("/wedding-date");
 export const updateWeddingDate = (date: string | null) =>
   request<WeddingDate>("/wedding-date", { method: "PUT", body: JSON.stringify({ date }) });
+export const getRomDate = () => request<WeddingDate>("/rom-date");
+export const updateRomDate = (date: string | null) =>
+  request<WeddingDate>("/rom-date", { method: "PUT", body: JSON.stringify({ date }) });
 
 // Delete planner: while the partner has joined it only removes you and they
 // keep everything; otherwise the whole planner goes. `confirm` is the typed phrase.

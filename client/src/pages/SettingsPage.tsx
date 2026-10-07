@@ -14,6 +14,8 @@ type Props = {
 
 export default function SettingsPage({ weddingDate, onWeddingDateChange }: Props) {
   const [draft, setDraft] = useState(weddingDate ?? "");
+  const [romDate, setRomDate] = useState<string | null>(null);
+  const [romDraft, setRomDraft] = useState("");
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState<{ kind: "saved" | "error"; message: string } | null>(null);
 
@@ -22,7 +24,19 @@ export default function SettingsPage({ weddingDate, onWeddingDateChange }: Props
     setDraft(weddingDate ?? "");
   }, [weddingDate]);
 
-  const unchanged = draft === (weddingDate ?? "");
+  useEffect(() => {
+    api
+      .getRomDate()
+      .then(({ date }) => {
+        setRomDate(date);
+        setRomDraft(date ?? "");
+      })
+      .catch(() => {});
+  }, []);
+
+  const weddingUnchanged = draft === (weddingDate ?? "");
+  const romUnchanged = romDraft === (romDate ?? "");
+  const unchanged = weddingUnchanged && romUnchanged;
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
@@ -30,9 +44,18 @@ export default function SettingsPage({ weddingDate, onWeddingDateChange }: Props
     setSaving(true);
     setStatus(null);
     try {
-      const { date } = await api.updateWeddingDate(draft || null);
-      onWeddingDateChange(date);
-      setStatus({ kind: "saved", message: date ? `Saved — ${formatDateLong(date)}` : "Wedding date cleared" });
+      const saved: string[] = [];
+      if (!weddingUnchanged) {
+        const { date } = await api.updateWeddingDate(draft || null);
+        onWeddingDateChange(date);
+        saved.push(date ? `wedding ${formatDateLong(date)}` : "wedding date cleared");
+      }
+      if (!romUnchanged) {
+        const { date } = await api.updateRomDate(romDraft || null);
+        setRomDate(date);
+        saved.push(date ? `ROM ${formatDateLong(date)}` : "ROM date cleared");
+      }
+      setStatus({ kind: "saved", message: `Saved — ${saved.join(", ")}` });
     } catch (err) {
       setStatus({ kind: "error", message: (err as Error).message });
     } finally {
@@ -47,16 +70,29 @@ export default function SettingsPage({ weddingDate, onWeddingDateChange }: Props
       <PartnerInviteCard />
 
       <section className="settings-card">
-        <h3>Wedding date</h3>
-        <p className="page-subtitle">Used for the countdown at the top of every page.</p>
+        <h3>Important dates</h3>
+        <p className="page-subtitle">
+          The wedding date sets the countdown at the top of every page. Both dates show on the Overview.
+        </p>
         <form className="settings-form" onSubmit={handleSave}>
           <label className="title-field">
-            Date
+            Wedding date
             <input
               type="date"
               value={draft}
               onChange={(e) => {
                 setDraft(e.target.value);
+                setStatus(null);
+              }}
+            />
+          </label>
+          <label className="title-field">
+            ROM date
+            <input
+              type="date"
+              value={romDraft}
+              onChange={(e) => {
+                setRomDraft(e.target.value);
                 setStatus(null);
               }}
             />

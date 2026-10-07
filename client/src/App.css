@@ -3098,6 +3098,55 @@
   font-size: clamp(1.6rem, 5vw, 2.4rem);
 }
 
+.overview-rom {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 6px 10px;
+  margin: 22px 0 0;
+  padding: 8px 16px;
+  border: 1px solid var(--hero-rule);
+  border-radius: 999px;
+  color: var(--hero-text);
+  font-size: 0.9rem;
+}
+
+.overview-rom-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: var(--hero-muted);
+}
+
+.overview-rom-date {
+  font-family: var(--heading);
+  font-size: 1.05rem;
+}
+
+.overview-rom-when {
+  color: var(--hero-muted);
+}
+
+.overview-rom-when::before {
+  content: "·";
+  margin-right: 10px;
+}
+
+/* phones: stack the ROM line instead of letting it wrap mid-sentence */
+@media (max-width: 480px) {
+  .overview-rom {
+    flex-direction: column;
+    gap: 2px;
+    border-radius: 16px;
+    padding: 10px 22px;
+  }
+
+  .overview-rom-when::before {
+    content: none;
+  }
+}
+
 .overview-hero-empty {
   margin: 10px 0 0;
   color: var(--hero-text);

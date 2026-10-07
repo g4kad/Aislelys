@@ -607,6 +607,22 @@ app.delete("/big-day/tasks/:taskId", async (c) => {
   return c.json({ bigDay });
 });
 
+// ---------- ROM date ----------
+
+app.get("/rom-date", async (c) => {
+  const couple = await c.env.DB.prepare("SELECT romDate FROM couples WHERE id = ?").bind(c.get("coupleId")).first();
+  return c.json({ date: couple?.romDate ?? null });
+});
+
+app.put("/rom-date", async (c) => {
+  const { date } = await c.req.json();
+  if (date !== null && !(typeof date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(date) && !isNaN(Date.parse(date)))) {
+    return c.json({ error: "date must be YYYY-MM-DD or null" }, 400);
+  }
+  await c.env.DB.prepare("UPDATE couples SET romDate = ? WHERE id = ?").bind(date, c.get("coupleId")).run();
+  return c.json({ date });
+});
+
 // ---------- Delete planner ----------
 
 // The phrase Settings asks for before deleting; checked here too so a stray

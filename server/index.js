@@ -333,6 +333,26 @@ app.get("/api/wedding-date", async (req, res) => {
   res.json({ date: couple?.weddingDate ?? null });
 });
 
+// ---------- ROM date (shown on the Overview) ----------
+
+app.get("/api/rom-date", async (req, res) => {
+  const data = await readData();
+  const couple = (data.couples || []).find((c) => c.id === req.coupleId);
+  res.json({ date: couple?.romDate ?? null });
+});
+
+app.put("/api/rom-date", async (req, res) => {
+  const { date } = req.body;
+  if (date !== null && !(typeof date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(date) && !isNaN(Date.parse(date)))) {
+    return res.status(400).json({ error: "date must be YYYY-MM-DD or null" });
+  }
+  const data = await readData();
+  const couple = (data.couples || []).find((c) => c.id === req.coupleId);
+  couple.romDate = date;
+  await writeData(data);
+  res.json({ date });
+});
+
 // ---------- Our Big Day ----------
 
 const BIG_DAY_MAX_DAYS = 10;
