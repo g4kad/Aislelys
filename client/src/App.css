@@ -4012,7 +4012,7 @@
   color: var(--danger);
 }
 
-/* ---------- Frosted glass (trial: Planner, Guest List and Budget) ---------- */
+/* ---------- Frosted glass (trial: Planner, Guest List, Budget and Vendors) ---------- */
 
 /* the page keeps the same vertical rhythm as .app-main */
 .planner-page {
@@ -4078,6 +4078,7 @@ body:has(.glass-page) {
 .glass-page .board-section,
 .glass-page .card,
 .glass-page .board-footer .btn,
+.glass-page > .btn-row > .btn:not(.primary),
 .glass-page .budget-summary-stat {
   background: var(--glass-fill);
   -webkit-backdrop-filter: var(--glass-blur);
@@ -4092,6 +4093,7 @@ body:has(.glass-page) {
 .glass-page .calendar-panel,
 .glass-page .day-panel,
 .glass-page .board-footer .btn,
+.glass-page > .btn-row > .btn:not(.primary),
 .glass-page .budget-summary-stat {
   border-left-color: var(--glass-edge);
 }
@@ -4138,7 +4140,8 @@ body:has(.glass-page) {
     rgba(253, 249, 239, 0.6);
 }
 
-.glass-page .board-footer .btn:hover {
+.glass-page .board-footer .btn:hover,
+.glass-page > .btn-row > .btn:not(.primary):hover {
   background:
     linear-gradient(to bottom, rgba(255, 255, 255, 0.75), rgba(255, 255, 255, 0.5)),
     rgba(255, 255, 255, 0.4);

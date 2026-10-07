@@ -92,7 +92,7 @@ export default function VendorsPage() {
   if (loading) return <p className="empty-hint">Loading…</p>;
 
   return (
-    <div className="vendors-page">
+    <div className="vendors-page glass-page">
       {error && (
         <div className="error-banner" onClick={() => setError(null)}>
           {error} (click to dismiss)
