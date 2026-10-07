@@ -3079,7 +3079,7 @@
 }
 
 .overview-hero-label {
-  margin: 8px 0 0;
+  margin: 2px 0 0;
   font-size: 0.8rem;
   font-weight: 600;
   letter-spacing: 0.14em;
@@ -3104,7 +3104,7 @@
   align-items: center;
   justify-content: center;
   gap: 6px 10px;
-  margin: 22px 0 0;
+  margin: 12px 0 0;
   padding: 8px 16px;
   border: 1px solid var(--hero-rule);
   border-radius: 999px;
