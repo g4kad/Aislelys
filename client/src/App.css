@@ -4018,4 +4018,25 @@ body:has(.glass-page) {
     rgba(253, 249, 239, 0.6);
 }
 
-/* task rows stay solid — swipe-to-delete keeps its trash button behind them */
+/* drop-down rows (task cards, the to-do list) get the frosted look too;
+   their coloured left stripe is untouched */
+.glass-page .card {
+  background:
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.28)),
+    rgba(255, 255, 255, 0.3);
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
+  backdrop-filter: blur(18px) saturate(150%);
+  border-top-color: rgba(255, 255, 255, 0.85);
+  border-right-color: rgba(255, 255, 255, 0.7);
+  border-bottom-color: rgba(255, 255, 255, 0.6);
+  box-shadow:
+    0 4px 16px rgba(60, 45, 35, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+/* swipeable rows: a solid warm layer under the glass, so the delete
+   button behind the row can never show through */
+.glass-page .swipe-content {
+  background: #fbf7f0;
+  border-radius: 10px;
+}
