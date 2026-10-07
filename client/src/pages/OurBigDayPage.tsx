@@ -190,12 +190,12 @@ function SessionTimeline({
   session,
   index,
   onAddTask,
-  onEditTask,
+  onOpenTask,
 }: {
   session: BigDaySession;
   index: number;
   onAddTask: () => void;
-  onEditTask: (task: BigDayTask) => void;
+  onOpenTask: (task: BigDayTask) => void;
 }) {
   const tasks = sortedTasks(session.tasks);
   return (
@@ -212,7 +212,7 @@ function SessionTimeline({
         <ul className="big-day-task-list">
           {tasks.map((t) => (
             <li key={t.id}>
-              <button type="button" className="big-day-task" onClick={() => onEditTask(t)}>
+              <button type="button" className="big-day-task" onClick={() => onOpenTask(t)}>
                 <span className="big-day-task-time">{t.time ? formatTime(t.time) : "—"}</span>
                 <span className="big-day-task-main">
                   <span className="big-day-task-name">{t.name}</span>
@@ -278,8 +278,8 @@ export default function OurBigDayPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
-  // the session a task is being added to, or the task being edited
-  const [taskModal, setTaskModal] = useState<{ sessionId: string; task?: BigDayTask } | null>(null);
+  // the session a task is being added to, or the task being viewed/edited
+  const [taskModal, setTaskModal] = useState<{ sessionId: string; taskId?: string } | null>(null);
 
   useEffect(() => {
     api
@@ -313,6 +313,7 @@ export default function OurBigDayPage() {
   const showSetup = !loading && (!bigDay || editing);
   const modalSessionIndex = bigDay?.sessions.findIndex((s) => s.id === taskModal?.sessionId) ?? -1;
   const modalSession = bigDay && modalSessionIndex !== -1 ? bigDay.sessions[modalSessionIndex] : null;
+  const modalTask = taskModal?.taskId ? modalSession?.tasks.find((t) => t.id === taskModal.taskId) : undefined;
 
   return (
     <div className="our-big-day-page">
@@ -359,7 +360,7 @@ export default function OurBigDayPage() {
                         session={s}
                         index={i}
                         onAddTask={() => setTaskModal({ sessionId: s.id })}
-                        onEditTask={(task) => setTaskModal({ sessionId: s.id, task })}
+                        onOpenTask={(task) => setTaskModal({ sessionId: s.id, taskId: task.id })}
                       />
                     ))}
                   </div>
@@ -372,20 +373,18 @@ export default function OurBigDayPage() {
         </div>
       )}
 
-      {taskModal && modalSession && (
+      {taskModal && modalSession && (!taskModal.taskId || modalTask) && (
         <BigDayTaskModal
-          key={taskModal.task?.id ?? taskModal.sessionId}
+          key={taskModal.taskId ?? taskModal.sessionId}
           sessionName={sessionLabel(modalSession, modalSessionIndex)}
-          task={taskModal.task}
+          task={modalTask}
           onClose={() => setTaskModal(null)}
           onSave={(task) =>
             applyTaskChange(
-              taskModal.task
-                ? api.updateBigDayTask(taskModal.task.id, task)
-                : api.addBigDayTask(taskModal.sessionId, task)
+              modalTask ? api.updateBigDayTask(modalTask.id, task) : api.addBigDayTask(taskModal.sessionId, task)
             )
           }
-          onDelete={taskModal.task ? () => applyTaskChange(api.deleteBigDayTask(taskModal.task!.id)) : undefined}
+          onDelete={modalTask ? () => applyTaskChange(api.deleteBigDayTask(modalTask.id)) : undefined}
         />
       )}
     </div>
