@@ -3968,24 +3968,17 @@
   isolation: isolate;
 }
 
-/* one soft light-brown gradient rising from the bottom, behind the page
-   content only (never the header or nav), so the frosted cards have
-   something to blur. Spans the full window width. */
+/* one soft light-brown gradient rising from the bottom of the screen, so
+   the frosted cards have something to blur. Pinned to the window, so it
+   always reaches the very bottom while scrolling; it fades out well below
+   the header and nav. */
 .glass-page::before {
   content: "";
-  position: absolute;
-  top: 0;
-  bottom: -64px;
-  left: calc(50% - 50vw);
-  right: calc(50% - 50vw);
+  position: fixed;
+  inset: 0;
   z-index: -1;
   pointer-events: none;
-  background: linear-gradient(to top, rgba(185, 151, 103, 0.34), rgba(196, 164, 120, 0.14) 55%, rgba(196, 164, 120, 0) 90%);
-}
-
-/* the full-width washes mustn't add a sideways scrollbar */
-body:has(.glass-page) {
-  overflow-x: clip;
+  background: linear-gradient(to top, rgba(185, 151, 103, 0.36), rgba(196, 164, 120, 0.14) 45%, rgba(196, 164, 120, 0) 75%);
 }
 
 .glass-page .calendar-panel,
