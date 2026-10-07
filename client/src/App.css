@@ -1387,7 +1387,24 @@
 }
 
 .task-add-form input:last-of-type {
-  flex: 0 0 120px;
+  flex: 1 1 auto;
+}
+
+/* desktop only: the name field, the assign dropdown and the Add button sit
+   in one row, so line them up at the same height despite their different
+   font sizes and padding. */
+@media (min-width: 861px) {
+  .task-add-form input,
+  .task-add-form .assignee-dropdown .dropdown-trigger,
+  .task-add-form button {
+    height: 36px;
+  }
+
+  .task-add-form button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
 }
 
 .card-footer {
@@ -2661,9 +2678,6 @@
   }
   .task-add-form {
     flex-wrap: wrap;
-  }
-  .task-add-form input:last-of-type {
-    flex: 1 1 auto;
   }
   .board-toolbar {
     display: none;

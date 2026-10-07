@@ -94,7 +94,7 @@ export default function EventCard({
         <span className="card-title">{event.title}</span>
         {event.tasks.length > 0 && (
           <span className="task-pill">
-            {doneCount}/{event.tasks.length} tasks
+            {doneCount}/{event.tasks.length} sub-tasks
           </span>
         )}
         {!hideDate && event.date && <span className="card-date event-card-date">{formatDateDMY(event.date)}</span>}
@@ -111,7 +111,7 @@ export default function EventCard({
           )}
 
           <div className="view-block">
-            <span className="view-label">Tasks</span>
+            <span className="view-label">Sub-tasks</span>
             {event.tasks.length === 0 ? (
               <p className="empty-hint">No tasks yet.</p>
             ) : (
@@ -138,7 +138,7 @@ export default function EventCard({
             <form className="task-add-form" onSubmit={submitTask}>
               <input
                 type="text"
-                placeholder="New task…"
+                placeholder="New sub-task…"
                 value={taskName}
                 onChange={(e) => setTaskName(e.target.value)}
               />
@@ -149,7 +149,7 @@ export default function EventCard({
                 placeholder="Assign"
                 options={assigneeOptions}
               />
-              <button className="btn small" type="submit">Add task</button>
+              <button className="btn small" type="submit">Add sub-task</button>
             </form>
           </div>
 
@@ -222,7 +222,7 @@ export default function EventCard({
 
           <div className="tasks-block">
             <div className="notes-block-header">
-              <span>Tasks</span>
+              <span>Sub-tasks</span>
             </div>
             {event.tasks.length === 0 && <p className="empty-hint">No tasks yet.</p>}
             <ul className="task-list">
@@ -241,7 +241,7 @@ export default function EventCard({
                     placeholder="Assign"
                     options={assigneeOptions}
                   />
-                  <button className="icon-btn" title="Remove task" onClick={() => onDeleteTask(task.id)}>
+                  <button className="icon-btn" title="Remove sub-task" onClick={() => onDeleteTask(task.id)}>
                     <IconClose />
                   </button>
                 </li>
@@ -250,7 +250,7 @@ export default function EventCard({
             <form className="task-add-form" onSubmit={submitTask}>
               <input
                 type="text"
-                placeholder="New task…"
+                placeholder="New sub-task…"
                 value={taskName}
                 onChange={(e) => setTaskName(e.target.value)}
               />
@@ -261,7 +261,7 @@ export default function EventCard({
                 placeholder="Assign"
                 options={assigneeOptions}
               />
-              <button className="btn small" type="submit">Add task</button>
+              <button className="btn small" type="submit">Add sub-task</button>
             </form>
           </div>
 
