@@ -110,7 +110,7 @@ export const QUESTIONS: Question[] = [
     id: "guest-list-missing",
     section: "Guest list",
     type: "text",
-    prompt: "What was missing and can be improved for you in guest list?",
+    prompt: "What was missing or could be improved for you in the guest list?",
     placeholder: "What would make it better?",
   },
   {
@@ -168,7 +168,7 @@ export const QUESTIONS: Question[] = [
     section: "The big picture",
     type: "text",
     prompt: "What is your favourite thing about Aislelys?",
-    placeholder: "Give us a positive feedback",
+    placeholder: "Give us some positive feedback",
   },
   {
     id: "least-favourite-thing",
