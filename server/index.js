@@ -397,6 +397,18 @@ app.get("/api/wedding-date", async (req, res) => {
   res.json({ date: couple?.weddingDate ?? null });
 });
 
+app.put("/api/wedding-date", async (req, res) => {
+  const { date } = req.body;
+  if (date !== null && !(typeof date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(date) && !isNaN(Date.parse(date)))) {
+    return res.status(400).json({ error: "date must be YYYY-MM-DD or null" });
+  }
+  const data = await readData();
+  const couple = (data.couples || []).find((c) => c.id === req.coupleId);
+  couple.weddingDate = date;
+  await writeData(data);
+  res.json({ date: couple.weddingDate });
+});
+
 // ---------- ROM date (shown on the Overview) ----------
 
 app.get("/api/rom-date", async (req, res) => {
