@@ -187,3 +187,13 @@ export type Vendor = {
   downpayment: number; // in the vendor's currency
   extras: ExtraCost[];
 };
+
+// One submission to a public feedback form (e.g. "ten-brides"). Answers are
+// keyed by question id so new questions don't need a type change.
+export type SurveyResponse = {
+  id: string;
+  answers: Record<string, string>;
+  coupleId: string | null;
+  userName: string | null;
+  createdAt: string;
+};

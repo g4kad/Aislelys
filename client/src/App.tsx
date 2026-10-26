@@ -12,6 +12,8 @@ import SettingsPage from "./pages/SettingsPage";
 import OverviewPage from "./pages/OverviewPage";
 import HomePage from "./home/HomePage";
 import { TermsPage, PrivacyPage, LegalFooter } from "./home/LegalPage";
+import TenBridesPage from "./survey/TenBridesPage";
+import TenBridesResultsPage from "./survey/TenBridesResultsPage";
 import AuthGate, { LoginPage } from "./components/AuthGate";
 import UserMenu from "./components/UserMenu";
 import { IconCalendar, IconUsers, IconWallet, IconStore, IconImage, IconHome, IconHeart } from "./components/Icons";
@@ -147,6 +149,8 @@ function App() {
       <Route path="/" element={<HomePage />} />
       <Route path="/terms" element={<TermsPage />} />
       <Route path="/privacy" element={<PrivacyPage />} />
+      <Route path="/ten-brides" element={<TenBridesPage />} />
+      <Route path="/ten-brides/results" element={<TenBridesResultsPage />} />
       <Route path="/:coupleId/*" element={<Workspace />} />
     </Routes>
   );

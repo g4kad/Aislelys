@@ -27,6 +27,7 @@ const EMPTY_DATA = {
   users: [],
   sessions: [],
   notifications: [],
+  surveyResponses: [],
 };
 
 let writeChain = Promise.resolve();

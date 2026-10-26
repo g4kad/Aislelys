@@ -176,6 +176,14 @@ function isDevLoginPath(reqPath, method) {
   return process.env.NODE_ENV !== "production" && method === "GET" && /^\/api\/dev-login\/[^/]+$/.test(reqPath);
 }
 
+// Submitting a response requires being signed in (so it can be credited to
+// an account), which the normal auth gate below already enforces — this
+// only exempts reading responses back, gated by its own admin-password
+// check inside the route itself, not a couple session.
+function isSurveyResultsPath(reqPath, method) {
+  return /^\/api\/surveys\/[^/]+\/responses$/.test(reqPath) && method === "GET";
+}
+
 const PUBLIC_AUTH_PATHS = new Set(["/api/auth/logout", "/api/signup", "/api/default-couple"]);
 
 app.use(async (req, res, next) => {
@@ -196,7 +204,8 @@ app.use(async (req, res, next) => {
     PUBLIC_AUTH_PATHS.has(req.path) ||
     isPublicGuestInvitePath(req.path, req.method) ||
     isPublicCouplePath(req.path, req.method) ||
-    isDevLoginPath(req.path, req.method)
+    isDevLoginPath(req.path, req.method) ||
+    isSurveyResultsPath(req.path, req.method)
   ) {
     return next();
   }
@@ -1374,6 +1383,42 @@ app.put("/api/exchange-rate", async (req, res) => {
   data.exchangeRate = { base: "SGD", rates, updatedAt: new Date().toISOString(), source: "manual" };
   await writeData(data);
   res.json(data.exchangeRate);
+});
+
+// ---------- Surveys (public feedback forms, e.g. "ten-brides") ----------
+
+// local dev only — production's is set in Cloudflare's settings table
+const DEV_SURVEY_ADMIN_PASSWORD = "ten-brides-dev";
+
+app.post("/api/surveys/:survey/responses", async (req, res) => {
+  const { answers } = req.body;
+  if (!answers || typeof answers !== "object") {
+    return res.status(400).json({ error: "answers is required" });
+  }
+  const data = await readData();
+  data.surveyResponses = data.surveyResponses || [];
+  const row = {
+    id: uuid(),
+    survey: req.params.survey,
+    answers,
+    coupleId: req.coupleId,
+    userName: req.user.name,
+    createdAt: new Date().toISOString(),
+  };
+  data.surveyResponses.push(row);
+  await writeData(data);
+  res.status(201).json({ id: row.id });
+});
+
+app.get("/api/surveys/:survey/responses", async (req, res) => {
+  const password = req.headers["x-survey-admin-password"] || "";
+  const data = await readData();
+  const expected = data.surveyAdminPassword || DEV_SURVEY_ADMIN_PASSWORD;
+  if (password !== expected) return res.status(401).json({ error: "Not authorized" });
+  const responses = (data.surveyResponses || [])
+    .filter((r) => r.survey === req.params.survey)
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  res.json(responses);
 });
 
 // ---------- Vendor categories ----------

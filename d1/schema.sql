@@ -199,3 +199,17 @@ CREATE TABLE IF NOT EXISTS todos (
   done INTEGER NOT NULL DEFAULT 0,
   createdAt TEXT NOT NULL
 );
+
+-- Feedback forms (e.g. the "ten-brides" survey): answers kept as JSON keyed
+-- by question id so new questions don't need a schema change. Submitting
+-- requires being signed in, so coupleId/userName identify who answered;
+-- reading responses back is gated by its own admin password, not a couple
+-- session.
+CREATE TABLE IF NOT EXISTS survey_responses (
+  id TEXT PRIMARY KEY,
+  survey TEXT NOT NULL,
+  answers TEXT NOT NULL,
+  coupleId TEXT,
+  userName TEXT,
+  createdAt TEXT NOT NULL
+);

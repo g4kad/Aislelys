@@ -21,6 +21,7 @@ import type {
   ExtraCost,
   BigDay,
   BigDayTask,
+  SurveyResponse,
 } from "./types";
 
 const BASE = "/api";
@@ -389,3 +390,14 @@ export async function uploadImage(file: File): Promise<string> {
   const data = await res.json();
   return data.url;
 }
+
+// Surveys (public feedback forms, e.g. "ten-brides")
+export const submitSurveyResponse = (survey: string, answers: Record<string, string>) =>
+  request<{ id: string }>(`/surveys/${survey}/responses`, {
+    method: "POST",
+    body: JSON.stringify({ answers }),
+  });
+export const getSurveyResponses = (survey: string, adminPassword: string) =>
+  request<SurveyResponse[]>(`/surveys/${survey}/responses`, {
+    headers: { "X-Survey-Admin-Password": adminPassword },
+  });

@@ -110,6 +110,14 @@ function isPublicCouplePath(path, method) {
 
 const PUBLIC_AUTH_PATHS = new Set(["/auth/logout", "/signup", "/default-couple"]);
 
+// Submitting a response requires being signed in (so it can be credited to
+// an account), which the normal auth gate below already enforces — this
+// only exempts reading responses back, gated by its own admin-password
+// check inside the route itself, not a couple session.
+function isSurveyResultsPath(path, method) {
+  return /^\/surveys\/[^/]+\/responses$/.test(path) && method === "GET";
+}
+
 app.use("*", async (c, next) => {
   const path = c.req.path.replace(/^\/api/, "") || "/";
   const token = getCookie(c, "session");
@@ -135,7 +143,12 @@ app.use("*", async (c, next) => {
       c.set("coupleId", user.coupleId);
     }
   }
-  if (PUBLIC_AUTH_PATHS.has(path) || isPublicGuestInvitePath(path, c.req.method) || isPublicCouplePath(path, c.req.method)) {
+  if (
+    PUBLIC_AUTH_PATHS.has(path) ||
+    isPublicGuestInvitePath(path, c.req.method) ||
+    isPublicCouplePath(path, c.req.method) ||
+    isSurveyResultsPath(path, c.req.method)
+  ) {
     return next();
   }
   // /account/* only needs a Clerk sign-in (the account may not be linked to a
@@ -1838,6 +1851,54 @@ app.put("/exchange-rate", async (c) => {
   const exchangeRate = { base: "SGD", rates, updatedAt: new Date().toISOString(), source: "manual" };
   await setSetting(c.env.DB, "exchangeRate", exchangeRate);
   return c.json(exchangeRate);
+});
+
+// ---------- Surveys (feedback forms, e.g. "ten-brides") ----------
+// Submitting requires being signed in (the auth gate above already enforces
+// this for any path not in the public-bypass list), so every response is
+// credited to the couple/partner who sent it.
+
+app.post("/surveys/:survey/responses", async (c) => {
+  const user = c.get("user");
+  const coupleId = c.get("coupleId");
+  const survey = c.req.param("survey");
+  const { answers } = await c.req.json();
+  if (!answers || typeof answers !== "object") return c.json({ error: "answers is required" }, 400);
+  const row = {
+    id: crypto.randomUUID(),
+    survey,
+    answers: JSON.stringify(answers),
+    coupleId,
+    userName: user.name,
+    createdAt: new Date().toISOString(),
+  };
+  await c.env.DB.prepare(
+    "INSERT INTO survey_responses (id, survey, answers, coupleId, userName, createdAt) VALUES (?,?,?,?,?,?)"
+  )
+    .bind(row.id, row.survey, row.answers, row.coupleId, row.userName, row.createdAt)
+    .run();
+  return c.json({ id: row.id }, 201);
+});
+
+app.get("/surveys/:survey/responses", async (c) => {
+  const password = c.req.header("X-Survey-Admin-Password") || "";
+  const expected = await getSetting(c.env.DB, "surveyAdminPassword", null);
+  if (!expected || password !== expected) return c.json({ error: "Not authorized" }, 401);
+  const survey = c.req.param("survey");
+  const { results } = await c.env.DB.prepare(
+    "SELECT id, answers, coupleId, userName, createdAt FROM survey_responses WHERE survey = ? ORDER BY createdAt DESC"
+  )
+    .bind(survey)
+    .all();
+  return c.json(
+    results.map((r) => ({
+      id: r.id,
+      answers: JSON.parse(r.answers),
+      coupleId: r.coupleId,
+      userName: r.userName,
+      createdAt: r.createdAt,
+    }))
+  );
 });
 
 // ---------- Vendor categories ----------
