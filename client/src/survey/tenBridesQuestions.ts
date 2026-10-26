@@ -51,7 +51,7 @@ export const QUESTIONS: Question[] = [
     id: "navigation-ease",
     section: "Getting started",
     type: "mcq",
-    prompt: "Was navigating around the website easy?",
+    prompt: "Was navigating around the webapp easy?",
     options: ["Yes", "No", "Somewhat"],
   },
   {
