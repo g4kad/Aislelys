@@ -24,10 +24,12 @@ export type Question =
       options: string[];
       followUp?: { id: string; whenOption: string; placeholder: string };
     })
+  | (QuestionBase & { type: "mcq-multi"; options: string[] })
   | (QuestionBase & { type: "text"; placeholder?: string })
   | (QuestionBase & { type: "scale"; min: number; max: number; minLabel?: string; maxLabel?: string });
 
 const FEATURE_OPTIONS = ["Planner", "Guest list", "Budget", "Vendors", "Inspiration board", "Our Big Day"];
+const ALL_FEATURE_OPTIONS = ["Overview", "Planner", "Guest list", "Budget", "Vendors", "Inspiration board", "Our Big Day"];
 
 export const QUESTIONS: Question[] = [
   {
@@ -185,9 +187,9 @@ export const QUESTIONS: Question[] = [
   {
     id: "most-missed-feature",
     section: "The big picture",
-    type: "mcq",
-    prompt: "Which feature would you miss most if it disappeared?",
-    options: FEATURE_OPTIONS,
+    type: "mcq-multi",
+    prompt: "Which feature would you miss the most? (You can select more than one)",
+    options: ALL_FEATURE_OPTIONS,
   },
   {
     id: "wishlist-feature",

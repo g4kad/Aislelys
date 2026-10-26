@@ -37,6 +37,18 @@ export default function TenBridesPage() {
     setAnswers((prev) => ({ ...prev, [id]: value }));
   }
 
+  // mcq-multi answers are stored as a single ", "-joined string, like the
+  // rest of the answers map, so results/validation need no special casing.
+  function multiValues(id: string): string[] {
+    return (answers[id] ?? "").split(", ").filter(Boolean);
+  }
+
+  function toggleMultiOption(id: string, option: string) {
+    const current = multiValues(id);
+    const next = current.includes(option) ? current.filter((o) => o !== option) : [...current, option];
+    setAnswer(id, next.join(", "));
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (missingRequired || submitting) return;
@@ -145,6 +157,21 @@ export default function TenBridesPage() {
                           </>
                         )}
                       </>
+                    )}
+
+                    {q.type === "mcq-multi" && (
+                      <div className="survey-options">
+                        {q.options.map((opt) => (
+                          <button
+                            key={opt}
+                            type="button"
+                            className={`survey-option ${multiValues(q.id).includes(opt) ? "selected" : ""}`}
+                            onClick={() => toggleMultiOption(q.id, opt)}
+                          >
+                            {opt}
+                          </button>
+                        ))}
+                      </div>
                     )}
 
                     {q.type === "text" && (
