@@ -188,7 +188,7 @@ export const QUESTIONS: Question[] = [
     id: "most-missed-feature",
     section: "The big picture",
     type: "mcq-multi",
-    prompt: "Which feature would you miss the most? (You can select more than one)",
+    prompt: "Which feature will you be using the most? (You can select more than one)",
     options: ALL_FEATURE_OPTIONS,
   },
   {
