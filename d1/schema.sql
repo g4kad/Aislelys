@@ -49,7 +49,10 @@ CREATE TABLE IF NOT EXISTS sessions (
   token TEXT PRIMARY KEY,
   userId TEXT NOT NULL,
   createdAt TEXT NOT NULL,
-  expiresAt TEXT NOT NULL
+  expiresAt TEXT NOT NULL,
+  -- Updated (throttled) on each request; a session is auto-logged-out once
+  -- this is more than 48h in the past, even if expiresAt is still far off.
+  lastSeenAt TEXT
 );
 
 CREATE TABLE IF NOT EXISTS notifications (

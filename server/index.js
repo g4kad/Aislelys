@@ -15,7 +15,9 @@ app.use(cors());
 app.use(express.json());
 
 const PORT = process.env.PORT || 4000;
-const SESSION_MAX_AGE_MS = 90 * 24 * 60 * 60 * 1000; // 90 days
+const SESSION_MAX_AGE_MS = 90 * 24 * 60 * 60 * 1000; // 90 days — hard cap regardless of activity
+const SESSION_INACTIVITY_LIMIT_MS = 48 * 60 * 60 * 1000; // auto-logout after 48h with no requests
+const SESSION_LAST_SEEN_UPDATE_THROTTLE_MS = 30 * 60 * 1000; // avoid writing on every request
 const NOTIFICATION_BUFFER_MS = 10 * 60 * 1000; // 10 minutes
 
 // ---------- Auth helpers ----------
@@ -145,7 +147,13 @@ async function createSession(res, data, userId) {
   const token = randomToken();
   const now = new Date();
   const expires = new Date(now.getTime() + SESSION_MAX_AGE_MS);
-  data.sessions.push({ token, userId, createdAt: now.toISOString(), expiresAt: expires.toISOString() });
+  data.sessions.push({
+    token,
+    userId,
+    createdAt: now.toISOString(),
+    expiresAt: expires.toISOString(),
+    lastSeenAt: now.toISOString(),
+  });
   await writeData(data);
   res.setHeader(
     "Set-Cookie",
@@ -192,11 +200,24 @@ app.use(async (req, res, next) => {
   if (token) {
     const data = await readData();
     const session = (data.sessions || []).find((s) => s.token === token);
-    if (session && new Date(session.expiresAt) > new Date()) {
-      const user = (data.users || []).find((u) => u.id === session.userId);
-      if (user) {
-        req.user = { id: user.id, name: user.name };
-        req.coupleId = user.coupleId;
+    if (session) {
+      const now = new Date();
+      const lastSeen = new Date(session.lastSeenAt || session.createdAt);
+      const inactiveTooLong = now.getTime() - lastSeen.getTime() > SESSION_INACTIVITY_LIMIT_MS;
+      if (!inactiveTooLong && now < new Date(session.expiresAt)) {
+        const user = (data.users || []).find((u) => u.id === session.userId);
+        if (user) {
+          req.user = { id: user.id, name: user.name };
+          req.coupleId = user.coupleId;
+        }
+        if (now.getTime() - lastSeen.getTime() > SESSION_LAST_SEEN_UPDATE_THROTTLE_MS) {
+          session.lastSeenAt = now.toISOString();
+          await writeData(data);
+        }
+      } else {
+        // Expired by the 48h inactivity window or the 90-day hard cap — clean it up.
+        data.sessions = data.sessions.filter((s) => s.token !== token);
+        await writeData(data);
       }
     }
   }

@@ -27,7 +27,9 @@ function clerkUserIdOf(c) {
 
 // ---------- Auth helpers ----------
 
-const SESSION_MAX_AGE_SECONDS = 90 * 24 * 60 * 60; // 90 days
+const SESSION_MAX_AGE_SECONDS = 90 * 24 * 60 * 60; // 90 days — hard cap regardless of activity
+const SESSION_INACTIVITY_LIMIT_MS = 48 * 60 * 60 * 1000; // auto-logout after 48h with no requests
+const SESSION_LAST_SEEN_UPDATE_THROTTLE_MS = 30 * 60 * 1000; // avoid writing to D1 on every request
 
 function bytesToHex(bytes) {
   return Array.from(bytes).map((b) => b.toString(16).padStart(2, "0")).join("");
@@ -80,8 +82,8 @@ async function createSession(db, c, userId) {
   const token = randomToken();
   const now = new Date();
   const expires = new Date(now.getTime() + SESSION_MAX_AGE_SECONDS * 1000);
-  await db.prepare("INSERT INTO sessions (token, userId, createdAt, expiresAt) VALUES (?,?,?,?)")
-    .bind(token, userId, now.toISOString(), expires.toISOString())
+  await db.prepare("INSERT INTO sessions (token, userId, createdAt, expiresAt, lastSeenAt) VALUES (?,?,?,?,?)")
+    .bind(token, userId, now.toISOString(), expires.toISOString(), now.toISOString())
     .run();
   setCookie(c, "session", token, {
     httpOnly: true,
@@ -123,11 +125,22 @@ app.use("*", async (c, next) => {
   const token = getCookie(c, "session");
   if (token) {
     const session = await c.env.DB.prepare("SELECT * FROM sessions WHERE token = ?").bind(token).first();
-    if (session && new Date(session.expiresAt) > new Date()) {
-      const user = await c.env.DB.prepare("SELECT id, name, coupleId FROM users WHERE id = ?").bind(session.userId).first();
-      if (user) {
-        c.set("user", { id: user.id, name: user.name });
-        c.set("coupleId", user.coupleId);
+    if (session) {
+      const now = new Date();
+      const lastSeen = new Date(session.lastSeenAt || session.createdAt);
+      const inactiveTooLong = now.getTime() - lastSeen.getTime() > SESSION_INACTIVITY_LIMIT_MS;
+      if (!inactiveTooLong && now < new Date(session.expiresAt)) {
+        const user = await c.env.DB.prepare("SELECT id, name, coupleId FROM users WHERE id = ?").bind(session.userId).first();
+        if (user) {
+          c.set("user", { id: user.id, name: user.name });
+          c.set("coupleId", user.coupleId);
+        }
+        if (now.getTime() - lastSeen.getTime() > SESSION_LAST_SEEN_UPDATE_THROTTLE_MS) {
+          await c.env.DB.prepare("UPDATE sessions SET lastSeenAt = ? WHERE token = ?").bind(now.toISOString(), token).run();
+        }
+      } else {
+        // Expired by the 48h inactivity window or the 90-day hard cap — clean it up.
+        await c.env.DB.prepare("DELETE FROM sessions WHERE token = ?").bind(token).run();
       }
     }
   }
