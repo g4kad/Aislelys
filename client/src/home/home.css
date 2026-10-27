@@ -2221,3 +2221,98 @@ html:has(.hp) {
     transition: none;
   }
 }
+
+/* ---------- pricing ---------- */
+
+.hp-pricing {
+  padding-top: clamp(96px, 10vw, 140px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 44px;
+}
+
+.hp-pricing-head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  text-align: center;
+}
+
+/* one plan: the price on the left, what's included on the right */
+.hp-price-card {
+  width: 100%;
+  max-width: 52rem;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  border: 1px solid var(--hp-line);
+  border-radius: var(--hp-radius-lg);
+  background: var(--hp-cream);
+  box-shadow: 0 18px 40px rgba(60, 40, 20, 0.08);
+  overflow: hidden;
+}
+
+.hp-price-main {
+  padding: clamp(28px, 4vw, 44px);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.hp-price-badge {
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--hp-sage);
+  color: var(--hp-on-sage);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.hp-price-figure {
+  font-family: var(--heading);
+  font-style: italic;
+  font-size: clamp(3.2rem, 5vw, 4.2rem);
+  line-height: 1;
+  color: var(--hp-gold-em);
+}
+
+.hp-price-note {
+  font-size: calc(1rem - 2px);
+  line-height: 1.55;
+  color: var(--hp-body);
+  margin-bottom: 10px;
+}
+
+.hp-price-main .hp-btn {
+  align-self: stretch;
+}
+
+.hp-price-fine {
+  align-self: center;
+  font-size: 0.8125rem;
+  color: var(--hp-body);
+}
+
+.hp-price-features {
+  padding: clamp(28px, 4vw, 44px);
+  background: var(--hp-bg);
+  border-left: 1px solid var(--hp-line);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+@media (max-width: 640px) {
+  .hp-price-card {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .hp-price-features {
+    border-left: 0;
+    border-top: 1px solid var(--hp-line);
+  }
+}

@@ -46,10 +46,16 @@ const STEPS = [
   { n: "3", title: "Bring in the family", body: "Send a guest-list link to your parents so they can add their people." },
 ];
 
+const PLAN_FEATURES = ["Planner", "Guest list", "Budgeting", "Compile vendors", "Inspiration board"];
+
 const FAQS = [
   {
     q: "Is Aislelys free?",
-    a: "Yes, Aislelys is free right now. If we ever add paid features, we'll tell you first, and nothing is charged without your agreement.",
+    a: "Yes, for a limited time. After that, Aislelys will be a one-time payment of up to $12, not a subscription. We'll tell you before anything changes, and nothing is charged without your agreement.",
+  },
+  {
+    q: "What happens to our planner when the free trial ends?",
+    a: "We'll keep your planner, guest list, budget and inspiration board safe for 3 months. Make the one-time payment any time in those 3 months and pick up right where you left off. After that, your planner is deleted.",
   },
   {
     q: "Do we each need our own sign-in?",
@@ -64,12 +70,8 @@ const FAQS = [
     a: "No. Send each side its own guest-list link and they can add their people straight away, without signing up. Share it only with people you trust.",
   },
   {
-    q: "Which currencies does the budget use?",
-    a: "Singapore dollars (S$) and Malaysian ringgit (RM). Add each cost in either one; conversions are estimates to help you plan.",
-  },
-  {
     q: "Is our planner private?",
-    a: "Yes. Each couple's planner is kept separate from everyone else's. We don't run ads or tracking, never sell your data, and don't use your content to train AI.",
+    a: "Yes. Each couple's planner is kept separate from everyone else's, and everything in it, photos included, is locked away safely. We don't run ads or tracking, never sell your data, and don't use your content to train AI.",
   },
   {
     q: "Can we delete our planner?",
@@ -179,6 +181,7 @@ export default function HomePage() {
           <a href="#guests">Guest list</a>
           <a href="#budget">Budget</a>
           <a href="#inspiration">Inspiration</a>
+          <a href="#pricing">Pricing</a>
         </nav>
         <div className="hp-nav-actions">
           <Link to="/sign-in" className="hp-link-btn">
@@ -372,6 +375,40 @@ export default function HomePage() {
           </div>
         </section>
 
+        {/* PRICING */}
+        <section id="pricing" className="hp-wrap hp-pricing">
+          <div className="hp-pricing-head">
+            <p className="hp-eyebrow">Pricing</p>
+            <h2 className="hp-h2">
+              Simple, <em>one-time</em> pricing.
+            </h2>
+          </div>
+          <div className="hp-price-card">
+            <div className="hp-price-main">
+              <span className="hp-price-badge">For a limited time</span>
+              <p className="hp-price-amount">
+                <span className="hp-price-figure">Free Planner</span>
+              </p>
+              <p className="hp-price-note">Then up to $12, one-time — no monthly fees.</p>
+              <Link to="/sign-up" className="hp-btn hp-btn-primary">
+                Start planning together
+              </Link>
+              <span className="hp-price-fine">No credit card needed</span>
+            </div>
+            <div className="hp-price-features">
+              <p className="hp-eyebrow">Features</p>
+              <ul className="hp-points">
+                {PLAN_FEATURES.map((f) => (
+                  <li key={f}>
+                    <Check />
+                    {f}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </section>
+
         {/* FINAL CTA */}
         <section className="hp-wrap hp-final">
           <h2 className="hp-display hp-final-title">
@@ -410,6 +447,7 @@ export default function HomePage() {
           <a href="#guests">Guest list</a>
           <a href="#budget">Budget</a>
           <a href="#inspiration">Inspiration</a>
+          <a href="#pricing">Pricing</a>
           <Link to="/terms">Terms</Link>
           <Link to="/privacy">Privacy</Link>
         </nav>
