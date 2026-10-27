@@ -55,7 +55,7 @@ const FAQS = [
   },
   {
     q: "What happens to our planner when the free trial ends?",
-    a: "We'll keep your planner, guest list, budget and inspiration board safe for 3 months. Make the one-time payment any time in those 3 months and pick up right where you left off. After that, your planner is deleted.",
+    a: "Nothing is lost — we'll keep your planner, guest list, budget and inspiration board safe for 3 months. Make the one-time payment any time in that window and you'll pick up exactly where you left off. If it's still unclaimed after 3 months, we'll delete it for good.",
   },
   {
     q: "Do we each need our own sign-in?",
