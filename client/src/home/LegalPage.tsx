@@ -8,7 +8,7 @@ import "./legal.css";
 // brand, and stay public like it. Update LAST_UPDATED whenever either text
 // changes.
 
-const LAST_UPDATED = "7 October 2026";
+const LAST_UPDATED = "26 October 2026";
 const CONTACT_EMAIL = "planner@aislelys.com";
 
 function Mail() {
@@ -176,7 +176,8 @@ export function TermsPage() {
       <section>
         <h2>9. Availability and backups</h2>
         <p>
-          We work to keep Aislelys running and your data safe, but we can’t promise the service will always be
+          We work to keep Aislelys running and your data safe, including encrypting it while it travels and while it’s stored (see
+          section 8 of our <Link to="/privacy">Privacy Policy</Link>), but we can’t promise the service will always be
           available or free of errors. Please keep your own copy of anything you can’t afford to lose, such as vendor
           contracts and important photos.
         </p>
@@ -398,9 +399,11 @@ export function PrivacyPage() {
       <section>
         <h2>8. Security</h2>
         <p>
-          All connections are encrypted with HTTPS. Passwords are hashed with a salt, and sign-in cookies are
-          protected from scripts. Each couple’s data is kept separate from every other couple’s. No system is
-          perfectly secure, so please use strong passwords and share guest-list links with care. If a data breach
+          Your data is encrypted both while it travels between your device and our servers, and while it’s stored on
+          them. Passwords are never stored as you type them. Each couple’s data is kept separate from every other couple’s.
+        </p>
+        <p>
+          Please use strong passwords and share guest-list links with care. If a data breach
           affects your personal data, we will tell you in the app and notify the Personal Data Protection Commission as the PDPA
           requires.
         </p>
