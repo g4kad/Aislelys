@@ -149,8 +149,10 @@ function App() {
       <Route path="/" element={<HomePage />} />
       <Route path="/terms" element={<TermsPage />} />
       <Route path="/privacy" element={<PrivacyPage />} />
-      <Route path="/ten-brides" element={<TenBridesPage />} />
-      <Route path="/ten-brides/results" element={<TenBridesResultsPage />} />
+      <Route path="/founding-brides" element={<TenBridesPage />} />
+      <Route path="/founding-brides/results" element={<TenBridesResultsPage />} />
+      <Route path="/ten-brides" element={<Navigate to="/founding-brides" replace />} />
+      <Route path="/ten-brides/results" element={<Navigate to="/founding-brides/results" replace />} />
       <Route path="/:coupleId/*" element={<Workspace />} />
     </Routes>
   );

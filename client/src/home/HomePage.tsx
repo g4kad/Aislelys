@@ -58,6 +58,10 @@ const FAQS = [
     a: "Nothing is lost — we'll keep your planner, guest list, budget and inspiration board safe for 3 months. Make the one-time payment any time in that window and you'll pick up exactly where you left off. If it's still unclaimed after 3 months, we'll delete it for good.",
   },
   {
+    q: "When will I get charged?",
+    a: "Never automatically — we don't ask for your payment details, so there's nothing to charge. When the free period ends, your planner stays safe for 3 months, and you can make the one-time payment yourself whenever you're ready.",
+  },
+  {
     q: "Do we each need our own sign-in?",
     a: "You share one planner, and each of you signs in with your own name and password. You can both see and change everything in it.",
   },

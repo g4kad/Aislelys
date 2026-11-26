@@ -2316,3 +2316,42 @@ html:has(.hp) {
     border-top: 1px solid var(--hp-line);
   }
 }
+
+/* ---------- mobile type scale ---------- */
+
+@media (max-width: 640px) {
+  .hp-display {
+    font-size: calc(3.2rem - 2px);
+  }
+
+  .hp-h2 {
+    font-size: calc(2.3rem - 2px);
+  }
+
+  .hp-price-figure {
+    font-size: 35px;
+  }
+
+  .hp-lede {
+    font-size: calc(1.05rem - 4px);
+    line-height: 1.2;
+  }
+
+  .hp-body,
+  .hp-faq-item p {
+    font-size: calc(1.125rem - 4px);
+    line-height: 1.2;
+  }
+
+  .hp-step-body,
+  .hp-price-note {
+    font-size: calc(1rem - 4px);
+    line-height: 1.2;
+  }
+
+  .hp-pillar-line,
+  .hp-share-card p {
+    font-size: calc(0.9375rem - 4px);
+    line-height: 1.2;
+  }
+}
